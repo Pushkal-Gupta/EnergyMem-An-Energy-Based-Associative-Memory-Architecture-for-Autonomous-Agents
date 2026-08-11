@@ -1,0 +1,39 @@
+[project]
+name = "energymem"
+version = "0.1.0"
+description = "An energy-based associative memory architecture for autonomous agents"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Week 1 -- real sentence embeddings. See docs/09_DAY0_FINDINGS.md F6: synthetic
+# corpora have no headroom, so this is not optional in practice.
+encoders = [
+    "sentence-transformers>=3.0",
+    "torch>=2.0",
+]
+# Baselines (Rajit). faiss for ANN, rank-bm25 for lexical.
+baselines = [
+    "faiss-cpu>=1.8",
+    "rank-bm25>=0.2",
+]
+viz = ["matplotlib>=3.7"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+all = ["energymem[encoders,baselines,viz,dev]"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 95
+target-version = "py310"

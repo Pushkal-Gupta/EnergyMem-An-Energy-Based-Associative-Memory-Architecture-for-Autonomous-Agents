@@ -1,0 +1,72 @@
+% Method. Owner: Pushkal.
+%
+% Section 3.1 is the most important half-page in the paper. It concedes the reviewer's
+% strongest objection before they can raise it, and converts it into the paper's spine.
+% See docs/06_RISK_REGISTER.md R-1.
+
+\subsection{Memory as an energy landscape}
+
+% Setup: memories m_i in R^d, L2-normalized, stacked as X in R^{d x N}.
+% Query cue q; retrieval state xi initialized at q.
+%
+%   E(xi) = -lse(beta, X^T xi + b) + 0.5 ||xi||^2
+%
+% CCCP update (guaranteed descent):
+%   xi <- X softmax(beta (X^T xi + b))
+%   xi <- (1-eta) xi + eta R xi
+%   xi <- xi / ||xi||
+%
+% TODO(Pushkal): state the three generalization axes G1/G2/G3 as a table here.
+
+\subsection{Dense retrieval is a special case}
+
+\begin{proposition}[Reduction]
+\label{prop:reduction}
+% For L2-normalized patterns, with T=1, b=0, R=I and beta -> infinity, the retrieval
+% operator returns exactly argmax_i <q, m_i>, i.e. top-1 cosine retrieval.
+%
+% Proof: softmax(beta z) -> one-hot(argmax z) as beta -> inf; hence xi_1 -> m_{i*} with
+% i* = argmax_i <q, m_i>. Readout by similarity to xi_1 returns m_{i*}.
+\end{proposition}
+
+% SAY THIS EXPLICITLY IN THE TEXT, do not leave it implicit:
+%
+%   "Proposition 1 means the standard dense-retrieval baseline is not an external
+%    competitor but a point in our own parameter space. We therefore implement it as a
+%    configuration of the same code path, which makes every comparison in Section 6 exact
+%    by construction. The research question is not whether energy minimization beats
+%    cosine similarity -- at that point they are the same operator -- but which
+%    departures from it pay for themselves."
+%
+% Verified numerically: 1000/1000 queries agree with exact cosine top-1
+% (tests/test_reduction.py, run in CI).
+
+\subsection{Multi-target retrieval by residual peeling}
+
+% docs/09_DAY0_FINDINGS.md F4/F5. This subsection reports a negative result and its fix.
+%
+% Descent converges to a single point xi*. Reading top-k by similarity to xi* ranks by
+% proximity to ONE attractor, whereas the original query retains evidence for all k
+% targets. Convergence therefore DESTROYS the multiplicity that top-k preserves --
+% measured Recall 0.257 vs 1.000 at k=4 on synthetic data.
+%
+% Fix (Algorithm 1): descend, commit to the nearest attractor, project it out of the
+% residual cue, re-descend. Matching pursuit over the energy landscape. Restores 1.000.
+%
+% This is a genuine contribution: no system in the related work performs multi-target
+% readout under attractor dynamics. Present it as such, but present the failure first.
+
+\subsection{Memory strength as basin depth}
+
+% G2. b_i = w_u log(1+usage_i) + w_r exp(-dt_i/tau) + w_s surprise_i.
+% Reinforcement, decay and forgetting become one term rather than three heuristics.
+% MUST be compared against a cosine retriever given the SAME signals as a score prior --
+% if that matches, this is engineering, not contribution. Say which it turned out to be.
+
+\subsection{Learned associative topology}
+
+% G3. R learned from temporal co-occurrence, NEVER from cosine similarity.
+% Position carefully against PAM (Dury 2026), which already does association-beyond-
+% similarity with an EXTERNAL predictor. Our claim is the INTEGRATION -- association
+% reshapes the same landscape retrieval descends -- not the idea of association itself.
+% See docs/07_CITATION_AUDIT.md.

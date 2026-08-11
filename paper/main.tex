@@ -1,0 +1,72 @@
+% EnergyMem -- paper skeleton
+%
+% FORMAT: currently plain article for drafting. Swap the preamble for the venue
+% template once the target is locked (docs/05_VENUE_STRATEGY.md):
+%   ICLR 2027 -> iclr2027_conference.sty
+%   TMLR      -> tmlr.sty
+%   IEEE TNNLS-> IEEEtran.cls (reuse the setup from the location-privacy paper)
+%
+% WRITING ORDER -- do not deviate:
+%   1. Results tables (generated from experiments/results/, never hand-typed)
+%   2. Method
+%   3. Intro
+%   4. Related Work
+%   5. Abstract LAST
+% Writing the abstract first is how papers end up claiming what they did not measure.
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+
+\newtheorem{proposition}{Proposition}
+
+\title{EnergyMem: An Energy-Based Associative Memory\\Architecture for Autonomous Agents}
+\author{Pushkal Gupta \and Rajit Agrawal \and Anshveer Singh \and Thangaramya K.\\
+        School of Computer Science and Engineering, Vellore Institute of Technology}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% WRITE THIS LAST.
+% Must contain, in this order:
+%   (1) agent memory is retrieval over a store; (2) associative-memory theory offers an
+%   alternative that has never been evaluated as the persistent layer; (3) our reduction
+%   result; (4) what we measured; (5) THE HONEST HEADLINE -- including the latency cost
+%   and any negative result. See docs/09_DAY0_FINDINGS.md before writing a word of this.
+\input{sections/abstract}
+\end{abstract}
+
+\section{Introduction}
+\input{sections/intro}
+
+\section{Related Work}
+\input{sections/related_work}
+
+\section{Method}
+\input{sections/method}
+
+\section{Experimental Setup}
+\input{sections/setup}
+
+\section{Results}
+\input{sections/results}
+
+\section{Limitations}
+\input{sections/limitations}
+
+\section{Conclusion}
+\input{sections/conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

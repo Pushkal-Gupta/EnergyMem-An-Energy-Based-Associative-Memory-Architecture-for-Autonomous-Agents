@@ -1,0 +1,65 @@
+% ONLY entries confirmed against the actual paper page go in this file.
+% Status tracked in docs/07_CITATION_AUDIT.md. Owner: Rajit.
+%
+% The Review-1 bibliography was machine-generated (Gemini/Genspark/ChatGPT). One
+% fabricated or mis-attributed reference found by a reviewer contaminates their trust in
+% every number in the paper. The audit already caught one mis-citation -- arXiv:2506.01303
+% was cited under the wrong title.
+
+% ============================ VERIFIED 2026-08-11 ============================
+
+@article{dury2026pam,
+  title  = {Predictive Associative Memory: Retrieval Beyond Similarity Through Temporal Co-occurrence},
+  author = {Dury, Jason},
+  journal = {arXiv preprint arXiv:2602.11322},
+  year   = {2026},
+  note   = {VERIFIED. Code: github.com/EridosAI/PAM-Benchmark (MIT). PRIMARY BASELINE for RQ3 --
+            already achieves association-beyond-similarity with an external JEPA-style predictor.}
+}
+
+@article{zhu2026helamem,
+  title  = {HeLa-Mem: Hebbian Learning and Associative Memory for LLM Agents},
+  author = {Zhu, Jinchang and Li, Jindong and Zhang, Cheng and Liu, Jiahong and Yang, Menglin},
+  journal = {Proceedings of ACL},
+  year   = {2026},
+  note   = {VERIFIED. arXiv:2604.16839, accepted ACL 2026. Hebbian co-activation +
+            episodic->semantic distillation, evaluated on LoCoMo. MAJOR PRIOR ART for C2/C4.}
+}
+
+@article{li2025dmhn,
+  title  = {Dynamic Manifold Hopfield Networks for Context-Dependent Associative Memory},
+  author = {Li, Chong and Zeng, Taiping and Xue, Xiangyang and Feng, Jianfeng},
+  journal = {arXiv preprint arXiv:2506.01303},
+  year   = {2025},
+  note   = {VERIFIED. NB: the Review-1 deck cited this ID under the title "Latent Structured
+            Hopfield Network" -- that was WRONG. Context-modulated attractor geometry;
+            adjacent to our G2.}
+}
+
+@article{guo2026oscillator,
+  title  = {Learnable Sequential Memory in Coupled Oscillator Networks},
+  author = {Guo, Taosha and Pasqualetti, Fabio},
+  journal = {arXiv preprint arXiv:2607.18439},
+  year   = {2026},
+  note   = {VERIFIED. Separates stored patterns from a learned routing layer -- direct
+            motivation for keeping R separate from X in our formulation.}
+}
+
+@article{wu2026longmemevalv2,
+  title  = {LongMemEval-V2: Evaluating Long-Term Agent Memory Toward Experienced Colleagues},
+  author = {Wu, Di and Ji, Zixiang and Kawatkar, Asmi and Kwan, Bryan and Gu, Jia-Chen
+            and Peng, Nanyun and Chang, Kai-Wei},
+  journal = {arXiv preprint arXiv:2605.12493},
+  year   = {2026},
+  note   = {VERIFIED. 451 curated questions, five memory abilities, agent trajectories.}
+}
+
+% ======================= TO VERIFY -- Rajit, Week 1 ==========================
+% Nothing below this line enters main.tex until confirmed against the real page.
+% Tier A (load-bearing): Hopfield 1982 PNAS; Krotov & Hopfield NeurIPS 2016;
+%   Ramsauer arXiv:2008.02217; Millidge ICML 2022; Behrouz Titans (check NeurIPS 2025
+%   proceedings version); arXiv:2412.05562 (deck cites it under TWO different titles --
+%   resolve); LongMemEval ICLR 2025; LoCoMo ACL 2024; HippoRAG NeurIPS 2024; A-MEM;
+%   MemoryBank AAAI 2024; MemGPT; MemOS.
+% Tier C (CUT): blog posts, Medium, ResearchGate, Scholarpedia, themoonlight.io.
+%   Not citable. Replace with the primary source or delete.

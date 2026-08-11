@@ -1,0 +1,29 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/main.pdf
+
+# Data: large corpora and benchmark downloads are not committed.
+# The DegradeBench GENERATOR is committed, and so is the generated split manifest --
+# reviewers must be able to reproduce the exact queries.
+data/*
+!data/.gitkeep
+!data/degradebench_manifest.json
+
+# Results ARE committed -- every number in the paper must be traceable to a file.
+!experiments/results/**
+
+.DS_Store
+.env
