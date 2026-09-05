@@ -69,19 +69,28 @@ src/energymem/
   memory/lifecycle.py strength bias, decay, consolidation
   baselines/         dense top-k (+ BM25, hybrid, reranker, PAM, HeLa-Mem — Week 1)
   eval/              metrics, bootstrap CIs, DegradeBench, LoCoMo loader
-experiments/   run_E1..E6.py; results/ committed as JSON
+experiments/   run_E1..E6.py; results/ committed as JSON; cache/ gitignored (regenerable)
 paper/         LaTeX skeleton, section stubs, verified refs.bib
 scripts/       demo_review2.py
+  confirm_holdout.py          the confirmed image-completion result (tune/test split)
+  exp_multibeta_scales.py     multi-β scales vs single β vs ensemble — negative result
+  exp_locomo_anchored.py      the LoCoMo negative result (anchor × pp₀ sweep)
+  sweep_beta_transition.py    maps the β leverage band; shows high-β → cosine
 tests/         sanity suite — Proposition 1, energy monotonicity, capacity, determinism
 ```
 
-## Current status (2026-09-05)
+## Current status (2026-09-06)
 
 - ✅ Energy core, dense baseline, test suite — **5/5 passing**
 - ✅ **Proposition 1 verified numerically**, on synthetic *and* on real embeddings
 - ✅ Real embeddings, both modalities: images (Imagenette-160 + ResNet18) and text
       (LoCoMo + MiniLM). The synthetic-ceiling problem in F6 is resolved.
-- ⚠️ **The headline hypothesis does not hold on real data.** See below before planning work.
+- ✅ **Confirmed, honestly-powered positive result**: energy descent beats cosine on
+      image pattern completion, +0.014 [+0.006, +0.021], growing with corruption severity.
+- ❌ Multiple β scales (mixture or ensemble) do not beat one well-tuned β — checked
+      three ways (per-memory, per-region/trained, multi-scale) and ruled out each time.
+- ⚠️ The same descent that wins on images loses monotonically on LoCoMo questions.
+      **The claim is conditional, not general** — see the diagnosis below.
 - ❌ Learned routing (G3), lifecycle (decay/consolidation) — still untested
 
 ---
@@ -91,7 +100,9 @@ tests/         sanity suite — Proposition 1, energy monotonicity, capacity, de
 Real data, two modalities. The short version: **energy descent beats cosine when the
 query is a degraded copy of a stored pattern, and loses when it is not — and we can say
 precisely why.** Both halves are established: +0.014 [+0.006, +0.021] on held-out image
-completion, −0.084 on LoCoMo question→evidence retrieval.
+completion, −0.084 on LoCoMo question→evidence retrieval. Within the winning regime, one
+well-tuned β is already sufficient: mixing multiple β scales, however combined, does not
+improve on it (study 1b).
 
 ### 1. Images — occlusion recovery ✅ CONFIRMED POSITIVE (`scripts/confirm_holdout.py`)
 
@@ -118,6 +129,52 @@ dissolving into the baseline, not a working regime.
 > ⚠️ Earlier image-modality verdicts in this repo were **underpowered and are withdrawn**
 > (80 distinct images, unpaired CIs ~5× the effect size, β tuned on the test images). See
 > `experiments/PROTOCOL_CHANGES.md`, 2026-09-06.
+
+### 1b. Images — does mixing multiple β *scales* beat one tuned β? ❌ NO (`scripts/exp_multibeta_scales.py`)
+
+Different question from 2's per-memory β: here every candidate β sees the *whole* bank,
+and the question is whether combining several global scales beats one well-tuned scale.
+Three mechanisms, precisely distinguished (math in the script header):
+
+- **single β** — one temperature, one trajectory.
+- **integrated mixture** — `p_t = Σⱼ wⱼ·softmax(βⱼ·s_t)` inside *every* descent step; one
+  coupled trajectory. Provably not reducible to any single β (mixture-of-softmaxes
+  rank argument, Yang et al. ICLR 2018) — confirmed empirically: identical to the
+  ensemble at T=1 (99.5% top-1 agreement) but **diverges at T=8 (63.0% agreement)**,
+  since composition and mixing don't commute for T>1.
+- **naive ensemble** — m fully independent trajectories, fused only at readout. Costs
+  m× the matmuls of the other two.
+
+Literature check first (Yang et al. 2018 MoS, MultiMax ICML 2024, CT-MoS, Hopfield-
+Fenchel-Young 2025): the general mechanism is established elsewhere; applying it to
+Hopfield-style memory retrieval specifically does not appear to be published.
+
+Tune/test split as in study 1, resampling **images** in the bootstrap (not query
+instances, which are correlated across occlusion levels/seeds of the same image):
+
+| condition | R@1 | R@5 | MRR | matmuls | Δ vs single β |
+|---|---|---|---|---|---|
+| cosine | 0.543 | **0.759** | **0.643** | 1 | — |
+| single β=56 (tuned) | 0.555 | 0.605 | 0.589 | 16 | — |
+| integrated mix [32,40,48] | **0.559** | 0.591 | 0.585 | 16 | +0.0036 [−0.0033, +0.0106] n.s. |
+| ensemble [32,40,48] | 0.559 | 0.599 | 0.586 | 48 | +0.0032 [−0.0038, +0.0103] n.s. |
+| *control* mix [1,5,20] | 0.108 | 0.319 | 0.217 | 16 | predicted collapse — confirmed |
+| *control* ensemble [1,5,20] | 0.282 | 0.296 | 0.304 | 48 | predicted collapse — confirmed, less severe |
+
+**Answer: no.** Integrated mixture vs. ensemble: **+0.0003 [−0.0014, +0.0021]** —
+statistically identical despite disagreeing on 37% of individual queries. The extra
+expressiveness is real (confirmed by the divergence check) but performance-neutral: it
+changes *which* queries are answered correctly, not *how many*. Single β=56 already
+matches cosine's advantage; mixing buys nothing further and costs 2–3× more compute.
+
+Two findings kept from the controls: (i) the integrated `[1,5,20]` control collapsed to
+exact chance (0.108 = 1/10) and gave *identical* accuracy at every occlusion level — one
+bad scale inside a shared trajectory poisons the whole state, unlike the ensemble version
+(0.282) where it only dilutes one vote among independent runs; this is direct evidence the
+coupling is real and can hurt as easily as it can (fail to) help. (ii) Descent wins R@1 but
+**loses badly on R@5/MRR** (0.599–0.605 vs cosine 0.759) — it converges to one attractor,
+so ranks 2–5 reflect proximity to that point rather than the query (F4/F5, confirmed on
+real images): a better top-1, a worse shortlist.
 
 ### 2. Images — capacity and calibration (`scripts/test_capacity_confidence.py`)
 
