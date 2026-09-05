@@ -25,5 +25,8 @@ data/*
 # Results ARE committed -- every number in the paper must be traceable to a file.
 !experiments/results/**
 
+# Embedding caches are regenerable from the scripts that write them (and large).
+experiments/cache/
+
 .DS_Store
 .env

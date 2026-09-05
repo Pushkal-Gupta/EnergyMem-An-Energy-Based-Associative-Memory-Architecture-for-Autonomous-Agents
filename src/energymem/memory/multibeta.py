@@ -1,40 +1,43 @@
-"""Multi-beta energy memory -- a per-memory temperature instead of one global beta.
+"""Per-pattern beta, correctly parameterized.
 
-MOTIVATION (see experiments/PROTOCOL_CHANGES.md, 2026-09-03 capacity-sweep entry).
-EnergyMemory uses a single global beta for every stored pattern. The capacity sweep
-showed this is a real limitation: a beta tuned for a small, evenly-spread memory bank
-stops being sharp enough once the bank grows and some regions become locally crowded
-(e.g. several near-duplicate images), while other regions stay sparse. One shared
-number cannot be simultaneously right for both.
+A heterogeneous-beta memory GENERALIZES the fixed-beta memory: if every beta_i is equal
+it must reproduce the fixed-beta network exactly. Any implementation that scores worse
+than fixed beta under a proper search is therefore broken, not informative. The first
+version of this file was broken in two ways, both fixed here.
 
-THE IDEA. Give every stored memory its own beta_i, set from how crowded its own
-neighborhood is:
+BUG 1 -- the constant solution was not in the search space.
+    Old:  beta_i = beta_min + gain * log(1+N) / gap_i,  beta_min = 4, gain in {0..32}
+    gain=0 collapses to a uniform beta of 4.0 -- and beta<=8 is already known to collapse
+    to the corpus centroid (docs/09_DAY0_FINDINGS F2, reproduced on images). So the only
+    uniform setting reachable by the search was a catastrophic one; uniform beta=32 could
+    not be expressed at all. The search could not fall back to the baseline it was
+    supposed to generalize.
 
-    - a memory with a close look-alike nearby (small gap to its nearest neighbour)
-      needs a SHARP, high beta_i so its own basin does not blur into its neighbour's
-    - a memory sitting alone (large gap to its nearest neighbour) can use a LOW,
-      forgiving beta_i, giving it a wide basin that still finds it from a heavily
-      corrupted cue
+    New:  beta_i = beta_base * (1 + lam * z_i),   z = standardized crowding score
+    lam=0 gives beta_i = beta_base for every i -- the fixed-beta network exactly, for any
+    beta_base. The special case is now interior to the parameter space and (beta_base,
+    lam) are searched jointly.
 
-This changes the SHAPE of the energy landscape (sculpting, done once at index time).
-The retrieval loop itself (_descend) is unchanged in structure -- same iterative
-"move toward the weighted blend of stored patterns, repeat until settled" process as
-EnergyMemory. The only change is that each pattern's pull uses its own beta_i instead
-of one shared beta.
+BUG 2 -- heterogeneous beta rescaled patterns against each other.
+    In ``softmax_i(beta_i * s_i)`` a larger beta_i does not merely sharpen pattern i's
+    basin; it multiplies pattern i's score relative to every other candidate. beta was
+    controlling basin DEPTH when only SHARPNESS was intended, so patterns in crowded
+    regions won on multiplier magnitude rather than similarity.
 
-SCULPTING RULE. For pattern i, let gap_i = 1 - max_j!=i cos_sim(x_i, x_j) (patterns
-are L2-normalized, so cos_sim(x_i, x_i) = 1; gap_i is the similarity headroom before
-the nearest competitor). This mirrors the modern-Hopfield-network stability
-requirement: the beta needed to keep a pattern a well-separated attractor grows as its
-separation from its nearest neighbour shrinks, and grows (logarithmically) with the
-number of competing patterns N. We use:
+    Fix: center the scores on the running maximum before applying beta,
 
-    beta_i = beta_min + gain * log(1 + N) / gap_i
+        w_i = exp(beta_i * (s_i - max_j s_j)),      p = w / sum(w)
 
-`gain` is the one free constant. It is NOT hand-picked: `index()` self-calibrates it
-by corrupting a handful of the memory bank's own patterns (dimension dropout, not
-domain-specific) and choosing whichever gain in a small grid recovers them best. No
-external validation set or domain knowledge is required.
+    The top-scoring pattern is pinned at w=1 regardless of its own beta, so no pattern can
+    out-shout another by carrying a bigger multiplier. Each beta_i now controls only how
+    fast pattern i decays once it is *behind* the leader -- sharpness, not depth. Because
+    softmax is shift-invariant, a constant beta makes this identical to the standard
+    update, which is what preserves the reduction in BUG 1.
+
+The scientific question this file can now actually answer: at the jointly-optimal
+(beta_base, lam), is lam > 0? A nonzero optimum means locally-varying sharpness earns its
+place. lam = 0 means it does not -- and that is a real answer, not an artifact of a
+search that could not represent the baseline.
 """
 
 from __future__ import annotations
@@ -46,46 +49,56 @@ import numpy as np
 
 from ..base import Memory, RetrievalResult, Retriever, l2_normalize
 
-GAIN_GRID = (0.0, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0)
-BETA_MIN = 4.0
-CALIB_N_QUERIES = 50
-CALIB_DROPOUT = 0.30
-
-
-def _softmax(z: np.ndarray) -> np.ndarray:
-    z = z - z.max()
-    e = np.exp(z)
-    return e / e.sum()
+#: beta_i is clipped to this floor so a large lam cannot drive a pattern's beta negative
+BETA_FLOOR = 0.1
 
 
 def _nearest_neighbor_gap(X: np.ndarray) -> np.ndarray:
-    """gap_i = 1 - similarity to the closest OTHER stored pattern. X is (d, N), L2-normalized columns."""
-    S = X.T @ X  # (N, N) cosine similarities
+    """gap_i = 1 - cos_sim to the closest OTHER stored pattern. X is (d, N), unit columns."""
+    S = X.T @ X
     n = S.shape[0]
     S[np.arange(n), np.arange(n)] = -np.inf
     nn_sim = S.max(axis=1)
-    return np.clip(1.0 - nn_sim, 1e-3, None)
+    return np.clip(1.0 - nn_sim, 1e-6, None)
 
 
-def _corrupt_embedding(x: np.ndarray, rate: float, rng: np.random.Generator) -> np.ndarray:
-    """Domain-agnostic corruption for self-calibration: zero out a random fraction of
-    dimensions and renormalize. Mirrors the "partial/noisy cue" scenario without
-    needing to know whether x came from an image, text, or anything else."""
-    keep = rng.random(x.shape[0]) >= rate
-    if not keep.any():
-        keep[rng.integers(x.shape[0])] = True
-    return l2_normalize(x * keep)
+def crowding_z(X: np.ndarray) -> np.ndarray:
+    """Standardized crowding: high where a pattern's nearest neighbour is close.
+
+    Uses -log(gap) so the long tail of near-duplicates does not dominate, then z-scores
+    it so that ``lam`` has a consistent meaning across corpora of different densities.
+    """
+    gap = _nearest_neighbor_gap(X)
+    c = -np.log(gap)
+    sd = c.std()
+    if sd < 1e-12:
+        return np.zeros_like(c)
+    return (c - c.mean()) / sd
 
 
 class MultiBetaEnergyMemory(Retriever):
-    """EnergyMemory with a per-pattern beta instead of one global beta.
+    """Energy memory with per-pattern sharpness.
 
-    Same retrieval loop and interface as EnergyMemory. See module docstring for the
-    sculpting rule and self-calibration procedure.
+    Parameters
+    ----------
+    beta_base
+        The uniform temperature. With ``lam=0`` this *is* the fixed-beta network.
+    lam
+        Heterogeneity strength. ``beta_i = beta_base * (1 + lam * z_i)`` with ``z`` the
+        standardized crowding score. ``lam=0`` disables heterogeneity entirely.
     """
 
-    def __init__(self, n_steps: int = 8, tol: float = 1e-5, encoder=None) -> None:
+    def __init__(
+        self,
+        n_steps: int = 8,
+        beta_base: float = 32.0,
+        lam: float = 0.0,
+        tol: float = 1e-5,
+        encoder=None,
+    ) -> None:
         self.n_steps = n_steps
+        self.beta_base = beta_base
+        self.lam = lam
         self.tol = tol
         self.encoder = encoder
 
@@ -93,61 +106,51 @@ class MultiBetaEnergyMemory(Retriever):
         self.X: np.ndarray | None = None
         self.b: np.ndarray | None = None
         self.beta_vec: np.ndarray | None = None
-        self.gain_used: float | None = None
 
     # ------------------------------------------------------------------ index
 
-    def index(self, memories: Sequence[Memory]) -> None:
+    def index(self, memories: Sequence[Memory], z: np.ndarray | None = None) -> None:
+        """Index the bank. ``z`` optionally supplies a precomputed crowding score --
+        it depends only on the patterns, so a (beta_base, lam) sweep over one fixed bank
+        should compute it once via ``crowding_z`` rather than N^2 times."""
         if not memories:
             raise ValueError("cannot index an empty memory set")
         embs = [m.embedding for m in memories]
         if any(e is None for e in embs):
             raise ValueError("all memories must be encoded before indexing")
         self.memories = list(memories)
-        self.X = l2_normalize(np.stack(embs), axis=1).T.astype(np.float64)  # (d, N)
+        self.X = l2_normalize(np.stack(embs), axis=1).T.astype(np.float64)
         self.b = np.zeros(len(memories), dtype=np.float64)
 
-        gap = _nearest_neighbor_gap(self.X)
-        n = self.X.shape[1]
-        self.gain_used = self._calibrate_gain(gap, n)
-        self.beta_vec = BETA_MIN + self.gain_used * np.log(1 + n) / gap
-
-    def _beta_for_gain(self, gap: np.ndarray, n: int, gain: float) -> np.ndarray:
-        return BETA_MIN + gain * np.log(1 + n) / gap
-
-    def _calibrate_gain(self, gap: np.ndarray, n: int) -> float:
-        """Self-test: corrupt a sample of the bank's own patterns, see which gain
-        in GAIN_GRID recovers them best. No external labels or domain knowledge used."""
-        rng = np.random.default_rng(0)
-        m = min(CALIB_N_QUERIES, n)
-        sample_idx = rng.choice(n, size=m, replace=False)
-
-        best_gain, best_acc = GAIN_GRID[0], -1.0
-        for gain in GAIN_GRID:
-            beta_vec = self._beta_for_gain(gap, n, gain)
-            hits = 0
-            for i in sample_idx:
-                q = _corrupt_embedding(self.X[:, i], CALIB_DROPOUT, rng)
-                xi, *_ = self._descend(q, self.X, self.b, beta_vec)
-                sims = self.X.T @ xi
-                if int(np.argmax(sims)) == i:
-                    hits += 1
-            acc = hits / m
-            if acc > best_acc:
-                best_acc, best_gain = acc, gain
-        return best_gain
+        if self.lam == 0.0:
+            self.beta_vec = np.full(self.X.shape[1], self.beta_base, dtype=np.float64)
+        else:
+            if z is None:
+                z = crowding_z(self.X)
+            self.beta_vec = np.clip(
+                self.beta_base * (1.0 + self.lam * z), BETA_FLOOR, None
+            )
 
     # --------------------------------------------------------------- dynamics
 
-    def _descend(
-        self, q: np.ndarray, X: np.ndarray, b: np.ndarray, beta_vec: np.ndarray
-    ) -> tuple[np.ndarray, int, bool]:
+    def _weights(self, s: np.ndarray) -> np.ndarray:
+        """Max-centered heterogeneous softmax.
+
+        Centering on max_j s_j pins the leader's weight at 1 for every beta, so beta_i
+        cannot inflate pattern i against the field -- it only sets how quickly pattern i
+        falls away once behind. With constant beta this is exactly softmax(beta * s).
+        """
+        z = self.beta_vec * (s - s.max())
+        w = np.exp(z)
+        return w / w.sum()
+
+    def _descend(self, q: np.ndarray) -> tuple[np.ndarray, int, bool]:
+        X, b = self.X, self.b
         xi = l2_normalize(q.astype(np.float64))
         converged = False
         steps = 0
         for t in range(self.n_steps):
-            p = _softmax(beta_vec * (X.T @ xi + b))
-            nxt = l2_normalize(X @ p)
+            nxt = l2_normalize(X @ self._weights(X.T @ xi + b))
             delta = float(np.linalg.norm(nxt - xi))
             xi = nxt
             steps = t + 1
@@ -162,8 +165,7 @@ class MultiBetaEnergyMemory(Retriever):
         if self.X is None or self.beta_vec is None:
             raise RuntimeError("index() before retrieve()")
         t0 = time.perf_counter()
-        q = self._encode(query)
-        xi, steps, converged = self._descend(q, self.X, self.b, self.beta_vec)
+        xi, steps, converged = self._descend(self._encode(query))
 
         sims = self.X.T @ xi
         order = np.argsort(-sims)[:k]

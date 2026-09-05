@@ -88,21 +88,36 @@ tests/         sanity suite — Proposition 1, energy monotonicity, capacity, de
 
 ## Empirical status: what we actually found
 
-Three studies on real data. The short version: **energy descent does not beat cosine
-top-k for agent memory retrieval, and we can say precisely why.**
+Real data, two modalities. The short version: **energy descent beats cosine when the
+query is a degraded copy of a stored pattern, and loses when it is not — and we can say
+precisely why.** Both halves are established: +0.014 [+0.006, +0.021] on held-out image
+completion, −0.084 on LoCoMo question→evidence retrieval.
 
-### 1. Images — occlusion recovery (`scripts/test_imagenet_hopfield.py`)
+### 1. Images — occlusion recovery ✅ CONFIRMED POSITIVE (`scripts/confirm_holdout.py`)
 
-300 Imagenette images as memories, ResNet18 features, queries = occluded held-out images.
+400 Imagenette images as memories, ResNet18 features, queries = occluded held-out images.
+β selected on a **disjoint tune half**; one pre-committed paired test on the held-out half.
+n = 5,847 query instances from 1,949 distinct images (the full val split).
 
-| occlusion | cosine | energy T=8 β=32 | energy T=8 β=8 |
-|---|---|---|---|
-| 0% | 0.863 | 0.838 | 0.100 |
-| 60% | 0.407 | **0.465** | 0.100 |
-| 80% | 0.285 | **0.333** | 0.100 |
+| occlusion | cosine | energy β=40 | paired Δ | 95% CI |
+|---|---|---|---|---|
+| 30% | 0.730 | 0.733 | +0.003 | [−0.008, +0.014] n.s. |
+| 50% | 0.542 | 0.559 | +0.017 | [+0.003, +0.031] **sig** |
+| 70% | 0.386 | 0.407 | +0.021 | [+0.007, +0.034] **sig** |
+| **pooled** | **0.553** | **0.566** | **+0.014** | **[+0.006, +0.021] sig** |
 
-The **only** setting where descent wins. β=8 collapses to chance (0.100 = 1/10 classes):
-too flat a softmax averages the whole corpus on step 1. Reproduces F2 on real features.
+The advantage **grows with corruption severity** — exactly what pattern completion
+predicts, and null at light corruption where there is nothing to reconstruct. Costs ~8×
+cosine's latency. Tune-half estimate (+0.016) matched held-out (+0.014): no selection bias.
+
+β is only influential in a narrow band. `scripts/sweep_beta_transition.py`: β=12 → 0.100
+(centroid collapse), β=40 → 0.510, β=512 → 0.4995 vs cosine 0.4996 — high β *degenerates
+into cosine* (Proposition 1), so the apparent "plateau" above β≈50 is the method
+dissolving into the baseline, not a working regime.
+
+> ⚠️ Earlier image-modality verdicts in this repo were **underpowered and are withdrawn**
+> (80 distinct images, unpaired CIs ~5× the effect size, β tuned on the test images). See
+> `experiments/PROTOCOL_CHANGES.md`, 2026-09-06.
 
 ### 2. Images — capacity and calibration (`scripts/test_capacity_confidence.py`)
 
@@ -111,11 +126,21 @@ too flat a softmax averages the whole corpus on step 1. Reproduces F2 on real fe
 - **Calibration** (negative): retrieval margin does *not* predict correctness, for either
   method (correlation ≈ 0; accuracy is non-monotonic across margin quartiles). The
   "memory knows when it is unsure" idea does not survive contact with data.
-- **Per-memory β** (`memory/multibeta.py`, negative): giving each pattern its own β_i
-  made things *worse* at every N (0.150 vs 0.471 at N=4,000). Reason: in
-  `softmax_i(β_i·s_i)` a heterogeneous β_i rescales pattern i against all others, so it
-  controls basin *depth* when only *sharpness* was intended. Crowded patterns win on
-  multiplier size rather than similarity. Kept in the repo as a documented dead end.
+- **Per-memory β** (`memory/multibeta.py`): two distinct failures, both since diagnosed.
+  (i) The original parameterization could only express a *uniform* β of 4.0 — below the
+  centroid-collapse cliff — so uniform β=32 was unreachable and the search could not fall
+  back to the baseline it was meant to generalize. Fixed: `β_i = β_base·(1 + λ·z_i)`, with
+  λ=0 reproducing fixed β exactly (verified 40/40). (ii) `softmax_i(β_i·s_i)` lets a
+  heterogeneous β_i rescale pattern i against all others — controlling basin *depth* when
+  only *sharpness* was intended. Fixed by max-centering, `exp(β_i·(s_i − max_j s_j))`.
+  Even corrected, heterogeneity is **inert here**: the learned β values (51–88) sit above
+  the band where β has any leverage at all, and a shuffle control (same values, randomly
+  reassigned to regions) scores identically.
+- **Gradient-trained β** (`memory/beta_training.py`, `memory/query_beta.py`): β learned by
+  backprop, per-region and as a continuous function of the descent state. Both land within
+  noise of a well-tuned scalar β. Conditioning β on the query is *motivated* — the optimal
+  β genuinely differs by corruption level — but the learned function converged to a near
+  constant (β≈31 at every occlusion level).
 
 ### 3. Text — LoCoMo, the real agent benchmark (`scripts/exp_locomo_anchored.py`)
 
@@ -149,10 +174,14 @@ a corrupted turn, so there is nothing to complete and averaging only smears the 
 discriminative signal.
 
 > **Associative completion requires the cue to be a degraded instance of a stored pattern.
-> Question-based agent retrieval violates that premise, so the method does not transfer.**
+> Image occlusion satisfies that premise and descent wins, by more as damage increases.
+> Question-based agent retrieval violates it, and descent loses monotonically.**
 
-Falsifiable and not yet run: swap LoCoMo queries from questions to *masked turns* on the
-same corpus and encoder. The diagnosis predicts descent regains its advantage.
+Both halves are now measured rather than argued: +0.021 at 70% occlusion (held-out,
+significant) and −0.084 on LoCoMo (monotone across the anchor sweep). The remaining
+confirmation, cheap and not yet run: swap LoCoMo queries from questions to *masked turns*
+on the same corpus and encoder. The diagnosis predicts descent regains its advantage —
+same data, same embeddings, only the query type changes.
 
 ### Corrections to our own earlier claims
 
