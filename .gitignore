@@ -30,3 +30,12 @@ experiments/cache/
 
 .DS_Store
 .env
+<<<<<<< Updated upstream
+=======
+
+# encoder cache -- regenerable, large
+.cache/
+
+# scratch notes, not part of the project
+.git-scratch/
+>>>>>>> Stashed changes
