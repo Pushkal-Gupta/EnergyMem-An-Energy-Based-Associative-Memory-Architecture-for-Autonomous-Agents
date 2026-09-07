@@ -22,3 +22,40 @@ deviation and punish a silent one.
 | 2026-09-06 | **CONFIRMED POSITIVE RESULT** (images): energy descent beats cosine under pattern completion | Protocol: beta selected on a disjoint TUNE half (1,948 images), single pre-committed paired comparison on the HELD-OUT half. n=5,847 query instances from 1,949 distinct images, the full Imagenette val split. beta=40 vs cosine: **+0.014, paired 95% CI [+0.006, +0.021]**, wins 287 / losses 208. Per level: 30% +0.003 (n.s.), 50% +0.017 (sig), 70% +0.021 (sig) -- the advantage grows with corruption severity, as the completion mechanism predicts. Tune-half estimate (+0.016) matched held-out (+0.014), indicating no residual selection bias. |
 | 2026-09-06 | The LoCoMo (text) negative result is NOT affected by the above | Its effect size (Coverage@5 0.336 cosine vs 0.252 pure descent) is ~10x the noise floor that obscured the image effect, and the anchor sweep gives a monotone dose-response across six settings rather than a single comparison. Re-powering would not reverse it. The two modalities together support the mechanistic claim: descent helps when the cue is a degraded copy of a stored pattern and hurts when it is not. |
 | 2026-09-06 | Multi-scale β (mixing several temperatures during retrieval) investigated and ruled out, third time this mechanism has been tested | Literature check first (Mixture-of-Softmaxes, Yang et al. ICLR 2018; MultiMax ICML 2024; CT-MoS; Hopfield-Fenchel-Young 2025): the general mixing mechanism is established elsewhere, not previously applied to Hopfield-style memory retrieval. Three variants precisely distinguished and implemented: single beta, an INTEGRATED mixture (`p_t = sum_j w_j softmax(beta_j s_t)` inside every descent step, one coupled trajectory), and a NAIVE ENSEMBLE (m independent trajectories fused only at readout). Verified these are genuinely different mechanisms, not accidentally identical: agree 99.5% at T=1, diverge to 63.0% top-1 agreement at T=8 (composition and mixing do not commute for T>1). Reduction check passed (equal betas -> exact single-beta reduction, max diff 4e-13). Held-out result (tune/test split, bootstrap resampling images): integrated mixture vs ensemble = +0.0003 [-0.0014, +0.0021] -- statistically identical despite disagreeing on 37% of individual queries. Neither beats a single well-tuned beta beyond noise. The predicted-to-fail control ([1,5,20], values below the measured beta leverage band) collapsed to exact chance for the integrated version and gave identical accuracy at every occlusion level, worse than its ensemble counterpart (0.282) -- confirms the coupling is real (it can make things worse) even though it does not make things better. |
+| 2026-09-04 | Stage-A **sentence**-embedding run carried out (`all-mpnet-base-v2`), separate from the 2026-09-03 image run | The text-side Stage-A validation the image run explicitly left owed. Findings F10-F15, `experiments/run_real.py`. Note the two runs are different modalities and are **not** interchangeable evidence. |
+
+## 2026-09-04 — first sentence-embedding run discarded
+
+The run at `20260904T174209Z` was executed before the F10 fix (perturbation scale not
+dimension-normalized). It reported `vote_proj=0.000` and `repulsion=0.016`, which were
+units artifacts rather than measurements. Deleted rather than kept, so nobody cites it.
+Superseded by `20260904T174411Z`. Finding recorded as F10.
+
+## 2026-09-04 — significance testing changed to a cluster bootstrap
+
+Originally CIs were bootstrapped over all (seed × question) measurements. Seeds reshuffle
+the corpus but reuse the same questions, so those rows are correlated and the naive
+bootstrap is pseudo-replication — it reported p=0.0005 where the correct cluster bootstrap
+over questions reports p=0.076. **All significance testing now resamples questions.**
+
+## 2026-09-05 — hyperparameters must be selected on a held-out thread split
+
+Consequence of F15. β had been chosen by sweeping on the same questions it was then scored
+on, which inflated the reported effect from +0.004 to +0.042. Every reported number now
+comes from `experiments/devtest.py`, which splits **by thread** so no storyline spans the
+boundary, tunes on dev, and reports on test.
+
+## 2026-09-05 — Phase 3 opened: world-model experiments outside the pre-registered E1–E6
+
+`docs/10_EXPERIMENT_LEDGER.md` X16–X19 test retrieval as inference in a learned world model
+(`src/energymem/world/`). This is a new axis, not one of the pre-registered experiments, and
+was opened because every pre-registered departure (G1, peeling, repulsion) had been measured
+and found not to pay (F15). Logged here rather than folded silently into E1–E6.
+
+## Cross-modality caveat
+
+Two "real embedding" runs now exist — images (2026-09-03) and sentences (2026-09-04/05).
+The β-versus-corpus-size finding from the image run and the β-versus-dimensionality finding
+(F11) from the sentence run are **consistent in direction**: β does not transfer across
+conditions and must be re-tuned per setting. Neither run substitutes for the other, and the
+paper must say which modality each number came from.
