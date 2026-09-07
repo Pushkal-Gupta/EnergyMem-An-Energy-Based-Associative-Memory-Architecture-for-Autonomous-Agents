@@ -55,6 +55,31 @@
 %
 % This is a genuine contribution: no system in the related work performs multi-target
 % readout under attractor dynamics. Present it as such, but present the failure first.
+%
+% ABLATION -- the alternative readout (docs/09_DAY0_FINDINGS.md F7). Descend m particles in
+% PARALLEL with a repulsion term (Stein-variational descent over E) instead of peeling
+% sequentially. Report all four variants; two of them fail and the failures carry the argument:
+%   perturbation alone   0.142  -- no working sigma: collapse or uniform scatter, nothing between
+%   cosine top-m seeding 0.260  -- circular; stored patterns are exact fixed points, so the
+%                                 descent is a no-op and any ranking is cosine top-k again
+%   + repulsion          0.910  -- works; particles concentrate on the gold set
+%   residual peeling     1.000  -- wins ON SYNTHETIC. On real embeddings it does NOT (F13).
+%
+% CORRECTED 2026-09-04 (F8). The earlier claim -- "parallel descent has no ranking signal"
+% -- is FALSE and must not appear in the paper. Basin volume (how many perturbed cues drain
+% to an attractor) IS a query-dependent ranking signal, and it lifts the parallel readout
+% from 0.142 to 0.621.
+%
+% The correct claim is sharper: multi-target readout needs enforced diversity in the
+% DYNAMICS, not in the READOUT. Banning the winner from the shortlist leaves the next
+% descent starting from the same cue -- the second-most-voted attractor is a gold only
+% 0.02-0.10 of the time. Projecting the winner out of the CUE changes where the next
+% descent begins, and recovers 1.000 with or without voting.
+%
+% Report vote+ban as the headline negative result: it is the intuitive proposal, and it
+% fails for a precise measurable reason rather than a vague one.
+% Caveat to state: peeling is k sequential descents vs one batched matmul -- report the
+% latency crossover at realistic N, do not generalize from the CPU/N=1000 numbers.
 
 \subsection{Memory strength as basin depth}
 

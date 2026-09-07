@@ -27,3 +27,6 @@ data/*
 
 .DS_Store
 .env
+
+# encoder cache -- regenerable, large
+.cache/
