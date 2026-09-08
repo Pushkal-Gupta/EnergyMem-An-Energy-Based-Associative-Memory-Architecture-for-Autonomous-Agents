@@ -1,30 +1,273 @@
 # EnergyMem
 
-**An Energy-Based Associative Memory Architecture for Autonomous Agents**
+**A hybrid predictive–associative memory architecture for autonomous agents**
 
-BCSE497J Project-I · Fall 2026–27 · SCOPE, VIT Vellore · Project ID 20113UG01
-Pushkal Gupta (23BCT0253) · Rajit Agrawal (23BCE2371) · Anshveer Singh (23BCE0703)
-Guide: Dr. Thangaramya K
+A research project on how an agent should retrieve its own long-term memory. The working
+hypothesis is that retrieval is not a lookup over a static store but **inference in a
+learned model of how experience unfolds**, and that dense embedding search is the
+degenerate zero-step case of that model.
 
 ---
 
-## What this is
+## The question
 
 Agent long-term memory is almost universally retrieved by top-k embedding similarity.
 Associative-memory theory offers an alternative — recall as convergence to an attractor in
-a learned energy landscape — but it has never been evaluated as the *persistent memory
-layer* of an agent under matched conditions.
+an energy landscape — but it had never been evaluated as the *persistent memory layer* of
+an agent under matched conditions.
 
-We show that **dense top-k retrieval is a special case of the energy formulation**
-(`T=1, β→∞, b=0, R=I`), then measure which departures from that corner actually pay for
-themselves.
+We proved that **dense top-k retrieval is a special case of the energy formulation**
+(`T=1, β→∞, b=0, R=I`; Proposition 1, verified 1000/1000), then measured which departures
+from that corner pay for themselves. Most do not. The one that does is not a better way to
+*search* the landscape — it is a **model of what follows what**, run forward.
+
+That result is what the architecture below is built around. Everything in it is forced by a
+specific experiment; nothing is there because it sounded good.
+
+---
+
+## The architecture
+
+Five modules. An encoder and a decoder at the boundaries, and between them a latent
+controller, a joint-embedding predictor, and a stochastic associative memory. The predictor
+supplies *where experience tends to go next*; the memory supplies *what was actually
+stored*; the controller decides how much inference to spend; the temperature decides
+whether the memory behaves as a Hopfield network (deterministic descent) or as a Boltzmann
+machine (sampling from a distribution over futures).
+
+```
+   raw experience                                                    ranked memories
+   (text / image)                                                    + predicted state
+         │                                                                   ▲
+         ▼                                                                   │
+   ┌───────────┐                                                       ┌───────────┐
+   │  E        │   z ∈ S^(d−1)                                         │  D        │
+   │  Encoder  │────────────┬────────────────────────────────────────► │  Readout  │
+   │  (frozen) │            │                                          │  Decoder  │
+   └───────────┘            │                                          └───────────┘
+                            ▼                                                ▲
+                      ┌───────────┐      control (β, Θ, H, S, λ)              │
+                      │  C        │──────────────┬───────────────────┐        │
+                      │ Latent    │              │                   │        │
+                      │Controller │  context c_t │                   │        │
+                      └───────────┘              ▼                   ▼        │
+                            │             ┌───────────┐        ┌───────────┐  │
+                            └────────────►│  P        │  ẑ_s   │  M        │  │
+                                          │ Predictor │───────►│ Stochastic│──┘
+                                          │  (JEPA)   │  w_s   │ Assoc.Mem │
+                                          └───────────┘        └───────────┘
+                                             modes,                 X, b
+                                          not a mean            energy landscape
+```
+
+Notation: `z` a unit-norm embedding, `X ∈ R^(d×N)` the memory bank, `b ∈ R^N` per-memory
+strengths, `β` retrieval sharpness, `Θ` sampling temperature, `H` rollout depth, `S` number
+of hypotheses, `λ` predictor–memory coupling.
+
+### E — Encoder (frozen, matched)
+
+`z = E(x) ∈ S^(d−1)`. Text and images both land on the unit sphere. The encoder is frozen
+and **identical across every method and every baseline**, so that no comparison can be won
+by representation quality. This is a hard rule, not a default: it is what makes the
+baseline a point in our own parameter space rather than a separate system.
+
+### C — Latent controller (the reasoning frontend)
+
+Reads the recent trajectory `z_≤t` and emits (i) a context vector `c_t` and (ii) the
+inference budget `(β, Θ, H, S, λ)`. It emits **control, not tokens** — this is the
+latent-reasoning analogy: the module decides *how much* inference this query deserves, the
+way a reasoning model decides how long to think.
+
+It exists because no single fixed configuration wins everywhere. Three regimes have been
+measured and they want opposite settings:
+
+| regime | query is… | what wins | budget |
+|---|---|---|---|
+| **Completion** | a degraded copy of a stored pattern (occluded image) | multi-step descent, β in band | `H=0, T>1, β∈[16,48]` |
+| **Composition** | a cue whose answer is *k* steps downstream in a storyline | predictor rollout | `H≥1, S>1, Θ>0` |
+| **Semantic match** | a question about stored evidence | plain cosine | `H=0, T=1, β→∞` |
+
+A fixed pipeline must lose two of the three. The minimal controller is a regime classifier
+over the query; the strong version learns the budget end-to-end. Either way, when it emits a
+constant it reduces exactly to the fixed configuration, which is how it gets tested.
+
+### P — Predictor (joint-embedding, distributional)
+
+Predicts the *representation* of what comes next, never its tokens. Two facts from X17/X17b
+constrain its form absolutely:
+
+1. A free-form parametric map does not generalise here. Transitions between consecutive
+   episodes are near-orthogonal (mean pairwise cosine 0.006) — there is no global "and then"
+   direction to fit — and a rank-2…32 sweep memorised at every capacity (0.784 on seen
+   threads, **0.008** on unseen, against a cosine baseline of 0.106).
+2. A **nonparametric** predictor that carries the transitions instead of compressing them
+   works: locally-weighted displacement transfer, +46% on held-out threads.
+
+So the default `P` is a kernel over observed transitions, and it returns a **weighted set of
+modes, not a mean**:
+
+```
+P(· | q) = { (ẑ_i, w_i) }_{i∈topK},   ẑ_i = Π[ q + Δ_i ],   w = softmax(τ · Z_c^T q)
+```
+
+where `Δ_i = z_next(i) − z_cue(i)` are displacements from transitions the agent actually
+experienced, and `Π` is projection back to the sphere. Temporal adjacency is free
+supervision — nothing here is labelled.
+
+**Why modes and not a mean.** The conditional next-state distribution is multi-modal: a cue
+can legitimately lead to several mutually exclusive futures. A point estimate returns their
+average, and in embedding space the average of two distinct memories is a location where
+nothing is stored — off-manifold, a ridge between basins rather than a basin. Preliminary
+diagnostics support this strongly (predictions land at cosine ≈0.44 from their own nearest
+stored neighbour, against ≈0.73 for real episodes) but they are **not yet in the ledger**;
+re-running and logging them is the first item in the queue below.
+
+Rollout to `H` hops applies `P` to its own output, expanding the top modes into a weighted
+beam of `S` hypotheses. This is where the architecture earns its name: two hops requires
+*composing* dynamics the model only ever saw one step at a time.
+
+### M — Stochastic associative memory (Hopfield ↔ Boltzmann)
+
+The memory itself. Energy over the bank:
+
+```
+E_M(ξ) = −(1/β)·lse( β (Xᵀξ + b) ) + ½‖ξ‖²
+```
+
+with the update, per hypothesis, run in parallel across `s = 1…S`:
+
+```
+ξ ← Π[ (1−λ)·X·softmax(β(Xᵀξ + b))  +  λ·ẑ_s  +  √(2Θ)·ε ],    ε ~ N(0, I/d)
+```
+
+Three dials, and each one names a known system:
+
+- **`Θ = 0, λ = 0`** — deterministic CCCP descent. Provably monotone, provably halts.
+  This is a modern Hopfield network. With `T=1, β→∞` it is *exactly* cosine top-1.
+- **`Θ > 0`** — the update becomes a Markov chain that explores rather than commits, with
+  an approximate stationary distribution `∝ exp(−E/Θ)`. This is the Boltzmann regime, and
+  it is the direct fix for mode-averaging: noise kicks the state off the ridge into one
+  basin or the other, so `S` chains **cover** the branching futures instead of collapsing to
+  their invalid mean. (The noisy update is not Metropolis-adjusted; an MH correction is
+  available behind a flag, and any claim about sampling from the true Gibbs measure must use
+  it.)
+- **`λ > 0`** — the predictor's output enters the energy as a bias rather than running
+  beside it. **This is currently believed to be worth nothing** (X18: interpolating the
+  routing operator inside the descent step never exceeded running the predictor externally;
+  at `η=1` it merely *recovers* it by replacing the Hopfield step entirely). `λ` is kept as
+  an explicit, ablatable term whose null setting reproduces the separated pipeline, precisely
+  so that the negative result stays testable instead of being designed away.
+
+Note that `β` and `Θ` are **different temperatures** and conflating them is a bug, not a
+simplification. `β` sharpens the retrieval kernel over stored patterns; `Θ` is the thermal
+noise of the sampler. `β` has leverage only inside a narrow band (below ≈16 the state
+collapses to the corpus centroid on step one; above ≈50 descent degenerates into cosine, so
+the apparent plateau is the method dissolving into the baseline).
+
+### D — Readout / decoder
+
+Two jobs.
+
+**Mixture-aware scoring.** Given `S` converged hypotheses with weights, score each stored
+memory by
+
+```
+score(m) = logsumexp_s [ β·⟨ξ_s, z_m⟩ + log w_s ]
+```
+
+and **never** by `⟨mean_s ξ_s, z_m⟩`. Averaging the hypotheses before scoring reintroduces
+exactly the failure the sampler was added to fix. The multi-answer case additionally uses
+residual peeling — commit to what was found, subtract it from the cue, roll again — which
+restores multi-answer recall that single-state convergence structurally destroys.
+
+**Decoding.** Default is non-generative: return the stored source text of the ranked
+memories, which keeps evaluation clean and every number attributable to retrieval. A
+generative decoder (an LLM conditioned on the retrieved set) sits behind the same interface
+for end-task evaluation. A third mode decodes the *predicted* latent `ẑ` that has no stored
+counterpart — the model's imagined next state — which is the diagnostic that tells you
+whether a rollout went somewhere plausible or off-manifold.
+
+### The reduction ladder
+
+Every rung has a null setting that reproduces the rung below it **exactly**, and each
+equivalence is asserted in the test suite. This is the architecture's central discipline:
+no module can be credited with an improvement that a coding difference could explain.
+
+| rung | configuration | is |
+|---|---|---|
+| **R0** | `T=1, β→∞, b=0, H=0, S=1, Θ=0, λ=0` | dense top-k — **Proposition 1**, verified 1000/1000 |
+| **R1** | `T>1`, finite β | modern Hopfield descent |
+| **R2** | `b ≠ 0` | strength-modulated basin depth (usage/recency/surprise as one physical term) |
+| **R3** | `H ≥ 1`, predictor external | world-model rollout |
+| **R4** | `Θ > 0, S > 1`, mixture readout | Boltzmann sampling over branching futures |
+| **R5** | controller emits per-query budget | latent-reasoning frontend |
+| **R6** | `λ > 0` | predictor coupled into the energy — *currently unsupported, kept ablatable* |
+
+**Proposition 1′ (extended reduction).** Dense top-k retrieval is the corner
+`(β→∞, T=1, H=0, S=1, Θ=0, λ=0)` of this architecture. The research question is therefore
+sharp rather than rhetorical: *which departures from that corner pay for themselves, and in
+which regime?*
+
+### Design invariants
+
+1. **Nesting.** Every module has a null setting that reduces to the previous configuration,
+   and CI asserts the equivalence numerically.
+2. **Matched frozen encoder** across every method, no exceptions.
+3. **Dimensionless hyperparameters.** Any scale crossing dimensionalities is normalised
+   (`σ_eff = σ/√d`). A missing `√d` once turned a working mechanism into a reported zero.
+4. **Never average modes.** Distributions are carried to the readout intact.
+5. **Composition over summation.** The predictor runs beside the memory unless `λ>0` is
+   shown to help.
+6. **Thread-disjoint splits, cluster-bootstrap CIs, held-out hyperparameter selection**, on
+   every headline number.
+
+### What forces each module
+
+| module | forced by | the finding |
+|---|---|---|
+| E (frozen, matched) | X1, X6, X12 | synthetic vectors have no headroom (cosine 1.000 on everything); real anisotropy (unrelated pairs at 0.258) is what creates room to improve |
+| M, deterministic | X1, X3, X11 | descent *is* cosine at the β→∞ corner; β has leverage only in a band, per-encoder |
+| M, multi-answer readout | X4, X5, X7, X8 | single-state convergence destroys multiplicity; diversity must live in the dynamics, not the readout |
+| P, nonparametric | **X17, X17b** | parametric JEPA memorises (0.784 seen → 0.008 unseen); displacement transfer generalises (+46%) |
+| P at all | **X16** | "what happened next" is not a similarity relation — cosine R@1 = 0.105, median gold rank 24/1319, errors are lexical collisions across unrelated storylines |
+| P **external**, λ=0 default | **X18** | folding the predictor into the energy never beat running it alongside |
+| rollout, H ≥ 1 | **X19** | 2-hop R@5 0.446 vs cosine 0.262, Δ +0.185 [+0.076, +0.297], p<0.001 — **+70% relative**, composing dynamics seen only one step at a time |
+| Θ > 0, S > 1, mixture readout | mode-averaging diagnostics *(preliminary, unlogged)* | the conditional next-state distribution is multi-modal; point estimates land off-manifold |
+| C (controller) | image vs LoCoMo split | the winning configuration is regime-dependent; a fixed pipeline must lose two of three regimes |
+
+---
+
+## Position in the literature
+
+- **Ramsauer et al., *Hopfield Networks is All You Need*** (arXiv 2020; ICLR 2021) — the
+  anchor for Proposition 1. Establishes the equivalence between continuous modern Hopfield
+  networks and attention, which is what makes "dense top-k is a corner of our parameter
+  space" a theorem rather than an analogy. Also the reason we state the objection ourselves:
+  a reviewer will otherwise say we reinvented attention over a database.
+- **LeCun, *A Path Towards Autonomous Machine Intelligence*** (2022) — JEPA. Justifies
+  predicting latent representations rather than tokens, which is what module `P` does and
+  why it survives where a token-level next-episode model would drown in surface detail.
+- **Hinton & Sejnowski, Boltzmann machines** (1985); Langevin/SGLD samplers
+  (Welling & Teh, 2011) — the `Θ>0` regime of module `M`.
+- **Packer et al., *MemGPT*** (2023) — the industry standard being critiqued: sophisticated
+  policies for *what gets written and evicted*, sitting on top of an unmodified
+  nearest-neighbour lookup. All of the intelligence is in the write path.
+- **Gutiérrez et al., *HippoRAG*** (NeurIPS 2024) — the contemporary rival, also moving past
+  flat cosine, but via a **spatial** association structure (a knowledge graph). Our claim is
+  **temporal**: association learned from the agent's own trajectory, with no graph
+  construction step. The contrast belongs in the paper explicitly.
+- **Yang et al., mixture-of-softmaxes** (ICLR 2018) — the rank argument used to show the
+  integrated multi-β mixture is not reducible to any single β (it is expressively distinct
+  and empirically inert; see study 1b).
+
+---
 
 ## Quick start
 
 ```bash
 make setup     # venv + deps
 make test      # sanity suite — Proposition 1 gates everything downstream
-make demo      # Review-2 demo, offline, <60s
+make demo      # offline milestone demo, <60s
 ```
 
 Data is not committed (`data/` is gitignored). To reproduce the real-data studies:
@@ -47,69 +290,79 @@ Extra deps for these: `torch`, `torchvision`, `sentence-transformers`, `matplotl
 | Doc | What it settles |
 |---|---|
 | [`docs/00_PROJECT_CHARTER.md`](docs/00_PROJECT_CHARTER.md) | Scope, the one-sentence claim, non-negotiables |
+| [`docs/12_ARCHITECTURE.md`](docs/12_ARCHITECTURE.md) | **🏗 The target architecture — full design spec, module contracts, build order** |
 | [`docs/10_EXPERIMENT_LEDGER.md`](docs/10_EXPERIMENT_LEDGER.md) | **📒 Every experiment X1–X19 in order, and how the question moved** |
 | [`docs/09_DAY0_FINDINGS.md`](docs/09_DAY0_FINDINGS.md) | **⚠️ Empirical results that change what you should build** |
 | [`docs/01_RESEARCH_PLAN.md`](docs/01_RESEARCH_PLAN.md) | The science: RQs, hypotheses, novelty argument |
-| [`docs/07_CITATION_AUDIT.md`](docs/07_CITATION_AUDIT.md) | Bibliography status + the 2026 competitive landscape |
+| [`docs/07_CITATION_AUDIT.md`](docs/07_CITATION_AUDIT.md) | Bibliography status + the competitive landscape |
 | [`docs/02_TIMELINE.md`](docs/02_TIMELINE.md) | Week-by-week with pass/fail gates |
-| [`docs/03_TASK_ALLOCATION.md`](docs/03_TASK_ALLOCATION.md) | Who owns what |
-| [`docs/04_EXPERIMENT_PROTOCOL.md`](docs/04_EXPERIMENT_PROTOCOL.md) | Pre-registered experiments E1–E6 |
+| [`docs/03_TASK_ALLOCATION.md`](docs/03_TASK_ALLOCATION.md) | Workstream ownership |
+| [`docs/04_EXPERIMENT_PROTOCOL.md`](docs/04_EXPERIMENT_PROTOCOL.md) | Pre-registered experiments |
 | [`docs/05_VENUE_STRATEGY.md`](docs/05_VENUE_STRATEGY.md) | Targets + deadlines |
 | [`docs/06_RISK_REGISTER.md`](docs/06_RISK_REGISTER.md) | What kills this paper and how we avoid it |
-| [`docs/08_REVIEW2_CHECKLIST.md`](docs/08_REVIEW2_CHECKLIST.md) | Panel deliverables |
+| [`docs/08_REVIEW2_CHECKLIST.md`](docs/08_REVIEW2_CHECKLIST.md) | Milestone review deliverables |
+| [`experiments/PROTOCOL_CHANGES.md`](experiments/PROTOCOL_CHANGES.md) | Every deviation and withdrawal, dated |
 
 ## Layout
 
 ```
-docs/          plan, protocol, risks, findings
+docs/          plan, protocol, risks, findings, ledger
 src/energymem/
   base.py            Retriever protocol, Memory, RetrievalResult   [FROZEN]
-  memory/energy.py   energy functional, CCCP descent, residual peeling
+  encoders.py        E — frozen encoder + on-disk cache (matched-encoder rule)
+  memory/energy.py   M — energy functional, CCCP descent, routing hook, peeling,
+                         parallel/repulsive descent
   memory/adaptive.py perplexity-targeted beta + query anchor (anchor=1.0 == cosine)
   memory/multibeta.py per-pattern beta — DEAD END, kept as documented negative result
-  memory/lifecycle.py strength bias, decay, consolidation
-  baselines/         dense top-k (+ BM25, hybrid, reranker, PAM, HeLa-Mem — Week 1)
-  eval/              metrics, bootstrap CIs, DegradeBench, LoCoMo loader
-experiments/   run_E1..E6.py; results/ committed as JSON; cache/ gitignored (regenerable)
+  memory/lifecycle.py b — strength bias, decay, consolidation
+  world/knn_wm.py    P — nonparametric displacement-transfer world model (the one that works)
+  world/jepa.py      P — parametric JEPA predictor (documented negative result, X17)
+  baselines/         dense top-k, BM25, hybrid RRF
+  eval/              metrics, cluster bootstrap, DegradeBench, LoCoMo loader,
+                     association probes (build_probes: "what happened next", h hops)
+experiments/   run_*.py; paired_test.py (cluster bootstrap); devtest.py (thread-disjoint)
 paper/         LaTeX skeleton, section stubs, verified refs.bib
-scripts/       demo_review2.py
-  confirm_holdout.py          the confirmed image-completion result (tune/test split)
-  exp_multibeta_scales.py     multi-β scales vs single β vs ensemble — negative result
-  exp_locomo_anchored.py      the LoCoMo negative result (anchor × pp₀ sweep)
-  sweep_beta_transition.py    maps the β leverage band; shows high-β → cosine
+scripts/       confirm_holdout.py          the confirmed image-completion result
+               exp_multibeta_scales.py     multi-β scales — negative result
+               exp_locomo_anchored.py      the LoCoMo negative result (anchor × pp₀ sweep)
+               sweep_beta_transition.py    maps the β leverage band; shows high-β → cosine
 tests/         sanity suite — Proposition 1, energy monotonicity, capacity, determinism
 ```
 
-## Current status (2026-09-06)
-
-- ✅ Energy core, dense baseline, test suite — **5/5 passing**
-- ✅ **Proposition 1 verified numerically**, on synthetic *and* on real embeddings
-- ✅ Real embeddings, both modalities: images (Imagenette-160 + ResNet18) and text
-      (LoCoMo + MiniLM). The synthetic-ceiling problem in F6 is resolved.
-- ✅ **Confirmed, honestly-powered positive result**: energy descent beats cosine on
-      image pattern completion, +0.014 [+0.006, +0.021], growing with corruption severity.
-- ❌ Multiple β scales (mixture or ensemble) do not beat one well-tuned β — checked
-      three ways (per-memory, per-region/trained, multi-scale) and ruled out each time.
-- ⚠️ The same descent that wins on images loses monotonically on LoCoMo questions.
-      **The claim is conditional, not general** — see the diagnosis below.
-- ❌ Learned routing (G3), lifecycle (decay/consolidation) — still untested
+Not yet built, and named here so the gap is visible: **C** (the controller) exists only as
+the fixed configurations we sweep by hand, and the **Θ>0 sampler** in `M` is not implemented
+— `energy.py` currently exposes deterministic descent plus repulsive parallel descent, which
+is a different mechanism (enforced diversity, not thermal noise).
 
 ---
 
-## Empirical status: what we actually found
+## Empirical status
 
-Real data, two modalities. The short version: **energy descent beats cosine when the
-query is a degraded copy of a stored pattern, and loses when it is not — and we can say
-precisely why.** Both halves are established: +0.014 [+0.006, +0.021] on held-out image
-completion, −0.084 on LoCoMo question→evidence retrieval. Within the winning regime, one
-well-tuned β is already sufficient: mixing multiple β scales, however combined, does not
-improve on it (study 1b).
+Two modalities, real data, honest protocol. The short version: **energy descent beats cosine
+when the query is a degraded copy of a stored pattern and loses when it is not; and the only
+mechanism that beats cosine on agent-style memory is running a world model forward.**
 
-### 1. Images — occlusion recovery ✅ CONFIRMED POSITIVE (`scripts/confirm_holdout.py`)
+### ✅ Proposition 1 — verified
 
-400 Imagenette images as memories, ResNet18 features, queries = occluded held-out images.
-β selected on a **disjoint tune half**; one pre-committed paired test on the held-out half.
-n = 5,847 query instances from 1,949 distinct images (the full val split).
+1000/1000 queries agree with exact cosine top-1 to floating-point precision, on synthetic
+*and* real embeddings. Gated in CI. Every downstream comparison is exact by construction.
+
+### ✅ Multi-hop association — the strongest result (X16, X17b, X19)
+
+| task | cosine | world model | Δ | |
+|---|---|---|---|---|
+| 1-hop "what happened next", R@1 | 0.106 | **0.154** | +0.049 [+0.000, +0.100] | p=0.032, **+46%** |
+| 2-hop, R@5 | 0.262 | 0.400 (1 step) | +0.138 [+0.063, +0.219] | p<0.001 |
+| 2-hop, R@5 | 0.262 | **0.446** (2-step rollout) | **+0.185** [+0.076, +0.297] | **p<0.001, +70%** |
+
+Held-out threads, hyperparameters selected on validation threads only. The model was trained
+on 1-step transitions exclusively — reaching 2 hops requires composing the learned dynamics
+with themselves. This is the point at which "world model" stops being a metaphor.
+
+### ✅ Image occlusion recovery — confirmed positive
+
+400 Imagenette memories, ResNet18 features, queries = occluded held-out images. β selected on
+a disjoint tune half; one pre-committed paired test. n = 5,847 instances from 1,949 images.
 
 | occlusion | cosine | energy β=40 | paired Δ | 95% CI |
 |---|---|---|---|---|
@@ -118,171 +371,108 @@ n = 5,847 query instances from 1,949 distinct images (the full val split).
 | 70% | 0.386 | 0.407 | +0.021 | [+0.007, +0.034] **sig** |
 | **pooled** | **0.553** | **0.566** | **+0.014** | **[+0.006, +0.021] sig** |
 
-The advantage **grows with corruption severity** — exactly what pattern completion
-predicts, and null at light corruption where there is nothing to reconstruct. Costs ~8×
-cosine's latency. Tune-half estimate (+0.016) matched held-out (+0.014): no selection bias.
+The advantage **grows with corruption severity** — what pattern completion predicts — and is
+null at light corruption where there is nothing to reconstruct. Costs ~8× cosine's latency.
+Tune-half estimate (+0.016) matched held-out (+0.014): no selection bias.
 
-β is only influential in a narrow band. `scripts/sweep_beta_transition.py`: β=12 → 0.100
-(centroid collapse), β=40 → 0.510, β=512 → 0.4995 vs cosine 0.4996 — high β *degenerates
-into cosine* (Proposition 1), so the apparent "plateau" above β≈50 is the method
-dissolving into the baseline, not a working regime.
+Descent wins R@1 but **loses badly on R@5/MRR** (0.605 vs cosine 0.759): it converges to one
+attractor, so ranks 2–5 reflect proximity to that point rather than to the query. A better
+top-1, a worse shortlist. This is the same structural fact that motivates modules `P`+`D`.
 
-> ⚠️ Earlier image-modality verdicts in this repo were **underpowered and are withdrawn**
-> (80 distinct images, unpaired CIs ~5× the effect size, β tuned on the test images). See
-> `experiments/PROTOCOL_CHANGES.md`, 2026-09-06.
+### ❌ Negative results that ship
 
-### 1b. Images — does mixing multiple β *scales* beat one tuned β? ❌ NO (`scripts/exp_multibeta_scales.py`)
+| claim | verdict | evidence |
+|---|---|---|
+| Multi-step descent beats one step on corrupted cues | **dead** | identical above the β threshold (X2) — exactly what Prop 1 predicts |
+| Readout variants (peeling, repulsion, voting) beat dense top-k on text | **dead** | +0.042 (tuned=tested, n=37) → **+0.004, p=0.43** with thread-disjoint selection (X15). The advantage was hyperparameter overfitting |
+| Folding the predictor into the energy beats running it alongside | **dead** | never exceeds external; η=1 merely recovers it (X18). This was the stated novelty against PAM, and it is not supported |
+| Multiple β scales beat one tuned β | **dead** | integrated mixture vs ensemble: +0.0003 [−0.0014, +0.0021], despite disagreeing on 37% of queries. Expressively distinct, performance-neutral |
+| Retrieval margin predicts correctness ("the memory knows when it is unsure") | **dead** | correlation ≈ 0, accuracy non-monotonic across margin quartiles, both methods |
+| Per-memory / learned β helps | **dead** | learned values land above the leverage band; a shuffle control scores identically |
+| Descent helps on question→evidence retrieval (LoCoMo) | **dead** | monotone dose–response: every increment of descent costs accuracy, optimum at the cosine boundary (0.336 → 0.252 across the anchor sweep, 1,977 questions) |
 
-Different question from 2's per-memory β: here every candidate β sees the *whole* bank,
-and the question is whether combining several global scales beats one well-tuned scale.
-Three mechanisms, precisely distinguished (math in the script header):
+### The diagnosis that unifies them
 
-- **single β** — one temperature, one trajectory.
-- **integrated mixture** — `p_t = Σⱼ wⱼ·softmax(βⱼ·s_t)` inside *every* descent step; one
-  coupled trajectory. Provably not reducible to any single β (mixture-of-softmaxes
-  rank argument, Yang et al. ICLR 2018) — confirmed empirically: identical to the
-  ensemble at T=1 (99.5% top-1 agreement) but **diverges at T=8 (63.0% agreement)**,
-  since composition and mixing don't commute for T>1.
-- **naive ensemble** — m fully independent trajectories, fused only at readout. Costs
-  m× the matmuls of the other two.
+The descent step computes a weighted average of stored patterns and moves the state onto
+their span. That pays only when **the query is a degraded copy of something already stored** —
+then moving toward the memory manifold restores lost signal. Agent memory retrieval is
+question → evidence: the query is not a corrupted turn, so there is nothing to complete and
+averaging only smears the query's discriminative signal.
 
-Literature check first (Yang et al. 2018 MoS, MultiMax ICML 2024, CT-MoS, Hopfield-
-Fenchel-Young 2025): the general mechanism is established elsewhere; applying it to
-Hopfield-style memory retrieval specifically does not appear to be published.
-
-Tune/test split as in study 1, resampling **images** in the bootstrap (not query
-instances, which are correlated across occlusion levels/seeds of the same image):
-
-| condition | R@1 | R@5 | MRR | matmuls | Δ vs single β |
-|---|---|---|---|---|---|
-| cosine | 0.543 | **0.759** | **0.643** | 1 | — |
-| single β=56 (tuned) | 0.555 | 0.605 | 0.589 | 16 | — |
-| integrated mix [32,40,48] | **0.559** | 0.591 | 0.585 | 16 | +0.0036 [−0.0033, +0.0106] n.s. |
-| ensemble [32,40,48] | 0.559 | 0.599 | 0.586 | 48 | +0.0032 [−0.0038, +0.0103] n.s. |
-| *control* mix [1,5,20] | 0.108 | 0.319 | 0.217 | 16 | predicted collapse — confirmed |
-| *control* ensemble [1,5,20] | 0.282 | 0.296 | 0.304 | 48 | predicted collapse — confirmed, less severe |
-
-**Answer: no.** Integrated mixture vs. ensemble: **+0.0003 [−0.0014, +0.0021]** —
-statistically identical despite disagreeing on 37% of individual queries. The extra
-expressiveness is real (confirmed by the divergence check) but performance-neutral: it
-changes *which* queries are answered correctly, not *how many*. Single β=56 already
-matches cosine's advantage; mixing buys nothing further and costs 2–3× more compute.
-
-Two findings kept from the controls: (i) the integrated `[1,5,20]` control collapsed to
-exact chance (0.108 = 1/10) and gave *identical* accuracy at every occlusion level — one
-bad scale inside a shared trajectory poisons the whole state, unlike the ensemble version
-(0.282) where it only dilutes one vote among independent runs; this is direct evidence the
-coupling is real and can hurt as easily as it can (fail to) help. (ii) Descent wins R@1 but
-**loses badly on R@5/MRR** (0.599–0.605 vs cosine 0.759) — it converges to one attractor,
-so ranks 2–5 reflect proximity to that point rather than the query (F4/F5, confirmed on
-real images): a better top-1, a worse shortlist.
-
-### 2. Images — capacity and calibration (`scripts/test_capacity_confidence.py`)
-
-- **Capacity**: the advantage above is size-dependent. Growing the bank 100 → 4,000 at
-  fixed β=32, cosine overtakes descent past N≈800.
-- **Calibration** (negative): retrieval margin does *not* predict correctness, for either
-  method (correlation ≈ 0; accuracy is non-monotonic across margin quartiles). The
-  "memory knows when it is unsure" idea does not survive contact with data.
-- **Per-memory β** (`memory/multibeta.py`): two distinct failures, both since diagnosed.
-  (i) The original parameterization could only express a *uniform* β of 4.0 — below the
-  centroid-collapse cliff — so uniform β=32 was unreachable and the search could not fall
-  back to the baseline it was meant to generalize. Fixed: `β_i = β_base·(1 + λ·z_i)`, with
-  λ=0 reproducing fixed β exactly (verified 40/40). (ii) `softmax_i(β_i·s_i)` lets a
-  heterogeneous β_i rescale pattern i against all others — controlling basin *depth* when
-  only *sharpness* was intended. Fixed by max-centering, `exp(β_i·(s_i − max_j s_j))`.
-  Even corrected, heterogeneity is **inert here**: the learned β values (51–88) sit above
-  the band where β has any leverage at all, and a shuffle control (same values, randomly
-  reassigned to regions) scores identically.
-- **Gradient-trained β** (`memory/beta_training.py`, `memory/query_beta.py`): β learned by
-  backprop, per-region and as a continuous function of the descent state. Both land within
-  noise of a well-tuned scalar β. Conditioning β on the query is *motivated* — the optimal
-  β genuinely differs by corruption level — but the learned function converged to a near
-  constant (β≈31 at every occlusion level).
-
-### 3. Text — LoCoMo, the real agent benchmark (`scripts/exp_locomo_anchored.py`)
-
-1,977 real questions over 5,882 conversational turns. `anchor` interpolates between pure
-cosine (`anchor=1.0`) and pure descent (`anchor=0.0`), so the baseline is a point in our
-own parameter space and the sweep measures exactly what descent adds.
-
-| condition | Coverage@5 |
-|---|---|
-| **anchor=1.00 — *is* cosine** | **0.336** [0.316, 0.355] |
-| anchor=0.90 | 0.331 |
-| anchor=0.75 | 0.321 |
-| anchor=0.50 | 0.304 |
-| anchor=0.25 | 0.273 |
-| anchor=0.00, pp₀=4 | 0.252 |
-| energy fixed β=32 | 0.236 |
-| anchor=0.00, pp₀=32 | 0.201 |
-
-Monotone dose-response: **every increment of descent costs accuracy**, optimum at the
-boundary. Reduction check passes 196/196 (anchor=1.0 reproduces cosine's top-5 exactly),
-so this is a property of the method, not a coding error.
-
-### The diagnosis
-
-One mechanism explains both modalities. The descent step computes a *weighted average of
-stored patterns* and moves the state onto their span; with no anchor the cue never
-re-enters. That pays off only when **the query is a degraded copy of something already
-stored** — then moving toward the memory manifold restores lost signal (images at 60–80%
-occlusion, the one win). Agent memory retrieval is question → evidence: the query is not
-a corrupted turn, so there is nothing to complete and averaging only smears the query's
-discriminative signal.
-
-> **Associative completion requires the cue to be a degraded instance of a stored pattern.
+> Associative completion requires the cue to be a degraded instance of a stored pattern.
 > Image occlusion satisfies that premise and descent wins, by more as damage increases.
-> Question-based agent retrieval violates it, and descent loses monotonically.**
+> Question-based retrieval violates it, and descent loses monotonically.
 
-Both halves are now measured rather than argued: +0.021 at 70% occlusion (held-out,
-significant) and −0.084 on LoCoMo (monotone across the anchor sweep). The remaining
-confirmation, cheap and not yet run: swap LoCoMo queries from questions to *masked turns*
-on the same corpus and encoder. The diagnosis predicts descent regains its advantage —
-same data, same embeddings, only the query type changes.
+Which is precisely why the architecture's centre of gravity moved from the landscape to the
+**predictor in front of it**: every readout variant we tried changed only how you read an
+answer *off* the landscape. None of them changed the landscape. A world model does.
 
 ### Corrections to our own earlier claims
 
 Logged rather than quietly overwritten (see `experiments/PROTOCOL_CHANGES.md`):
 
 1. **Data bug, invalidating.** LoCoMo `dia_id`s are unique only *within* a conversation —
-   5,882 turns carry 1,033 distinct ids, and 132/134 of conversation 0's gold ids recur in
-   other conversations. The first capacity sweep pooled banks without namespacing, so
-   distractors satisfied gold ids and scored as hits. Its "adaptive β improves as the bank
-   grows" result was an artifact; with namespaced ids adaptive β *degrades* (0.250 → 0.231),
-   just less steeply than fixed β (0.244 → 0.216). `exp_locomo_adaptive.py` is superseded.
+   5,882 turns carry 1,033 distinct ids. A capacity sweep that pooled banks without
+   namespacing let distractors satisfy gold ids and score as hits. Its "adaptive β improves
+   as the bank grows" result was an artifact.
 2. **Confounded comparison.** `pp_start=32` forces step 1 to average ~32 memories — the
-   broad-start annealing F2 already flagged as harmful. Removing it moves pure descent
-   from 0.201 to 0.252, so "adaptive β is worse than fixed β" was wrong: corrected, it is
-   *better* (0.252 vs 0.236). Both still lose to cosine.
+   broad-start annealing already shown to be harmful. Removing it moves pure descent from
+   0.201 to 0.252, reversing a stated conclusion.
 3. **Missing query anchor.** Descent without an anchor discards the cue after step 1, which
    made the earlier comparison a test of "is a blend of memories a better query than the
-   query." The `anchor` sweep replaces that single mis-specified point with a curve.
-## Current status (2026-09-04)
+   query." Replaced by the full anchor sweep.
+4. **Underpowered image verdicts withdrawn.** 80 distinct images, unpaired CIs ~5× the
+   effect size, β tuned on the test images. Superseded by the held-out study above.
+5. **A statistical error worth naming.** A naive bootstrap over (seed × question) rows
+   reported p=0.0005 for a result that a cluster bootstrap over questions puts at p=0.076.
+   Five seeds reusing the same questions is pseudo-replication. Cluster bootstrap is now
+   mandatory.
 
-- ✅ Energy core, test suite — **5/5 passing**; **Proposition 1 verified** (1000/1000)
-- ✅ **Real sentence embeddings wired up** (`all-mpnet-base-v2`) — F6 discharged
-- ✅ Real-text corpus, 1043 episodes / 37 multi-target questions (`eval/corpus.py`)
-- ✅ BM25 + hybrid RRF baselines; peeling, repulsion, vote-projection readouts
-- ✅ 5 seeds, **paired cluster-bootstrap** CIs (`experiments/paired_test.py`)
-- ✅ Question bank 37 → **146** (past the power threshold), dev/test split by thread
-- 🛑 **RESULT: no readout beats dense top-k.** Held-out Δ = **+0.004** [−0.033, +0.041],
-  p=0.43. The +0.042 trend was hyperparameter overfitting. See **F15**.
-- ✅ That is a clean, well-powered negative result and it is publishable alongside Prop 1
-- ✅ **World model (G3) built and evaluated.** Nonparametric displacement-transfer model
-  over the episode stream (`world/knn_wm.py`); parametric JEPA also tried (`world/jepa.py`).
-- 🎯 **STRONGEST RESULT: 2-hop association.** Rolling the world model forward reaches
-  memories two steps away that similarity cannot: Recall@5 **0.446 vs 0.262**,
-  Δ +0.185 [+0.076, +0.297], **p<0.001**, held-out threads. **+70% relative.** See X19.
-- 🛑 Integrating the predictor *inside* the energy landscape buys nothing over running it
-  alongside (X18). That novelty claim against PAM is not supported.
-- ❌ LongMemEval / LoCoMo — external validation of the negative result (network was down)
+---
+
+## What the architecture obliges us to test next
+
+Ordered by how much of the above they can invalidate. Experiments are chosen from this list,
+not added to it ad hoc.
+
+1. **Re-log the mode-averaging diagnostics.** Off-manifold-ness of averaged predictions,
+   multi-modality rate of the conditional next-state distribution, and mixture-vs-averaged
+   readout at 1 and 2 hops. Currently measured but not in the ledger, and module `M`'s `Θ>0`
+   regime rests on them. **Gate.**
+2. **Re-run the headline text negative inside the β leverage band.** The `β∈[16,48]` band was
+   established after X15 ran; a comparison at β above the band is a comparison of cosine
+   against cosine, and the project's most-cited negative is uninterpretable until it is
+   re-run with held-out selection and a cluster bootstrap. **Gate.**
+3. **External validity for the positive result.** Build the association probes on a public
+   corpus (LoCoMo, LongMemEval). Everything in the composition regime is currently measured
+   on a purpose-built 146-question corpus we wrote ourselves. Internally rigorous;
+   externally unestablished. **Gate on any headline claim.**
+4. **Implement the `Θ>0` sampler and measure distributional recall.** Not "did the single
+   output match the gold?" but "did the `S` chains *cover* the gold?" — on a corpus with
+   genuinely branching trajectories, which is where deterministic prediction must fail by
+   construction.
+5. **The occlusion test for text.** Swap LoCoMo queries from questions to *masked turns* on
+   the same corpus and encoder. The diagnosis predicts descent regains its advantage — same
+   data, same embeddings, only the query type changes. Cheap, and it either confirms the
+   unifying mechanism or breaks it.
+6. **Rollout-depth sweep.** `H = 0,1,2,3,4`. X19 shows 2 hops beat 1; where does compounding
+   error overtake compositional gain?
+7. **Budget-matched comparison.** Every accuracy number against its latency and matmul count.
+   Descent already costs ~8× cosine; `S` chains multiply that again.
+8. **Controller ablation.** Fixed configuration vs regime-classified budget, across all three
+   regimes at once. This is the test that the controller is architecture and not decoration.
+9. **`λ` ablation.** Sweep the coupling term to confirm or overturn X18 under the sampler,
+   where the prediction enters as a bias on a distribution rather than as an interpolation
+   inside a deterministic step.
 
 ## The rules
 
 1. Matched encoder across every method. No exceptions.
 2. Never report an accuracy win without its latency cost.
-3. ≥5 seeds, bootstrap 95% CIs on every headline number.
-4. No claim without an ablation.
-5. Every citation verified against the actual paper.
-6. Negative results ship. If it did not work, that goes in the abstract.
+3. ≥5 seeds, bootstrap 95% CIs on every headline number; cluster over questions, never over
+   (seed × question) rows.
+4. Hyperparameters selected on a split the score never sees.
+5. No claim without an ablation, and every module must have a null setting that reduces to
+   the configuration below it.
+6. Every citation verified against the actual paper.
+7. Negative results ship. If it did not work, that goes in the abstract.
