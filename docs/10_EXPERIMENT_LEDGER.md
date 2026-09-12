@@ -87,3 +87,51 @@ The paper's centre of gravity moves from *"energy-based retrieval"* to *"memory 
 
 **Also settled in Phase 3:** parametric vs nonparametric is not a detail. The parametric model looked spectacular on threads it had seen (0.784) and was worse than useless on new ones (0.008). Any result of this kind reported without a thread-disjoint split is meaningless.
 
+
+---
+
+## Phase 4 — The mode-averaging gate (2026-09-12)
+
+**Why this phase exists.** `docs/12_ARCHITECTURE.md` makes three design commitments —
+invariant I4 (*never average modes*), the mixture readout in module D, and the whole `Θ>0`
+sampling regime of module M — that all rest on one claim: *the conditional next-state
+distribution is multi-modal, so a point estimate lands between basins where nothing is
+stored.* That claim had been measured in an earlier session and **never written into the
+ledger**, so it was supporting three design decisions from outside the record. Phase 4
+re-measures it from scratch. `experiments/x23_mode_diagnostics.py`, results in
+`experiments/results/x23_mode_diagnostics.json`.
+
+**Protocol change, applies to every entry below.** A single 50/25/25 thread split leaves
+~60 hop-1 and ~30 hop-2 test probes, which cannot distinguish any effect at stake here.
+These runs use **thread-level 4-fold cross-validation**: every storyline is in the test set
+exactly once and is never in the train or val of the fold that tests it. `k_P, τ` for the
+world model and `K, β, α` for the mixture are selected **per fold on that fold's val
+threads**. The cue is excluded from the candidate set for every method identically.
+Cluster bootstrap over threads.
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X23** | Do averaged predictions land off-manifold? | **Barely.** Mean nearest-neighbour cosine: a real stored episode **0.482**, an averaged prediction **0.462**, a single un-averaged mode **0.619**. | The off-manifold gap is −0.021, not the large gap the design assumed. A single mode is *closer* to the manifold than a real episode is — which X23b explains, and not in the architecture's favour. |
+| **X23b** | Does averaging do something **other** than collapse the distribution? | **Yes, and it is the dominant effect.** A remembered displacement has norm **1.157** against a unit-norm cue, so `Π[q + Δ_i]` is dominated by the displacement: the top-1 of a raw mode is a **training** episode **100.0%** of the time (bank prior 14.0%). The kernel average shrinks the step to **0.394**, ×0.34. | **The first version of this experiment was confounded and its result was an artifact of my own code.** Un-matched, the mixture lost to averaging by −0.115 at hop 1. Matching step size via `α` removed most of that gap. Any mixture-vs-average comparison that does not match the step measures the step. `modes()` now takes `α`; the doc is corrected. |
+| **X24** | Is the conditional distribution actually multi-modal? | **Yes.** Mean mutual cosine among the top-3 modes **0.353**; **97%** of cues have modes that disagree (<0.5). | The premise is confirmed. There genuinely is a distribution for averaging to destroy — which makes X25 the more surprising. |
+| **X25** | With step size matched, does keeping the modes beat averaging them? | **No — it loses.** Hop 1 (n=257 probes / 122 threads): cosine R@1 0.105, **averaged 0.140** (Δ +0.035 [+0.012, +0.061], **p=0.002**), mixture 0.078 (Δ −0.027). Mixture − averaged: **−0.062 [−0.094, −0.034], p≈1.000**. Hop 2 (n=135 / 112 threads): cosine 0.096, averaged 0.089, mixture 0.089 — **nothing beats cosine**, every interval spans zero. | **GATE FAILED. Invariant I4 is not supported on text.** Averaging the modes is not a failure to be fixed; on this data it is *what makes the predictor work*. The shrinkage it applies keeps the query in control of where the prediction lands, and the distributional treatment removes that. |
+| **X25b** | Does X19 — the project's strongest result — replicate under this protocol? | **No.** X19 reported 2-hop Recall@5 **0.446 vs 0.262** (Δ +0.185, p<0.001, +70%). Here 2-hop R@5 is **cosine 0.207, averaged 0.230, mixture 0.237**, all intervals spanning zero. The 1-hop result **does** replicate: 0.140 vs 0.105, +33% relative, p=0.002 (X17b reported 0.154 vs 0.106, +46%). | **The headline claim is in question.** The original X19 script was lost before it could be committed, so this is a fresh reimplementation rather than a re-run, and the difference could lie in probe construction, the exclusion policy, or hyperparameter selection. It cannot be resolved by argument. **Until 2-hop is reproduced under a pre-registered protocol, X19 must not be cited as a result.** |
+
+**Where Phase 4 leaves the architecture.**
+
+- ❌ **I4, the mixture readout (module D), and the case for `Θ>0` (module M) lose their
+  evidential basis.** Rung **R4 is not supported** and must not be built on. The multi-modality
+  is real (X24); exploiting it distributionally still loses (X25).
+- ⚠️ **Rung R3 survives at one hop only.** The nonparametric predictor beats cosine on
+  "what happened next" (p=0.002) and that is now the project's only replicated positive.
+- ⚠️ **X19 is suspended, not withdrawn.** Reproducing it is now gate 1.
+- ✅ **The method worked.** A confound in our own implementation (X23b) produced a large,
+  clean, entirely false negative on the first run; matching step size removed it. The
+  finding survived the correction and reversed in magnitude but not in sign.
+
+**Consequence for the build order.** `docs/12_ARCHITECTURE.md` §10 step 1 is complete and
+**failed**. Steps 4 (`M.sample()`) and 5 (mixture scorer) were conditional on it and are
+now **deferred** — the code exists and is tested, but nothing licenses turning it on. The
+new step 1 is X19 reproduction under a pre-registered protocol; step 2 (the β-band re-run)
+and step 3 (public-corpus probes) are unchanged and now carry more weight, because the
+one-hop positive is all that is left to externally validate.

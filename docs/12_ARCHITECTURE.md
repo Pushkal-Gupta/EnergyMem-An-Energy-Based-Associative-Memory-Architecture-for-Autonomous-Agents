@@ -2,8 +2,32 @@
 
 **The Predictive–Associative Stack (PAS)**
 
-Status: **design specification.** This document describes the system we intend to build,
-not the system that exists. Where a component already exists it says so and points at the
+Status: **design specification, with one rung falsified.** This document describes the
+system we intend to build, not the system that exists.
+
+> ### ⚠️ Amendment, 2026-09-12 — read before building anything below
+>
+> Build step 1 (§10) has run. **It failed, and it takes rung R4 with it.** See Phase 4 of
+> the ledger (X23–X25b). In short:
+>
+> * **X24 confirms the premise.** The conditional next-state distribution really is
+>   multi-modal — 97% of cues have top-3 modes that mutually disagree.
+> * **X25 refutes the design decision built on it.** With step size matched, the mixture
+>   readout *loses* to averaging at one hop (−0.062 [−0.094, −0.034]) and ties at two.
+>   **Invariant I4 is not supported on text.** Averaging is not a failure to be fixed here;
+>   it is what makes the predictor work, because it shrinks the displacement and keeps the
+>   query in control of where the prediction lands (X23b).
+> * **X23b is a correction to our own code.** The first run of this experiment compared
+>   modes at `α=1` against the average, which differ in *two* ways — distributional vs
+>   point, and step size. A raw displacement has norm 1.157 against a unit-norm cue, so a
+>   raw mode lands on a training episode 100% of the time. `modes()` now takes `α`.
+> * **X25b suspends X19.** The 2-hop result this architecture was designed around does not
+>   replicate in a fresh implementation under thread-level K-fold. One hop does. Reproducing
+>   two hops is now build step 1.
+>
+> Everything below is left as written, with `[FALSIFIED]` / `[SUSPENDED]` markers where the
+> record now contradicts it. The unamended text is kept deliberately: the design as it stood
+> when it was tested is the thing the experiment was a test *of*. Where a component already exists it says so and points at the
 file; where it does not, it says that too. Nothing here is a result — results live in
 [`10_EXPERIMENT_LEDGER.md`](10_EXPERIMENT_LEDGER.md), and every design decision below cites
 the experiment that forced it.
@@ -77,8 +101,17 @@ normalised before use (`σ_eff = σ/√d`, noise scaled `√(2Θ/d)`). A missing
 working mechanism into a reported zero (X10) — that near-miss is the reason this is an
 invariant and not a style note.
 
-**I4 · Never average modes.** A distribution over futures is carried to the readout intact.
-No stage may collapse hypotheses to their mean.
+**I4 · Never average modes.** ~~A distribution over futures is carried to the readout
+intact. No stage may collapse hypotheses to their mean.~~ **[FALSIFIED on text, X25.]**
+The premise holds (the distribution is multi-modal, X24) and the conclusion does not: with
+step size matched, keeping the modes loses to averaging them at one hop and ties at two.
+Retained in the document as the hypothesis it was. Any future revival of it must first
+explain X23b — that the average's *shrinkage* of the displacement, not its collapse of the
+distribution, is the operative effect.
+
+**I4′ · Match the step size before comparing.** Whenever two predictors are compared, their
+effective displacement magnitude is matched or swept. The version of this invariant that
+replaced I4, and the one that actually catches bugs.
 
 **I5 · Composition over summation.** The predictor runs *beside* the memory. Coupling it
 *into* the energy is available as an explicit term whose null setting restores the separated
@@ -372,17 +405,27 @@ comes next. Predicts in embedding space, never in token space. Never returns a m
 ```
 Δ_i = z_next(i) − z_cue(i)          for each observed transition i
 w   = softmax( τ · Z_cᵀ q )         restricted to the k_P nearest cues
-mode_i = Π[ q + Δ_i ]               weight w_i
+mode_i = Π[ q + α·Δ_i ]             weight w_i
 ```
 
-**Why modes and not a mean — the central design decision.** The conditional next-state
+**`α` is not cosmetic (X23b).** A remembered displacement has norm ≈1.157 against a
+unit-norm cue, so at `α=1` the mode is *dominated by the displacement* and lands on
+`z_next(i)` — a stored training episode, 100% of the time on our corpus. The kernel average
+implicitly applies `α ≈ 0.34`, and that shrinkage is what keeps the query in control of
+where the prediction lands. Comparing modes at `α=1` against the average confounds two
+differences and was, on the first run, worth a spurious −0.115.
+
+**Why modes and not a mean — the central design decision. [FALSIFIED, X25 — kept as written.]** The conditional next-state
 distribution is multi-modal: one situation can legitimately lead to several mutually
 exclusive futures. A point estimate returns their average, and in embedding space the
 average of two distinct memories is a location where nothing is stored — a ridge between
 basins rather than a basin. Preliminary diagnostics support this strongly (averaged
 predictions sit at cosine ≈0.44 from their own nearest stored neighbour, against ≈0.73 for
 real episodes; a mixture readout recovers 2-hop exact match that an averaged one loses) but
-**these are not yet in the ledger** and re-running them is gate E1 in §9.
+**these were not in the ledger**, and re-running them properly (Phase 4) confirmed the
+multi-modality and **refuted the conclusion drawn from it**: with step size matched, the
+mixture readout loses to averaging. The paragraph above is left standing as the hypothesis
+that was tested.
 
 **Interface.**
 
@@ -401,7 +444,9 @@ the whole design.
 
 **Null setting.** `H = 0` — the predictor is bypassed entirely and `Ξ = {(q, 1)}`.
 
-**Status.** ⚠️ Exists but averages (I4 violation). `world/jepa.py` retains the parametric
+**Status.** ✅ `modes()`, `rollout()` and `α` implemented and tested
+(`tests/test_mixture_readout.py`). `predict()` is retained as the averaging baseline — and
+after X25 it is the one in the retrieval path. `world/jepa.py` retains the parametric
 variant as a documented negative result; it stays in the repo because "we tried the obvious
 thing and it memorised" is a finding, not dead code.
 
@@ -501,8 +546,9 @@ explained. Parallel chains have no such signal.
 
 **Null setting.** `S=1` with `extractive` decoding reduces to ordinary top-k readout.
 
-**Status.** ⚠️ Partial. Peeling and plain top-k readout exist; the mixture scorer and the
-three decode modes do not.
+**Status.** ⚠️ Partial. Peeling and plain top-k readout exist. The mixture scorer is built
+and fixture-tested (`src/energymem/readout.py`) but **is not in the retrieval path**: X25
+shows it loses to averaging on text. The three decode modes do not exist.
 
 ---
 
@@ -517,7 +563,7 @@ is a test.
 | **R1** | `T>1`, finite β in band | modern Hopfield descent |
 | **R2** | `b ≠ 0` | strength-modulated basin depth — usage, recency and surprise as one physical term instead of three bolted-on heuristics |
 | **R3** | `H ≥ 1`, predictor external | world-model rollout |
-| **R4** | `Θ > 0, S > 1`, mixture readout | Boltzmann sampling over branching futures |
+| **R4** | `Θ > 0, S > 1`, mixture readout | Boltzmann sampling over branching futures — **[NOT SUPPORTED]** the readout half loses to averaging (X25); the sampler half is untested and now unmotivated |
 | **R5** | controller emits a per-query budget | latent-reasoning frontend |
 | **R6** | `λ > 0` | predictor coupled into the energy — **currently unsupported (X18), kept ablatable** |
 
@@ -597,13 +643,18 @@ Each one is a mistake we actually made, with the guard that now prevents it.
 Dependency-ordered. Each step ends in a measurement, and steps 1–3 are gates: if a gate
 fails, the steps below it are re-planned rather than executed.
 
+> **Revised 2026-09-12.** Step 1 is done and failed (X23–X25b). Steps 4 and 5 were
+> conditional on it and are **deferred** — both are implemented and tested, but nothing
+> licenses turning them on. The new step 1 is X19 reproduction.
+
 | # | build | unblocks | gate? |
 |---|---|---|---|
-| **1** | `P.modes()` — stop averaging the kernel; re-log the mode-averaging diagnostics into the ledger | R4 entirely | **GATE** — R4 rests on an unlogged result |
+| ~~1~~ | ~~`P.modes()`; re-log the mode-averaging diagnostics~~ | — | ✅ **done, GATE FAILED** — see Phase 4 |
+| **1′** | Reproduce X19's 2-hop result under a pre-registered protocol, or withdraw it | every claim in the composition regime | **GATE** |
 | **2** | β-band re-run of the headline text negative, held-out selection, cluster bootstrap | the project's most-cited negative | **GATE** — see failure mode 5 |
 | **3** | Association probes on a public corpus (LoCoMo / LongMemEval) | any headline claim in the composition regime | **GATE** — external validity |
-| **4** | `M.sample()` — Langevin update with `√(2Θ/d)` scaling, MH correction behind a flag | R4 | |
-| **5** | `D` mixture scorer + fixture tests | R4 | |
+| ~~4~~ | `M.sample()` — Langevin update with `√(2Θ/d)` scaling | R4 | **deferred** — R4 unsupported |
+| ~~5~~ | `D` mixture scorer + fixture tests | R4 | ✅ built and tested; **not in the retrieval path** |
 | **6** | `EpisodeStore` with a first-class transition log and split logic | clean re-runs of everything above | |
 | **7** | `FixedController`, then `RegimeController` | R5 | |
 | **8** | `λ` ablation under the sampler | R6 / the X18 re-test | |
