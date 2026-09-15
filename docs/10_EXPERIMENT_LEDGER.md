@@ -135,3 +135,42 @@ now **deferred** — the code exists and is tested, but nothing licenses turning
 new step 1 is X19 reproduction under a pre-registered protocol; step 2 (the β-band re-run)
 and step 3 (public-corpus probes) are unchanged and now carry more weight, because the
 one-hop positive is all that is left to externally validate.
+
+---
+
+## Phase 5 — Is the 2-hop claim real, across more than one draw? (2026-09-15)
+
+**Why this phase exists.** Phase 4 gate build order names a pre-registered X19
+reproduction as gate 1. `experiments/x26_hop2_confirmatory.py` is that gate. It also asks a
+question X25b could not: `eval/corpus.py`'s storylines are fixed hand-authored content —
+`build(seed, ...)` only varies filler-sentence sampling and thread interleaving — so even a
+careful single rerun is one specific noise draw. This phase repeats the identical X23/X25
+protocol (same grids, same scoring functions, same cluster-bootstrap machinery, imported
+verbatim rather than reimplemented) across **5 filler seeds × 3 independent thread-fold
+partitions = 15 realizations per hop**.
+
+**Decision rule, fixed before any result was computed:** a hop is CONFIRMED only if a
+majority of the 15 realizations individually show a significant effect AND the
+meta-analytic mean across realizations excludes zero. This rule turned out to be
+**miscalibrated** — see the consequence below — and that miscalibration is reported
+rather than quietly patched, per this file's own append-only rule.
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X26** | Under the pre-registered rule, do hop 1 and hop 2 confirm? | **Neither, by the letter of the rule.** Hop 1: 4/15 realizations individually significant (averaged method). Hop 2: 1/15. Majority required 8/15. Both **NOT CONFIRMED** as declared. | The rule as written cannot detect a small, real, *consistent* effect — it is the same underpowered-single-draw problem the image-occlusion experiment hit at n=80, reintroduced by requiring per-realization rather than pooled significance. |
+| **X26 (disclosed post-hoc, not a re-vote)** | What does the raw sign pattern across the 15 realizations show? | **Hop 1: 15/15 positive, 0 negative** (sign-test p≈6×10⁻⁵). Mean effect +0.031, meta-CI [+0.027, +0.035]. **Hop 2: 10 positive, 5 negative** (sign-test p≈0.30) — no consistent direction. Mean effect +0.017, meta-CI [+0.004, +0.030], but a lower bound that close to zero from 5 negative draws is fragile, not robust. | **Not pre-registered, so not treated as a confirmatory result** — flagged explicitly to avoid the exact post-hoc-reinterpretation trap this ledger exists to prevent. As a transparent secondary read: the 1-hop association effect now has two independent lines of evidence pointing the same way and should be treated as materially more solid than a single replication. The 2-hop composition claim shows no consistent direction across 15 independent tries, which is a *stronger* basis for treating X19 as dead than X25b's single null was — inconsistency across many draws is harder to explain away as bad luck than one null result is. |
+
+**Where Phase 5 leaves the claim.**
+
+- ✅ **1-hop association (R3) is now the project's best-supported result**, replicated once
+  under rigorous protocol (X25) and shown sign-consistent across 15 further independent
+  realizations (X26). Effect size is modest (~+0.03 R@5 absolute, ~+15-30% relative
+  depending on draw) but the direction is not in serious doubt.
+- ❌ **2-hop composition (X19) does not recover under any test applied so far.** Not
+  underpowered — inconsistent in sign across realizations, which a larger sample would not
+  fix. Downgrade from "suspended" to "no supporting evidence found across two independent
+  gates (X25b, X26)."
+- ⚠️ **Methodological note for future gates:** a pre-registered decision rule needs its own
+  power check before being written down — "majority of realizations individually
+  significant" was intuitive but wrong for this effect size. A pooled or meta-analytic test
+  should be the primary pre-registered criterion next time, not a secondary one.
