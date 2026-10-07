@@ -1,10 +1,51 @@
-% WRITE LAST. Owner: Pushkal.
-% Template to fill once results are frozen:
-%   Autonomous agents accumulate long-term memory that is almost universally retrieved by
-%   top-k embedding similarity. Associative-memory theory offers an alternative -- recall as
-%   convergence to an attractor in a learned energy landscape -- but it has never been
-%   evaluated as the persistent memory layer of an agent under matched conditions. We show
-%   [PROPOSITION 1]. We then measure which departures from that special case pay for
-%   themselves, on [BENCHMARKS] against [BASELINES] with a single frozen encoder. We find
-%   [HONEST HEADLINE, INCLUDING THE NEGATIVE RESULTS AND THE LATENCY COST]. We release
-%   DegradeBench and all code.
+Agent long-term memory is almost universally retrieved by top-$k$ embedding similarity.
+Associative-memory theory offers an alternative---recall as convergence to an attractor in
+an energy landscape---but it has never been evaluated as the \emph{persistent memory
+layer} of an agent under matched conditions. We first show why the two literatures have
+not met: at the standard operating point they are the same operator. Proposition~1
+establishes that dense top-$k$ retrieval is exactly the $(T{=}1,\ \beta\!\to\!\infty,\
+b{=}0,\ R{=}I)$ corner of the modern Hopfield update, verified numerically on
+$1000/1000$ queries on synthetic vectors and $838/838$ on real sentence embeddings. The industry baseline is
+therefore a configuration of our own code rather than a separate system, which removes
+implementation advantage by construction and converts an unanswerable question into a
+sharp one: \emph{which departures from that corner pay for themselves, and where?}
+
+We answer it across two modalities with a single frozen encoder, thread-disjoint
+hyperparameter selection, and cluster-bootstrap intervals throughout: $5{,}847$ held-out
+image queries, $1{,}977$ \textsc{LoCoMo} questions, $146$ multi-target text questions, and
+$10{,}638$ temporal-association probes across two corpora. The answer is regime-dependent and mostly negative.
+Iterative descent beats cosine on image pattern completion ($+0.014$ pooled Recall@1,
+95\% CI $[+0.006,+0.021]$), and the advantage \emph{grows monotonically with corruption
+severity}, from a null $+0.003$ at 30\% occlusion to $+0.021$ at 70\%. It loses
+monotonically on conversational question$\to$evidence retrieval: every increment of
+descent costs accuracy, from $0.336$ to $0.252$ Coverage@5 across an interpolation sweep
+whose endpoint provably reproduces cosine. One mechanism explains both signs. Associative
+completion requires the cue to be a degraded instance of a stored pattern; image occlusion
+satisfies that premise and question answering violates it.
+
+We further show that $\beta$---the only dial with leverage---is influential only inside a
+narrow band (${\approx}16$--$48$ for a 768-dimensional sentence encoder), above which
+descent degenerates into cosine to three decimal places ($0.4995$ vs.\ $0.4996$ at
+$\beta{=}512$). A comparison run above that band compares cosine against itself, which we
+argue is a live hazard for this literature rather than a detail of ours. Of eight
+mechanisms tested beyond the reduction corner, exactly one survives: a nonparametric
+predictor over the agent's own observed transitions beats cosine on one-hop temporal
+association, reproduced in three independent implementations on two corpora. On
+\textsc{LoCoMo}, against a pooled bank of $5{,}882$ turns and over $5{,}233$ probes in $272$
+sessions, it raises Recall@1 from $0.064$ to $0.107$ ($+0.043$, $[+0.036,+0.050]$,
+$p<10^{-4}$; $+67\%$ relative) and Recall@5 from $0.174$ to $0.251$. The same experiment
+kills the multi-hop extension: at two hops the effect is $-0.002$ $[-0.008,+0.004]$,
+$p{=}0.77$, and we withdraw a previously recorded $+0.185$ two-hop result of our own as an
+artifact. Multi-step descent, residual peeling, repulsive parallel descent,
+vote-count readout, multi-scale $\beta$, per-memory $\beta$, retrieval-margin calibration,
+and coupling the predictor into the energy functional all fail, each with a diagnosed
+mechanism rather than a bare null.
+
+Finally, we report the measured magnitude of five protocol errors we committed and
+corrected. Each would have yielded a publishable but false result: a non-dimensionless
+hyperparameter ($0.016$ vs.\ $0.277$ after normalisation), a pseudo-replicated bootstrap
+($p{=}0.0005$ vs.\ $p{=}0.076$), test-set hyperparameter selection ($+0.042$ vs.\
+$+0.004$), asymmetric candidate exclusion (an exact $0.000$ that read as a finding), and an
+unmatched step size ($-0.115$ vs.\ $-0.062$). We release all code, the regime taxonomy, and
+an append-only experiment ledger in which every entry above appears with its date, its
+question, and the entries it overturned.

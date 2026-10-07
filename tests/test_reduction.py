@@ -10,12 +10,38 @@ Run: pytest -q
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from energymem.base import Memory, l2_normalize
 from energymem.baselines.dense import DenseTopK
 from energymem.memory.energy import EnergyMemory, dense_topk_config
+
+
+def _record_reduction(setting: str, agree: int, total: int) -> None:
+    """Write the agreement count to experiments/results/reduction_check.json.
+
+    Proposition 1 is the paper's theorem and C1 is the contribution that rests on it, but
+    until now its verification left no artefact -- only a green test. A claim whose
+    evidence is "a test passed on someone's laptop once" is not traceable, and
+    docs/13_CLAIM_TRACE.md flagged exactly this row as having no raw output. The file this
+    writes is that raw output.
+    """
+    import json
+    from datetime import datetime, timezone
+
+    dst = Path(__file__).resolve().parents[1] / "experiments" / "results" / "reduction_check.json"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        rec = json.loads(dst.read_text())
+    except (OSError, ValueError):
+        rec = {}
+    rec[setting] = {"agree": int(agree), "total": int(total),
+                    "exact": agree == total,
+                    "checked": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    dst.write_text(json.dumps(rec, indent=2, sort_keys=True))
 
 
 @pytest.fixture
@@ -44,6 +70,8 @@ def test_reduction_to_cosine_topk(corpus):
         for i, q in enumerate(queries)
         if em.retrieve(q, k=1).ids[0] != dense.retrieve(q, k=1).ids[0]
     ]
+    _record_reduction("synthetic_d%d" % embs.shape[1], len(queries) - len(mismatches),
+                      len(queries))
     assert not mismatches, (
         f"{len(mismatches)}/1000 queries disagree. Proposition 1 is violated -- "
         "stop and fix this before running any experiment."
@@ -116,3 +144,53 @@ def test_multistep_differs_from_onestep(corpus):
         for q in l2_normalize(rng.normal(size=(200, embs.shape[1])), axis=1)
     )
     assert differ > 0, "multi-step descent changed nothing -- check the update loop"
+
+
+def _real_embeddings(n: int = 500):
+    """Real sentence embeddings, or None if the encoder is unavailable offline."""
+    try:
+        from energymem.encoders import SentenceEncoder
+        from energymem.eval.corpus import build
+    except ImportError:
+        return None
+    try:
+        eps, _ = build(0, n_filler=0)
+        Z = SentenceEncoder().encode([e.text for e in eps[:n]])
+    except Exception:
+        return None          # no model, no cache, no network -- skip rather than fail CI
+    return Z
+
+
+@pytest.mark.slow
+def test_reduction_holds_on_real_embeddings():
+    """PROPOSITION 1 ON REAL VECTORS.
+
+    The synthetic test above runs at d=64 on isotropic Gaussians, which is the easy case:
+    random high-dimensional vectors are near-orthogonal, so the top-two similarity gap
+    delta is large and softmax concentration is trivial. Real sentence embeddings are
+    anisotropic -- unrelated pairs sit at cosine 0.258, not 0.0 -- so delta is far smaller
+    and the reduction is a meaningfully stronger claim there.
+
+    Appendix A.5 of the paper asserts the reduction holds on real embeddings. Before this
+    test existed, that assertion rested on a one-off console check, which is exactly the
+    kind of untraceable evidence docs/13_CLAIM_TRACE.md exists to surface.
+    """
+    Z = _real_embeddings()
+    if Z is None:
+        pytest.skip("sentence encoder unavailable (no model, cache or network)")
+
+    mems = [Memory(id=f"r{i}", text=f"real {i}", embedding=Z[i]) for i in range(len(Z))]
+    em = dense_topk_config(); em.index(mems)
+    dense = DenseTopK(); dense.index(mems)
+
+    rng = np.random.default_rng(7)
+    idx = rng.integers(0, len(Z), size=min(1000, len(Z) * 2))
+    queries = l2_normalize(Z[idx] + 0.1 * rng.normal(size=(len(idx), Z.shape[1])), axis=1)
+
+    mismatches = [i for i, q in enumerate(queries)
+                  if em.retrieve(q, k=1).ids[0] != dense.retrieve(q, k=1).ids[0]]
+    _record_reduction(f"real_mpnet_d{Z.shape[1]}", len(queries) - len(mismatches), len(queries))
+    assert not mismatches, (
+        f"{len(mismatches)}/{len(queries)} disagree on REAL embeddings. Proposition 1 holds "
+        "on synthetic vectors but not here -- the anisotropy case is the one that matters."
+    )

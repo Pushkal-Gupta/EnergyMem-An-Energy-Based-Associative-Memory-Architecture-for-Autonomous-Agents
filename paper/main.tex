@@ -1,44 +1,57 @@
-% EnergyMem -- paper skeleton
+% =====================================================================
+%  Dense Retrieval Is Degenerate Associative Memory
+% =====================================================================
+%  TARGET: TMLR (primary). Acceptance criteria are "claims supported by
+%  evidence" + "interesting to some audience", with no novelty bar -- which is
+%  exactly the shape of this paper. JMLR is the stretch; see
+%  docs/05_VENUE_STRATEGY.md.
 %
-% FORMAT: currently plain article for drafting. Swap the preamble for the venue
-% template once the target is locked (docs/05_VENUE_STRATEGY.md):
-%   ICLR 2027 -> iclr2027_conference.sty
-%   TMLR      -> tmlr.sty
-%   IEEE TNNLS-> IEEEtran.cls (reuse the setup from the location-privacy paper)
+%  SUBMISSION IS DOUBLE-BLIND. The author block below stays anonymous until
+%  camera-ready; the de-anonymised block is kept commented out directly beneath it.
 %
-% WRITING ORDER -- do not deviate:
-%   1. Results tables (generated from experiments/results/, never hand-typed)
-%   2. Method
-%   3. Intro
-%   4. Related Work
-%   5. Abstract LAST
-% Writing the abstract first is how papers end up claiming what they did not measure.
+%  EVERY NUMBER IN THIS PAPER TRACES TO docs/10_EXPERIMENT_LEDGER.md BY ID.
+%  Before submission, regenerate every table from experiments/results/*.json with
+%  scripts/make_tables.py rather than trusting the values typed here.
+% =====================================================================
 
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
 \usepackage{graphicx}
-\usepackage{hyperref}
-\usepackage{natbib}
+\usepackage{xcolor}
+\usepackage[numbers]{natbib}
+\usepackage[colorlinks=true,allcolors=blue!55!black]{hyperref}
 
 \newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{claimbox}{Claim}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
 
-\title{EnergyMem: An Energy-Based Associative Memory\\Architecture for Autonomous Agents}
-\author{Pushkal Gupta \and Rajit Agrawal \and Anshveer Singh \and Thangaramya K.\\
-        School of Computer Science and Engineering, Vellore Institute of Technology}
+\newcommand{\ci}[2]{{\small[#1,\,#2]}}
+\newcommand{\xid}[1]{\textsc{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\xib}{\boldsymbol{\xi}}
+\newcommand{\lse}{\operatorname{lse}}
+\newcommand{\sm}{\operatorname{softmax}}
+
+\title{\bfseries Dense Retrieval Is Degenerate Associative Memory:\\
+       A Reduction and a Regime Taxonomy for Agent Long-Term Memory}
+
+\author{Anonymous Authors\\\small Paper under double-blind review}
+% CAMERA-READY: replace the block above with the author list and affiliation.
+
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-% WRITE THIS LAST.
-% Must contain, in this order:
-%   (1) agent memory is retrieval over a store; (2) associative-memory theory offers an
-%   alternative that has never been evaluated as the persistent layer; (3) our reduction
-%   result; (4) what we measured; (5) THE HONEST HEADLINE -- including the latency cost
-%   and any negative result. See docs/09_DAY0_FINDINGS.md before writing a word of this.
 \input{sections/abstract}
 \end{abstract}
 
@@ -48,14 +61,20 @@
 \section{Related Work}
 \input{sections/related_work}
 
-\section{Method}
+\section{The Reduction}
 \input{sections/method}
 
-\section{Experimental Setup}
+\section{Experimental Protocol}
 \input{sections/setup}
 
 \section{Results}
 \input{sections/results}
+
+\section{The Regime Taxonomy}
+\input{sections/taxonomy}
+
+\section{What the Protocol Was Worth}
+\input{sections/protocol_errors}
 
 \section{Limitations}
 \input{sections/limitations}
@@ -63,9 +82,11 @@
 \section{Conclusion}
 \input{sections/conclusion}
 
+\small
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
+\normalsize
 \appendix
 \input{sections/appendix}
 

@@ -21,9 +21,15 @@ system we intend to build, not the system that exists.
 >   modes at `α=1` against the average, which differ in *two* ways — distributional vs
 >   point, and step size. A raw displacement has norm 1.157 against a unit-norm cue, so a
 >   raw mode lands on a training episode 100% of the time. `modes()` now takes `α`.
-> * **X25b suspends X19.** The 2-hop result this architecture was designed around does not
->   replicate in a fresh implementation under thread-level K-fold. One hop does. Reproducing
->   two hops is now build step 1.
+> * **X26b withdraws X19.** The 2-hop result this architecture was designed around is dead.
+>   X25b suspended it pending a pre-registered protocol; X26 *is* that protocol, on LoCoMo,
+>   at n=5,013 probes over 272 session clusters: Δ −0.002 [−0.008, +0.004], p=0.77. Three
+>   measurements, two corpora, one public. **`H≥2` is not supported and the 0.446 figure must
+>   not be cited.**
+> * **X26 does validate `H=1` externally.** +0.043 Recall@1 [+0.036, +0.050], p<1e-4, +67%
+>   relative on LoCoMo against a pooled 5,882-turn bank. The standing external-validity
+>   limitation on the composition regime is discharged for one hop — and only one hop.
+> * **X26c falsifies I4 a second time**, on public data: mixture 0.075 vs averaged 0.107.
 >
 > Everything below is left as written, with `[FALSIFIED]` / `[SUSPENDED]` markers where the
 > record now contradicts it. The unamended text is kept deliberately: the design as it stood
@@ -33,7 +39,7 @@ file; where it does not, it says that too. Nothing here is a result — results 
 the experiment that forced it.
 
 Read [`10_EXPERIMENT_LEDGER.md`](10_EXPERIMENT_LEDGER.md) first if you have not. This
-document assumes X1–X19.
+document assumes X1–X26c.
 
 ---
 
@@ -59,7 +65,8 @@ Nineteen experiments answer it, and the answer is uncomfortable for the original
   — fails to beat dense retrieval on agent-style text (X2, X15) and is inert on images
   beyond a single well-tuned β.
 - The one departure that works is not a readout at all. It is a **model of what follows
-  what**, run forward: +46% at one hop, **+70% at two** (X17b, X19).
+  what**, run forward: **+46% / +33% / +67% at one hop** across three implementations (X17b,
+  X25, X26) — and nothing at two (X26b).
 - And folding that model *into* the energy functional bought nothing over running it
   beside (X18).
 
@@ -396,9 +403,12 @@ comes next. Predicts in embedding space, never in token space. Never returns a m
 - **X17b — the fix.** Carry the transitions instead of compressing them. Locally-weighted
   displacement transfer: **0.154 vs 0.106** on held-out threads, +46%, `k` and `τ` chosen on
   validation threads only.
-- **X19 — why it must compose.** Two-hop Recall@5 **0.446 vs cosine 0.262**, Δ +0.185
-  [+0.076, +0.297], p<0.001. The model saw only 1-step transitions, so 2 hops requires
-  composing the dynamics with themselves.
+- **X19 — ~~why it must compose~~. WITHDRAWN (X26b).** This entry read: *two-hop Recall@5
+  0.446 vs cosine 0.262, Δ +0.185 [+0.076, +0.297], p<0.001.* It does not survive
+  reimplementation on either corpus, and is null on LoCoMo at n=5,013. The rollout exists in
+  this architecture at `H=1` only, where X26 validates it externally (+0.043, p<1e-4).
+  **Do not cite 0.446.** Kept visible rather than deleted because the architecture below was
+  designed around it, and that is the point of the amendment banner.
 
 **Mechanism (default).** Nonparametric kernel over observed transitions:
 
@@ -645,12 +655,16 @@ fails, the steps below it are re-planned rather than executed.
 
 > **Revised 2026-09-12.** Step 1 is done and failed (X23–X25b). Steps 4 and 5 were
 > conditional on it and are **deferred** — both are implemented and tested, but nothing
-> licenses turning them on. The new step 1 is X19 reproduction.
+> licenses turning them on. X19 reproduction ran and withdrew the claim (X26b); the public-
+> corpus gate passed at one hop (X26). The open gate is now a second public corpus plus a
+> downstream-task result.
 
 | # | build | unblocks | gate? |
 |---|---|---|---|
 | ~~1~~ | ~~`P.modes()`; re-log the mode-averaging diagnostics~~ | — | ✅ **done, GATE FAILED** — see Phase 4 |
-| **1′** | Reproduce X19's 2-hop result under a pre-registered protocol, or withdraw it | every claim in the composition regime | **GATE** |
+| ~~1′~~ | ~~Reproduce X19's 2-hop result, or withdraw it~~ | — | ✅ **done — WITHDRAWN** (X26b, n=5,013, null on LoCoMo) |
+| ~~3~~ | ~~Association probes on a public corpus~~ | the composition regime's external validity | ✅ **done — PASSED at one hop** (X26, +0.043, p<1e-4) |
+| **1″** | Second public corpus (LongMemEval) + a downstream-task result | whether +0.043 Recall@1 changes agent behaviour | **GATE** |
 | **2** | β-band re-run of the headline text negative, held-out selection, cluster bootstrap | the project's most-cited negative | **GATE** — see failure mode 5 |
 | **3** | Association probes on a public corpus (LoCoMo / LongMemEval) | any headline claim in the composition regime | **GATE** — external validity |
 | ~~4~~ | `M.sample()` — Langevin update with `√(2Θ/d)` scaling | R4 | **deferred** — R4 unsupported |

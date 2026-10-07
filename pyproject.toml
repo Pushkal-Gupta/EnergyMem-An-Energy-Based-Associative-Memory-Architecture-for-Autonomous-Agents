@@ -33,6 +33,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = ["slow: needs the sentence encoder (model, cache or network)"]
 
 [tool.ruff]
 line-length = 95

@@ -36,7 +36,3 @@ experiments/cache/
 
 # scratch notes, not part of the project
 .git-scratch/
-=======
-
-# encoder cache -- regenerable, large
-.cache/

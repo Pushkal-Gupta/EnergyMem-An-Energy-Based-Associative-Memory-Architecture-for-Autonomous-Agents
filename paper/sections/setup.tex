@@ -1,5 +1,74 @@
-% Owner: Rajit. Mirror docs/04_EXPERIMENT_PROTOCOL.md exactly.
-% Encoder (frozen, matched across ALL methods) | corpora | DegradeBench families
-% Baselines + THE TUNING BUDGET GIVEN TO EACH (state this explicitly -- it pre-empts
-% "you tuned yours and not theirs", the most common rejection reason for this shape).
-% Seeds, CIs, hardware.
+\label{sec:setup}
+
+Protocol decisions are listed here in full because several of them changed a conclusion's
+sign, and \S\ref{sec:protocol} reports by how much.
+
+\paragraph{Matched encoder.} Every method under comparison---ours, every baseline, every
+ablation---is handed identical vectors from the same frozen model. Text uses
+\texttt{all-mpnet-base-v2} \citep{reimers2019sbert}, $d{=}768$; images use ImageNet-pretrained
+ResNet-18 features \citep{he2016resnet}, $d{=}512$. Encoders are never fine-tuned, and no
+result in this paper can be attributed to representation quality.
+
+\paragraph{Corpora.}
+\begin{itemize}\itemsep2pt
+\item \textbf{Images (completion regime).} $400$ Imagenette images as the memory bank;
+  queries are occluded held-out images at $30/50/70\%$ occlusion. Evaluation uses $5{,}847$
+  query instances drawn from $1{,}949$ distinct images, the full validation split.
+\item \textbf{\textsc{LoCoMo} (semantic-match regime).} $1{,}977$ real questions over
+  $5{,}882$ conversational turns \citep{maharana2024locomo}. Metric: Coverage@5 over gold
+  evidence turns.
+\item \textbf{Episodic corpus (composition regime).} A purpose-built store of $1{,}319$
+  episodes across $122$ storylines with $146$ multi-target questions, plus $900$
+  compositional filler episodes and planted near-miss distractors. Association probes are
+  generated from it as consecutive (or $h$-distant) within-storyline pairs: $257$ probes at
+  one hop and $135$ at two. We state plainly that this corpus is ours, that it is the main
+  external-validity limitation of \S\ref{sec:composition}, and that it is not a substitute
+  for a public benchmark.
+\end{itemize}
+
+\paragraph{Baselines.} Dense top-$k$ (Proposition~\ref{prop:reduction}), BM25
+\citep{robertson2009bm25}, hybrid reciprocal-rank fusion \citep{cormack2009rrf}, and---in the
+composition regime---a parametric JEPA predictor. All lexical and hybrid baselines receive
+the same tuning budget as our methods, stated per experiment in Appendix~\ref{app:grids}.
+
+\paragraph{Splits and selection.} Hyperparameters are never selected on the data a number is
+reported on. In the composition regime the split unit is the \emph{storyline}, not the
+question: a model fitted on transitions from one storyline is never evaluated on that
+storyline. Because the corpus holds only $122$ storylines, a single $50/25/25$ split leaves
+$61$ one-hop and $30$ two-hop test probes, intervals on which span most of the plausible
+range before the experiment begins. We therefore use thread-level $4$-fold rotation: every
+storyline is in the test set exactly once and is never in the train or validation fold that
+tests it. Both the world model's own $(k,\tau)$ and the readout's parameters are selected
+per fold on that fold's validation storylines.
+
+\paragraph{Intervals.} Headline numbers are \emph{paired} differences against the baseline on
+the same queries, with $95\%$ bootstrap intervals ($20{,}000$ resamples) over the
+\emph{cluster}---questions, storylines, or source images as appropriate---never over
+individual measurements. Comparing two overlapping marginal intervals is the wrong test when
+both methods see the same queries; resampling rows rather than clusters is pseudo-replication
+and we quantify what it cost us in \S\ref{sec:protocol}. Image-modality intervals resample
+\emph{images}, not query instances, since instances from one image are correlated across
+occlusion levels and seeds.
+
+\paragraph{Dimensionless hyperparameters.} Every scale that crosses dimensionalities is
+normalised before use: a perturbation of nominal magnitude $\sigma$ is applied as
+$\sigma/\sqrt{d}$, so that its displacement norm is dimension-independent. At $d{=}768$ the
+unnormalised form is wrong by a factor of $28$.
+
+\paragraph{Symmetric candidate sets.} Where a cue is itself a stored memory---as in every
+association probe---it is excluded from the candidate set for \emph{every} method
+identically, before ranking. Asymmetry here produces exact zeros that read as findings.
+
+\paragraph{Latency.} No accuracy number appears without its cost. Iterative descent at
+$T{=}8$ costs $21\times$ cosine in measured wall-clock ($0.0502$\,ms vs.\ $0.0024$\,ms per
+query), and multi-$\beta$ ensembling a further $1.6$--$2.9\times$. We report both wall-clock
+and matmul counts, because they diverge: the integrated mixture issues the same $16$ matmuls
+as single-$\beta$ descent and costs $1.6\times$ the wall-clock, since mixing $m$ softmaxes
+per step is arithmetic outside the matmuls. Figures in Table~\ref{tab:multibeta} and
+Appendix~\ref{app:grids}.
+
+\paragraph{Record.} Every experiment is logged in an append-only ledger with an identifier,
+the question it asked, the result, and what it changed. Entries are never edited after their
+result is in; an overturned entry becomes a new entry pointing back at it. Identifiers of
+the form \xid{X$n$} in this paper index that ledger, including the entries that overturn our
+own earlier claims.

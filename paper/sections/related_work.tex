@@ -1,16 +1,82 @@
-% Owner: Rajit. ONLY cite entries marked VERIFIED in docs/07_CITATION_AUDIT.md.
-%
-% Three subsections:
-%   3.1 Agent memory systems -- improve WHAT is stored, leave retrieval as similarity
-%       MemoryBank, MemGPT, A-MEM, HippoRAG, MemOS, Titans, LightMem
-%   3.2 Associative / energy-based memory -- study the OPERATOR
-%       Hopfield 1982, Krotov & Hopfield 2016, Ramsauer 2020, Millidge 2022, DMHN
-%   3.3 The 2026 convergence -- THE MOST IMPORTANT SUBSECTION, do not skip
-%       PAM (Dury 2026)      -- association beyond similarity, but an EXTERNAL predictor
-%       HeLa-Mem (ACL 2026)  -- Hebbian co-activation + episodic->semantic, but a GRAPH
-%       DMHN                 -- context-modulated attractor geometry, but NO lifecycle
-%       => each isolates one mechanism in a formalism that cannot express the other two.
-%          That gap is our contribution. State it in exactly those terms.
-%
-% DO NOT write a related-work section that stops at Ramsauer 2020. Reviewers will know
-% PAM and HeLa-Mem by name.
+\label{sec:related}
+
+\subsection{Agent memory systems: sophistication on the write path}
+
+MemGPT frames long-term memory as an operating-system paging problem, with the model managing
+transfers between a context window and external storage \citep{packer2023memgpt}. MemoryBank
+adds a forgetting curve over stored summaries \citep{zhong2024memorybank}. A-MEM constructs
+interlinked notes with agent-generated structure \citep{xu2025amem}. HeLa-Mem introduces
+Hebbian co-activation and an episodic-to-semantic distillation stage \citep{zhu2026helamem}.
+These systems differ substantially in \emph{what is written, summarised, linked and evicted},
+and they are near-identical in how a memory is read: embed the query, take the top-$k$
+cosine neighbours.
+
+HippoRAG is the most prominent attempt to move past that read operator, replacing flat
+similarity with personalised PageRank over a constructed knowledge graph
+\citep{gutierrez2024hipporag}. Its association structure is \emph{spatial}---built from
+extracted entities and relations---where ours is \emph{temporal}, learned from the order in
+which the agent's own episodes arrived, with no extraction or graph-construction stage. The
+two are complementary rather than competing, and we do not claim superiority over it; we
+have not run the comparison.
+
+\subsection{Associative and energy-based memory: sophistication on the read path}
+
+The classical Hopfield network stores patterns as minima of an energy function and recalls by
+descent \citep{hopfield1982}, with capacity ${\approx}0.14d$ before basins merge. Dense
+associative memory raises capacity with higher-order interactions
+\citep{krotov2016dense}, and the continuous modern formulation attains exponential capacity
+with a one-step retrieval guarantee \citep{ramsauer2021hopfield}. Universal Hopfield Networks
+place these variants in one framework of similarity, separation and projection
+\citep{millidge2022universal}. Dynamic Manifold Hopfield Networks modulate attractor geometry
+by context \citep{li2025dmhn}, and coupled-oscillator formulations separate stored patterns
+from a learned routing layer \citep{guo2026oscillator}---the latter directly motivating our
+decision to keep $R$ separate from $X$ in Equation~\eqref{eq:update}.
+
+This literature almost exclusively evaluates on synthetic patterns or image reconstruction.
+Our completion result (\S\ref{sec:completion}) is consistent with it, and
+\S\ref{sec:semantic} is the finding that does not transfer: the regime these papers study is
+the one in which the mechanism works, and agent memory retrieval is predominantly not that
+regime.
+
+\subsection{The equivalence, and why it has not been exploited}
+
+\citet{ramsauer2021hopfield} prove that the modern Hopfield update is the attention
+mechanism of the transformer. This is usually read as a statement about transformers. Read in
+the other direction it says that a one-step, high-$\beta$ Hopfield retrieval over a memory
+bank \emph{is} an attention read over that bank---and, with normalised patterns and no
+strength term, is exactly cosine top-$k$. Proposition~\ref{prop:reduction} is a corollary of
+their result rather than a new theorem, and we claim no priority for it. What we claim is the
+consequence: it is the reason the comparison between the two literatures has been circular
+wherever it has been attempted, and it should be stated as the first line of any such
+comparison rather than discovered in review.
+
+\subsection{Prediction in representation space}
+
+The joint-embedding predictive architecture proposes predicting the representation of
+unobserved content rather than the content itself \citep{lecun2022path,assran2023ijepa}. Our
+module $P$ (\S\ref{sec:worldmodel}) is a JEPA-shaped predictor over an episode stream, and
+\S\ref{sec:composition} is, to our knowledge, the first report that the \emph{parametric}
+version of this fails in the low-data regime an individual agent's history actually provides
+($0.784$ on fitted storylines, $0.008$ on unseen), with a diagnosis---near-orthogonal
+displacements, no global transition direction---rather than a tuning complaint.
+
+Predictive Associative Memory is the closest prior work: it retrieves by temporal
+co-occurrence using an external predictor alongside the memory \citep{dury2026pam}. Our
+original claimed contribution against it was \emph{integration}---folding the predictor into
+the energy functional instead of running it beside. \S\ref{sec:negatives} reports that this
+does not work, at any coupling strength, and withdraws the claim. What remains distinct is
+the reduction frame, the regime taxonomy, and the nonparametric form of the predictor.
+
+\subsection{Mixtures, sampling, and statistical practice}
+
+The rank argument for mixtures of softmaxes \citep{yang2018softmax} establishes that our
+integrated multi-$\beta$ variant is not reducible to any single $\beta$; we confirm the
+expressiveness empirically and find it performance-neutral (Table~\ref{tab:multibeta}).
+The stochastic relaxation we specify and then decline to build on rests on Boltzmann machines
+\citep{ackley1985boltzmann} and Langevin sampling \citep{welling2011sgld}. Residual peeling
+is matching pursuit \citep{mallat1993matching} over the energy landscape, and repulsive
+parallel descent is Stein-variational in flavour \citep{liu2016svgd}. Our interval procedure
+follows the clustered bootstrap \citep{cameron2008bootstrap}; the headroom that makes any of
+these measurable at all on text is a consequence of embedding anisotropy
+\citep{ethayarajh2019contextual,gao2019representation}, without which, as
+\S\ref{sec:setup} notes, cosine saturates and nothing can be compared.

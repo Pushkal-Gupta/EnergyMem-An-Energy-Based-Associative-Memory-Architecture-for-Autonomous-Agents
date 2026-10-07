@@ -1,9 +1,56 @@
-% Owner: all. Write this HONESTLY and EARLY -- it is the section that wins reviewers.
-% Must include:
-%   - latency cost of iterative descent, stated numerically
-%   - the beta stability threshold and its practical implication (F2)
-%   - single-state descent cannot serve multi-target queries without peeling (F4)
-%   - correlated embeddings -> metastable blends; report the rate (R-5)
-%   - scale: N and model sizes we could actually run
-%   - biological framing is ANALOGY, not equivalence -- use that word
-%   - anything that did not work. Especially anything that did not work.
+\label{sec:limitations}
+
+\paragraph{One public benchmark, one task shape.} The one-hop positive replicates on
+\textsc{LoCoMo} \citep{maharana2024locomo}, which discharges the external-validity concern
+for that result. It does not discharge it generally. The probe shape---cue a turn, retrieve
+the turn that followed---is one operationalisation of temporal association, and
+\textsc{LoCoMo}'s alternating two-speaker structure gives next-turn prediction a regularity
+that a single agent's episode stream may not share. \textsc{LongMemEval}
+\citep{wu2025longmemeval} is the obvious second corpus and we have not run it.
+
+\paragraph{Association does not compose, and we do not know why.} Two hops is null on both
+corpora (\S\ref{sec:composition}). We attribute it to compounding prediction error
+exceeding the compositional signal, but that is an interpretation rather than a measurement:
+we have not isolated the error accumulated per step, and the small residual Recall@5 effect
+on \textsc{LoCoMo} is unexplained. A rollout-depth sweep with per-step error attribution is
+the experiment this calls for.
+
+\paragraph{The retrieval task is not the downstream task.} Every number here is retrieval
+quality. Whether a $+0.043$ Recall@1 improvement on next-turn association changes what an
+agent actually does---answer quality, task success---is untested, and the mapping from
+retrieval metrics to agent behaviour is weak enough that we make no claim about it.
+
+\paragraph{Scale.} Banks run from $400$ to $5{,}882$ patterns with encoders of $512$ and
+$768$ dimensions. The image advantage is explicitly capacity-dependent---cosine overtakes
+descent past $N\approx 800$ at fixed $\beta$---so nothing here licenses a claim at the
+$10^6$-memory scale a long-lived agent would reach. Whether the crossover is a $\beta$-scaling
+artefact is unresolved and we flag it as the most important unanswered question about the
+completion result.
+
+\paragraph{The latency cost is real, and larger than the matmul count suggests.} Descent
+at $T{=}8$ issues $16$ matmuls against cosine's $1$, but measured wall-clock is
+$21\times$ ($0.0502$\,ms vs.\ $0.0024$\,ms per query), for a pooled $+0.014$ Recall@1 in the
+one regime where it wins. Multi-$\beta$ variants cost a further $1.6$--$2.9\times$ for an
+effect indistinguishable from zero. We do not think this trade is attractive in deployment
+and say so.
+
+\paragraph{The shortlist regression.} Descent improves rank 1 and degrades ranks 2--5
+($0.605$ vs.\ $0.759$ Recall@5). For an agent that pastes five memories into context, which
+is the standard usage, this is plausibly a net loss. Our positive result is therefore
+narrower than ``better retrieval'' even within the completion regime.
+
+\paragraph{Biological framing is analogy.} We use the words basin, attractor and
+consolidation because they are the established vocabulary of the formalism. We make no claim
+of correspondence with neural mechanism, and no result here depends on one.
+
+\paragraph{Untested axes.} G2 (strength-modulated basin depth) and the lifecycle operations
+built around it---decay, consolidation---are implemented and unevaluated. Query-conditional
+selection of the operating point, which \S\ref{sec:taxonomy} argues the taxonomy requires, is
+specified and unbuilt. We mention them to be complete about what the formalism contains, not
+as results.
+
+\paragraph{A single encoder per modality.} Proposition~\ref{prop:reduction} is
+encoder-independent, but the $\beta$ band is not, and we measured it on one text encoder and
+one vision backbone. The claim that the band must be re-measured per encoder is supported by
+two points (synthetic and \texttt{all-mpnet-base-v2}), which establishes that it varies but
+not how it varies.

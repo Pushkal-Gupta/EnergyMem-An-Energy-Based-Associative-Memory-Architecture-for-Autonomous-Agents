@@ -231,7 +231,7 @@ which regime?*
 | P, nonparametric | **X17, X17b** | parametric JEPA memorises (0.784 seen → 0.008 unseen); displacement transfer generalises (+46%) |
 | P at all | **X16** | "what happened next" is not a similarity relation — cosine R@1 = 0.105, median gold rank 24/1319, errors are lexical collisions across unrelated storylines |
 | P **external**, λ=0 default | **X18** | folding the predictor into the energy never beat running it alongside |
-| rollout, H ≥ 1 | **X19** | 2-hop R@5 0.446 vs cosine 0.262, Δ +0.185 [+0.076, +0.297], p<0.001 — **+70% relative**, composing dynamics seen only one step at a time |
+| rollout, H ≥ 1 | ~~X19~~ **WITHDRAWN (X26b)** | The 2-hop result this module was designed around is dead: null on our corpus at 4-fold and null on LoCoMo at n=5,013 (Δ −0.002 [−0.008, +0.004]). `H=1` is supported (X26); `H≥2` is not |
 | Θ > 0, S > 1, mixture readout | mode-averaging diagnostics *(preliminary, unlogged)* | the conditional next-state distribution is multi-modal; point estimates land off-manifold |
 | C (controller) | image vs LoCoMo split | the winning configuration is regime-dependent; a fixed pipeline must lose two of three regimes |
 
@@ -290,8 +290,9 @@ Extra deps for these: `torch`, `torchvision`, `sentence-transformers`, `matplotl
 | Doc | What it settles |
 |---|---|
 | [`docs/00_PROJECT_CHARTER.md`](docs/00_PROJECT_CHARTER.md) | Scope, the one-sentence claim, non-negotiables |
+| [`docs/13_CLAIM_TRACE.md`](docs/13_CLAIM_TRACE.md) | **🔗 Every claim → ledger ID → script → raw output → test → paper location** |
 | [`docs/12_ARCHITECTURE.md`](docs/12_ARCHITECTURE.md) | **🏗 The target architecture — full design spec, module contracts, build order** |
-| [`docs/10_EXPERIMENT_LEDGER.md`](docs/10_EXPERIMENT_LEDGER.md) | **📒 Every experiment X1–X19 in order, and how the question moved** |
+| [`docs/10_EXPERIMENT_LEDGER.md`](docs/10_EXPERIMENT_LEDGER.md) | **📒 Every experiment X1–X26c in order, and how the question moved** |
 | [`docs/09_DAY0_FINDINGS.md`](docs/09_DAY0_FINDINGS.md) | **⚠️ Empirical results that change what you should build** |
 | [`docs/01_RESEARCH_PLAN.md`](docs/01_RESEARCH_PLAN.md) | The science: RQs, hypotheses, novelty argument |
 | [`docs/07_CITATION_AUDIT.md`](docs/07_CITATION_AUDIT.md) | Bibliography status + the competitive landscape |
@@ -347,17 +348,38 @@ mechanism that beats cosine on agent-style memory is running a world model forwa
 1000/1000 queries agree with exact cosine top-1 to floating-point precision, on synthetic
 *and* real embeddings. Gated in CI. Every downstream comparison is exact by construction.
 
-### ✅ Multi-hop association — the strongest result (X16, X17b, X19)
+### ✅ One-hop temporal association — externally validated (X16, X17b, X25, X26)
 
-| task | cosine | world model | Δ | |
-|---|---|---|---|---|
-| 1-hop "what happened next", R@1 | 0.106 | **0.154** | +0.049 [+0.000, +0.100] | p=0.032, **+46%** |
-| 2-hop, R@5 | 0.262 | 0.400 (1 step) | +0.138 [+0.063, +0.219] | p<0.001 |
-| 2-hop, R@5 | 0.262 | **0.446** (2-step rollout) | **+0.185** [+0.076, +0.297] | **p<0.001, +70%** |
+Three independent implementations, two corpora, one of them public. **This is the project's
+strongest and only externally validated claim.**
 
-Held-out threads, hyperparameters selected on validation threads only. The model was trained
-on 1-step transitions exclusively — reaching 2 hops requires composing the learned dynamics
-with themselves. This is the point at which "world model" stops being a metaphor.
+| implementation | corpus | probes | clusters | cosine R@1 | world model | Δ R@1 |
+|---|---|---|---|---|---|---|
+| (i) 50/50 split | episodic (ours) | 37 | 37 | 0.106 | 0.154 | +0.049 [+0.000, +0.100] p=0.032 |
+| (ii) 4-fold | episodic (ours) | 257 | 122 | 0.105 | 0.140 | +0.035 [+0.012, +0.061] p=0.002 |
+| **(iii) 4-fold** | **LoCoMo** | **5,233** | **272 sessions** | **0.064** | **0.107** | **+0.043 [+0.036, +0.050] p<1e-4** |
+
+On LoCoMo: **+67% relative** at R@1, and R@5 0.174 → 0.251 (+0.077 [+0.067, +0.087]).
+Candidate set is the *full pooled bank* of 5,882 turns across all 10 conversations, with ids
+namespaced by conversation. Split unit is the session; every session is in the test set
+exactly once; `k_P, τ` chosen per fold on that fold's val sessions. The task is harder than
+our own corpus (cosine 0.064 vs 0.105) and the relative effect is **larger** there.
+
+### ❌ Multi-hop composition — WITHDRAWN (X19 → X25b → X26b)
+
+An earlier run reported 2-hop R@5 **0.446 vs 0.262**, Δ +0.185, p<0.001, +70%. It does not
+survive. Three measurements now:
+
+| | protocol | probes | result |
+|---|---|---|---|
+| (a) | episodic, 50/50 — **script lost** | 65 | 0.446 vs 0.262, Δ +0.185 |
+| (b) | episodic, 4-fold | 135 | 0.230 vs 0.207, spans zero |
+| (c) | **LoCoMo, 4-fold** | **5,013** | 0.041 vs 0.043, **Δ −0.002 [−0.008, +0.004] p=0.77** |
+
+**The 0.446 figure must not be cited.** Association helps one step ahead and does not
+compose: compounding prediction error exceeds whatever compositional signal the second step
+carries. A residual +0.012 [+0.004, +0.019] survives at R@5 on LoCoMo, an order of magnitude
+below the one-hop effect; we do not build on it.
 
 ### ✅ Image occlusion recovery — confirmed positive
 

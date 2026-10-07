@@ -1,5 +1,381 @@
-% Proof of Proposition 1 in full
-% Full hyperparameter grids and the tuning budget per method
-% DegradeBench generation details + examples from every family/severity
-% Per-category LongMemEval breakdown
-% Reproducibility: commit SHA, hardware, wall-clock per experiment
+\section{Proof of Proposition~\ref{prop:reduction} and Corollary~\ref{cor:degeneracy}}
+\label{app:proof}
+
+Throughout, $X = [z_1\cdots z_N] \in \R^{d\times N}$ with $\|z_i\|=1$, the cue satisfies
+$\|q\|=1$, and we set $b=0$, $\eta=0$, $T=1$. Write $s_i = \langle z_i,q\rangle \in [-1,1]$
+for the logits, $p(\beta) = \sm(\beta s) \in \Delta^{N-1}$, and
+$\xib(\beta) = X p(\beta)$ for the unnormalised state after one update.
+
+\subsection{The unique-maximiser case}
+
+\begin{lemma}[Softmax concentration]
+\label{lem:conc}
+Let $i^\star = \arg\max_i s_i$ be unique and let
+$\delta \;=\; s_{i^\star} - \max_{i\neq i^\star} s_i \;>\;0$
+be the top-two gap. Then
+\[
+1 - p_{i^\star}(\beta) \;\le\; (N-1)\,e^{-\beta\delta},
+\qquad\text{and}\qquad
+\sum_{i\neq i^\star} p_i(\beta) \;\le\; (N-1)\,e^{-\beta\delta}.
+\]
+\end{lemma}
+
+\begin{proof}
+$p_{i^\star}(\beta)^{-1} = 1 + \sum_{i\neq i^\star} e^{-\beta(s_{i^\star}-s_i)}
+\le 1 + (N-1)e^{-\beta\delta}$, so
+$p_{i^\star} \ge (1+(N-1)e^{-\beta\delta})^{-1} \ge 1-(N-1)e^{-\beta\delta}$,
+using $(1+u)^{-1}\ge 1-u$ for $u\ge 0$. The second bound is $1-p_{i^\star}$.
+\end{proof}
+
+\begin{lemma}[State convergence with rate]
+\label{lem:state}
+Under the hypotheses of Lemma~\ref{lem:conc},
+$\big\|\xib(\beta) - z_{i^\star}\big\| \;\le\; 2(N-1)\,e^{-\beta\delta}$.
+Consequently $\xib(\beta)\to z_{i^\star}$ as $\beta\to\infty$, and since
+$\|z_{i^\star}\|=1$ the projection $\Pi$ is continuous at the limit and
+$\Pi[\xib(\beta)]\to z_{i^\star}$.
+\end{lemma}
+
+\begin{proof}
+Write $\varepsilon = \sum_{i\neq i^\star}p_i = 1-p_{i^\star}$. Then
+$\xib - z_{i^\star} = (p_{i^\star}-1)z_{i^\star} + \sum_{i\neq i^\star}p_i z_i$, so by the
+triangle inequality and $\|z_i\|=1$, $\|\xib - z_{i^\star}\| \le \varepsilon + \varepsilon
+= 2\varepsilon$. Apply Lemma~\ref{lem:conc}. For the last statement, $\|\xib\| \ge
+\|z_{i^\star}\| - 2\varepsilon = 1-2\varepsilon > 0$ for $\beta$ large, so $\Pi$ is
+well defined and Lipschitz in a neighbourhood of $z_{i^\star}$.
+\end{proof}
+
+\noindent This proves the state half of Proposition~\ref{prop:reduction}, with an explicit
+$O(e^{-\beta\delta})$ rate governed by the top-two similarity gap. Note the rate depends on
+$\delta$, not on $N$ except logarithmically: $\beta \ge \delta^{-1}\log\!\big((N-1)/\epsilon\big)$
+suffices for $\|\xib - z_{i^\star}\|\le 2\epsilon$.
+
+\subsection{The $k>1$ case: ranking, not state}
+
+Proposition~\ref{prop:reduction} as used in this paper is a statement about the \emph{top-$k$
+set}, which requires a separate argument because the state converges to a single pattern and
+the ranking is read off that state. Let $\pi_\beta$ be the ordering of $\{1..N\}$ by
+$\langle z_i, \Pi[\xib(\beta)]\rangle$ descending, and let $\pi_{\cos}$ be the ordering by
+$\langle z_i, q\rangle$ descending.
+
+\begin{lemma}[Rank-1 agreement]
+\label{lem:rank1}
+Under the hypotheses of Lemma~\ref{lem:conc}, for $\beta$ sufficiently large
+$\pi_\beta(1) = \pi_{\cos}(1) = i^\star$.
+\end{lemma}
+
+\begin{proof}
+By Lemma~\ref{lem:state}, $\langle z_{i^\star},\Pi[\xib]\rangle \to 1$ while for $j\neq
+i^\star$, $\langle z_j,\Pi[\xib]\rangle \to \langle z_j, z_{i^\star}\rangle \le 1$ with
+equality only if $z_j = z_{i^\star}$, excluded by distinctness of the patterns. Choosing
+$\beta$ past the point where the $O(e^{-\beta\delta})$ perturbation is smaller than half the
+gap $1-\max_{j\neq i^\star}\langle z_j,z_{i^\star}\rangle$ gives the claim.
+\end{proof}
+
+\begin{remark}[Ranks $2..k$ do not agree, and this is a result, not a gap]
+\label{rem:shortlist}
+For $k>1$ the two orderings are \emph{not} equal in the limit. Ranks $2..k$ of $\pi_\beta$
+order the patterns by proximity to $z_{i^\star}$, whereas $\pi_{\cos}$ orders them by
+proximity to $q$. The reduction therefore holds exactly at $k=1$ and as a statement about the
+retrieved \emph{set} only when $q$ is close enough to $z_{i^\star}$ that the two
+neighbourhoods coincide.
+
+This is not a technical caveat; it is the mechanism behind the empirical shortlist
+regression in \S\ref{sec:completion}. Descent improves Recall@1 while degrading Recall@5
+($0.605$ vs.\ cosine's $0.759$) precisely because the converged state has forgotten the cue.
+Our implementation of the dense baseline therefore reads the top-$k$ from $q$ directly, which
+is both the standard definition and the configuration that \texttt{tests/test\_reduction.py}
+verifies; a baseline reading ranks $2..k$ off the converged state would be a weaker baseline
+and would flatter the method.
+\end{remark}
+
+\subsection{Ties}
+
+If the maximiser is not unique, let $\mathcal{M} = \arg\max_i s_i$ with $|\mathcal{M}| = m
+\ge 2$. Then $p_i(\beta) \to 1/m$ for $i\in\mathcal{M}$ and $0$ otherwise, so
+$\xib(\beta) \to \frac{1}{m}\sum_{i\in\mathcal{M}} z_i$, the centroid of the tied patterns,
+and $\Pi$ maps it to the normalised centroid provided that sum is non-zero. The retrieved
+top-1 is then whichever tied pattern is nearest that centroid, which is an arbitrary
+tie-break --- exactly as it is for exact cosine retrieval.
+
+We record this case because it is the low-$\beta$ centroid-collapse failure of
+\S\ref{sec:band} in miniature. At finite, small $\beta$ the softmax is flat not because of
+exact ties but because $\beta\delta \ll 1$ for many pairs, and the state lands near the
+centroid of a large effective set. At $\beta{=}16$ on a 768-dimensional sentence encoder the
+effective set size $\exp(H(p))$ is $377$ patterns. The tie case and the collapse case are
+the same phenomenon at different scales, which is why a single lower bound on $\beta$
+describes both.
+
+\subsection{Proof of Corollary~\ref{cor:degeneracy}}
+
+Each $z_i$ is a fixed point of the update in the $\beta\to\infty$ limit: if
+$\xib^{(t)} = z_j$ then $s = X^{\!\top}z_j$ is maximised uniquely at $j$ (patterns distinct,
+unit norm), so by Lemma~\ref{lem:state} the next state is $z_j$ again. Combined with
+Lemma~\ref{lem:state} applied at $t=0$, the trajectory reaches $z_{i^\star}$ after one step
+and remains there, so $T>1$ is observationally equivalent to $T=1$, which is cosine
+retrieval by Proposition~\ref{prop:reduction}.
+
+\paragraph{Scope of the empirical claim.} Corollary~\ref{cor:degeneracy} is exact only in
+the limit. The empirical statement in \S\ref{sec:band} --- that a comparison run at high
+$\beta$ compares cosine against cosine --- is therefore an \emph{approximation claim}, and we
+state its evidential basis precisely rather than leaning on the theorem. On held-out image
+completion, Recall@1 at $\beta{=}512$ is $0.4995$ against the cosine baseline's $0.4996$:
+agreement to three decimal places, with a top-1 decision agreement rate that we report in
+Appendix~\ref{app:grids}. The theorem explains \emph{why} the gap closes and gives the rate
+at which it closes; the measurement establishes that at the $\beta$ values this literature
+actually uses, it has closed. Neither alone supports the claim.
+
+\subsection{Numerical verification}
+
+\texttt{tests/test\_reduction.py} instantiates Equation~\eqref{eq:update} with
+$T{=}1$, $\beta{=}10^6$, $b{=}0$, $\eta{=}0$ and asserts top-1 agreement with an independent
+exact-cosine implementation, in two settings. On isotropic synthetic Gaussians ($d{=}64$,
+$N{=}500$) it agrees on $1000/1000$ random queries. On real sentence embeddings ($d{=}768$,
+\texttt{all-mpnet-base-v2}) it agrees on $838/838$ perturbed-episode queries.
+
+The second setting is the one that carries weight, and we separate them deliberately. Random
+high-dimensional vectors are near-orthogonal, so the top-two gap $\delta$ of
+Lemma~\ref{lem:conc} is large and concentration is trivial. Real embeddings are anisotropic
+--- unrelated pairs sit at cosine $0.258$, not $0$ --- so $\delta$ is substantially smaller
+and the reduction is a materially stronger claim there. Both runs write their agreement
+counts to \texttt{experiments/results/reduction\_check.json}; the test gates continuous
+integration on every commit. We use
+$\beta{=}10^6$ rather than a symbolic limit because that is the operating point the claim is
+about; Lemma~\ref{lem:conc} shows $\beta\delta \gg \log N$ is the sufficient condition and
+for $N \le 10^4$, $\delta \ge 10^{-3}$ it is met with large margin.
+
+\section{Hyperparameter grids, splits, and tuning budget}
+\label{app:grids}
+
+\begin{table}[htbp]\centering\small
+\caption{Every grid searched, where it was searched, and where the number was reported.
+``Budget'' is the number of configurations evaluated. Baselines receive a budget at least as
+large as the method they are compared against, which is the commitment \S\ref{sec:setup}
+makes.}
+\label{tab:grids}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}lXrll@{}}
+\toprule
+\textbf{Experiment} & \textbf{Parameter grid} & \textbf{Budget} & \textbf{Selected on} & \textbf{Reported on} \\
+\midrule
+Image completion & $\beta \in \{12,\dots,512\}$, 14 values & 14 & tune half (images) & held-out half \\
+ & cosine: none & --- & --- & held-out half \\
+Multi-$\beta$ & scale sets, 6 conditions & 6 & tune half & held-out half \\
+\textsc{LoCoMo} anchored & $\texttt{anchor}\times \mathrm{pp}_0$, 8 conditions & 8 & --- & all 1,977 questions \\
+ & BM25: $k_1,b$ grid & 9 & dev questions & test questions \\
+ & hybrid RRF: $k$ constant & 5 & dev questions & test questions \\
+Readout variants & $\beta\in\{16,32,64,128\}$ & 4 & dev storylines & test storylines \\
+Association (ours) & $k_P\in\{5,10,20\}$, $\tau\in\{2,5,10\}$ & 9 & val storylines, per fold & test storylines \\
+ & mixture $K,\beta,\alpha$ & 48 & val storylines, per fold & test storylines \\
+Association (\textsc{LoCoMo}) & $k_P,\tau$ as above & 9 & val sessions, per fold & test sessions \\
+ & mixture $K,\beta,\alpha$ & 18 & val sessions, per fold & test sessions \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The $\beta$ grid in row~1 is swept densely through the transition region and coarsely
+outside it, and \texttt{sweep\_beta\_transition.py} records, for every value, both Recall@1
+and the top-1 decision agreement with cosine plotted in Figure~\ref{fig:band}
+(\texttt{experiments/results/beta\_band.json}).
+
+\paragraph{Cost.} Measured wall-clock on the hardware of Appendix~\ref{app:repro}, per
+query, on the held-out image split: cosine $0.0024$\,ms (1 matmul), single
+$\beta$ at $T{=}8$ $0.0502$\,ms (16 matmuls), integrated multi-$\beta$
+mixture $0.0810$\,ms (16 matmuls), and the $m$-way ensemble
+$0.1434$\,ms (48 matmuls). The ratio that matters for deployment is the
+first against the second: a $21\times$ wall-clock
+cost for $+0.013$ Recall@1, in the one regime where descent wins. The mixture variants add a
+further $1.6$--$2.9\times$
+for an effect indistinguishable from zero (Table~\ref{tab:multibeta}).
+
+We report matmul counts alongside wall-clock because the two diverge: the integrated mixture
+and the single-$\beta$ run issue the same 16 matmuls but differ $1.7\times$ in wall-clock,
+since mixing $m$ softmaxes per step is $O(mN)$ arithmetic outside the matmuls --
+$1.6\times$ the wall-clock for the same matmul
+count. A matmul-only accounting would understate it.
+
+\section{Corpus construction}
+\label{app:corpus}
+
+The episodic corpus is generated by \texttt{src/energymem/eval/corpus.py}, deterministically
+from a seed. It contains $122$ storylines drawn from $11$ topic families (property, travel,
+health, gardening, vehicle, employment, study, finance, pets, home repair, social), each a
+chronological sequence of $3$--$8$ episodes, interleaved in time so that the store is not
+grouped by topic. Multi-target questions are attached to storylines with the gold episode
+indices recorded at generation time.
+
+Two deliberate difficulty devices:
+
+\emph{Near-miss distractors.} Each storyline has a planted counterpart in the same topic
+family that shares vocabulary but not referent --- the apartment-hunting thread and the
+cottage thread both discuss commute times and deposits. These exist so that lexical overlap
+is an active hazard rather than an accident.
+
+\emph{Compositional filler.} $900$ additional episodes generated from a subject/verb/time
+template grammar, which inflate the candidate set without introducing new storylines.
+
+\paragraph{The X16 failure cases, in full.} These are the clearest evidence in the paper that
+succession is not similarity, and they are real retrievals from the run, not illustrations.
+
+\begin{table}[htbp]\centering\small
+\caption{Cosine's top-1 for three one-hop association probes. Every returned turn is a
+reasonable answer to ``what is most similar?'' and a wrong answer to ``what happened next?''}
+\label{tab:x16cases}
+\begin{tabular}{@{}p{0.3\textwidth}p{0.3\textwidth}p{0.33\textwidth}@{}}
+\toprule
+\textbf{Cue} & \textbf{Gold (next episode)} & \textbf{Cosine returned} \\
+\midrule
+``It turns out to be a forty minute drive from any shop.'' & ``Took most of the food with us and it was fine.'' & ``Decided against Warren Street because the commute would be forty minutes each way.'' \emph{(matched on ``forty minute''; a flat-hunting episode)} \\
+``Planted a crab apple at the end of the bed in October.'' & ``First proper crop this autumn, so the theory held.'' & ``Signed up for the weekly vegetable box.'' \emph{(matched on growing/vegetables; different storyline)} \\
+``Considering Iceland in February for the northern lights.'' & ``Read that the ring road is often closed that time of year.'' & ``Looking at the fjords in summer rather than winter.'' \emph{(matched on Nordic travel; the Norway thread)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Limitation, restated here because this is where a reviewer will look.} This corpus
+is ours. It is generated, not collected, and \S\ref{sec:limitations} treats its external
+validity as unestablished. Appendix~\ref{app:locomo} reports the same probe design on a
+public benchmark built by another group, which is the only evidence that bears on whether
+the corpus was written to suit the answer.
+
+\section{The experiment ledger}
+\label{app:ledger}
+
+\S\ref{sec:protocol} makes claims about our own process---that errors were caught, that
+results were overturned by reimplementation, that nothing was quietly rewritten. Those
+claims are not checkable without the record, so the record ships with the paper.
+
+\texttt{docs/10\_EXPERIMENT\_LEDGER.md} is append-only. Each entry carries an identifier, a
+date, the question asked, the result, and what the result changed. \textbf{An entry is never
+edited after its result is in.} When a later run overturns an earlier one, that is a new
+entry pointing back at the old, and the old entry stays as written---so \xid{X19} still
+records the $+0.185$ two-hop figure in its original wording, and \xid{X26b} is the entry
+that withdraws it. A reader can therefore reconstruct not only what we believe now but what
+we believed then and why we stopped.
+
+The ledger currently runs X1--X26c across five phases: synthetic validation (X1--X6),
+multi-answer readout (X7--X9), real embeddings (X10--X15), the world-model turn
+(X16--X19), the mode-averaging gate (X23--X25b), and external validity (X26--X26c).
+
+\paragraph{One gap, stated rather than papered over.} Three studies predate the ledger
+convention and carry no \xid{X} identifier: image completion, the anchored \textsc{LoCoMo}
+sweep, and multi-scale $\beta$. They are cited in this paper by script name instead. We
+have deliberately not back-numbered them, because inserting entries into an append-only
+record retrospectively is precisely the manipulation the record exists to prevent. The
+ledger preamble says the same.
+
+% SUBMISSION: attach docs/10_EXPERIMENT_LEDGER.md verbatim as supplementary material.
+% Do not reformat or abridge it -- a tidied ledger is not evidence of anything.
+
+\section{LoCoMo association probes}
+\label{app:locomo}
+
+\paragraph{Task.} Cue is a conversational turn; the gold target is the turn that followed it
+in the same session. This is the same probe design as the episodic corpus
+(Appendix~\ref{app:corpus}), applied to a benchmark we did not build.
+
+\paragraph{Candidate set.} The \emph{full pooled bank} of all $5{,}882$ turns from all ten
+conversations. A prediction must beat distractors from nine unrelated conversations as well
+as from its own, which makes the task strictly harder than per-conversation retrieval and is
+why absolute scores are lower here than on the episodic corpus (cosine Recall@1 $0.064$
+vs.\ $0.105$).
+
+\paragraph{Namespacing.} Dialogue identifiers are namespaced by \texttt{sample\_id}. Without
+this, $5{,}882$ turns carry only $1{,}033$ distinct identifiers and a turn from an unrelated
+conversation satisfies a gold identifier and scores as a hit --- the bug that invalidated an
+earlier capacity sweep of ours (\S\ref{sec:semantic}).
+
+\paragraph{Split unit.} The \emph{session} ($272$ of them across ten conversations), not the
+conversation and not the turn. A session is a coherent conversational episode; transitions
+from a session the model was fitted on are never evaluated. Four-fold rotation places every
+session in the test set exactly once, with the validation fold disjoint from both. The world
+model is fitted on ${\approx}2{,}800$ train-session transitions per fold, and both
+$(k_P,\tau)$ and the readout's $(K,\beta,\alpha)$ are selected on that fold's validation
+sessions.
+
+\paragraph{Probe subsampling.} Sessions vary in length, so at most $25$ probes per session
+enter the evaluation, sampled with a fixed seed. This keeps folds balanced and costs nothing
+statistically: the bootstrap resamples sessions, so the interval is driven by the $272$
+clusters rather than by the probe count.
+
+\paragraph{Full results.} Table~\ref{tab:locomo-full}. Note the asymmetry that bounds the
+claim: at one hop the effect is large and significant on both metrics; at two hops it is null
+at Recall@1 and carries only a residual $+0.012$ at Recall@5, an order of magnitude smaller.
+
+\begin{table}[htbp]\centering\small
+\caption{\textsc{LoCoMo} association, all methods and both hops. Hop 1 $n{=}5{,}233$;
+hop 2 $n{=}5{,}013$; $272$ session clusters throughout; intervals are 95\% cluster bootstrap.
+\texttt{experiments/locomo\_assoc.py}; raw values in
+\texttt{experiments/results/x26\_locomo\_assoc.json}.}
+\label{tab:locomo-full}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrlrl@{}}
+\toprule
+\textbf{Hop} & \textbf{Method} & \textbf{R@1} & \textbf{$\Delta$ R@1} & \textbf{R@5} & \textbf{$\Delta$ R@5} \\
+\midrule
+1 & cosine   & 0.064 & --- & 0.174 & --- \\
+  & averaged & \textbf{0.107} & $+0.043$ \ci{+0.036}{+0.050} & \textbf{0.251} & $+0.077$ \ci{+0.067}{+0.087} \\
+  & mixture  & 0.075 & $+0.011$ \ci{+0.006}{+0.016} & 0.202 & $+0.028$ \ci{+0.022}{+0.035} \\
+\midrule
+2 & cosine   & 0.043 & --- & 0.127 & --- \\
+  & averaged & 0.041 & $-0.002$ \ci{-0.008}{+0.004} & 0.139 & $+0.012$ \ci{+0.004}{+0.019} \\
+  & mixture  & 0.045 & $+0.002$ \ci{-0.003}{+0.006} & 0.134 & $+0.007$ \ci{+0.002}{+0.012} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The mixture readout, on public data.} \S\ref{sec:modes} reports that preserving
+the predictor's modes loses to averaging them on our corpus. It replicates here in sign and
+magnitude: the mixture beats cosine ($+0.011$) and loses decisively to averaging
+($0.075$ vs.\ $0.107$, a gap of $-0.032$). Invariant I4 is falsified on both corpora.
+
+\section{Reproducibility}
+\label{app:repro}
+
+\paragraph{Environment.} All results were produced on a single machine: Apple M5 Max,
+128\,GB RAM, macOS 26.5.1 (arm64). Python 3.13.2, NumPy 2.5.2, PyTorch 2.14.0, torchvision
+0.29.1, sentence-transformers 6.0.1. No GPU-specific code paths; every experiment runs on
+CPU. Encoders are frozen pretrained checkpoints
+(\texttt{all-mpnet-base-v2}; \texttt{ResNet18\_Weights.IMAGENET1K\_V1}) and are never
+fine-tuned.
+
+\paragraph{Data.} Neither corpus is redistributed. \textsc{LoCoMo} (2.8\,MB) and
+Imagenette-160 (99\,MB) are fetched by the two \texttt{curl} commands in the repository
+\textsc{readme}. The episodic corpus is \emph{generated}, not stored: it is produced
+deterministically from a seed by \texttt{src/energymem/eval/corpus.py}, so the exact queries
+are reproducible without shipping a data file.
+
+\paragraph{Regenerating the paper.} Every table and figure that has a results file behind it
+is produced by one command, and tables are written to \texttt{paper/generated/} and
+\texttt{\textbackslash input}ed rather than typed:
+
+{\footnotesize\begin{verbatim}
+make setup
+pytest -q                                   # Prop. 1 gate; writes reduction_check.json
+python experiments/x23_mode_diagnostics.py  # X23-X25
+python experiments/locomo_assoc.py          # X26
+python scripts/exp_locomo_anchored.py       # Table 2
+python scripts/confirm_holdout.py           # Table 1
+python scripts/exp_multibeta_scales.py      # Table 5
+python scripts/make_tables.py               # JSON -> generated tables + figures
+cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+\end{verbatim}}
+
+\texttt{make\_tables.py} prints, on every run, the list of tables it could \emph{not}
+generate from a results file. We regard that output as part of the reproducibility
+statement: it names precisely which numbers in the paper are still typed rather than
+derived, so the gap is visible to a reader instead of assumed closed.
+
+\paragraph{Known reproduction frictions.} Two, both environmental rather than scientific,
+recorded because they cost us time. Python on this machine ships without a CA bundle, so
+\texttt{urllib}-based downloads (including \texttt{torch.hub} weight fetches) fail with a
+certificate error; export \texttt{SSL\_CERT\_FILE} from \texttt{certifi}, or pre-fetch the
+checkpoint with \texttt{curl}. And \texttt{torchvision} is an optional dependency not
+installed by \texttt{make setup}; the two image experiments require it.
+
+\paragraph{What cannot be reproduced.} Two drivers were lost before they were committed:
+the one behind Table~\ref{tab:assoc} row~(i) and the one behind the parametric-predictor
+result in \S\ref{sec:composition}. Row~(i) is corroborated by rows (ii) and (iii) and could
+be removed without weakening the claim. We flag both rather than present them as
+reproducible, and we treat the loss as evidence for \S\ref{sec:protocol}'s argument: a
+result whose code is not committed is not a result yet.

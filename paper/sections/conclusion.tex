@@ -1,4 +1,37 @@
-% Owner: Pushkal. Short. No new claims. Restate what was measured, not what was hoped.
-% One paragraph of future work: planning over the landscape, active inference, the
-% full episodic/semantic/working/procedural taxonomy -- all deliberately out of scope
-% here (docs/00_PROJECT_CHARTER.md section 2).
+\label{sec:conclusion}
+
+We set out to build a better memory for autonomous agents on associative-memory foundations.
+That thesis is refuted here by our own measurements, at adequate power, with the mechanism
+identified: every departure from the dense-retrieval corner that changes only how an answer
+is read off the energy landscape fails on agent text, because none of them changes the
+landscape.
+
+What replaced it is narrower and better supported. Dense top-$k$ retrieval is exactly the
+$(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update, which makes
+the standard baseline a configuration of the method under test rather than a rival outside
+it, and converts an ill-posed question into a finite one. Within that frame, the sign of the
+effect is predictable before the experiment: associative descent helps when the cue is a
+degraded instance of a stored pattern, by more as the degradation increases, and hurts
+monotonically when it is not. Of eight mechanisms beyond the corner, one survives---a
+nonparametric predictor over the agent's own observed transitions, which retrieves by
+succession rather than resemblance. It beats cosine on one-hop association in three
+independent implementations across two corpora, including $+0.043$ Recall@1
+\ci{+0.036}{+0.050} on a public benchmark against a pooled bank of $5{,}882$ turns. The
+same experiment bounds it: at two hops the effect is $-0.002$, and a $+0.185$ two-hop
+result of our own is withdrawn as an artifact. Association helps one step ahead and does
+not compose.
+
+We also report what the protocol was worth, in the only currency that makes the argument:
+five errors, each a reasonable default, each worth a conclusion. Two produced false
+negatives, which were materially harder to detect than the false positives. Two of our own
+recorded claims were overturned by reimplementation rather than by review---and the one that
+had been our headline was settled only by the public-benchmark run that external validity
+demanded anyway.
+
+The constructive proposal we take from this is structural rather than empirical. Build the
+baseline as a corner of the method, give every added component a null setting that reproduces
+the configuration beneath it, and assert those equivalences in continuous integration. Four
+of the five errors above surfaced as violations of a known equivalence rather than as
+anomalous numbers. In a literature where the operator under test and the operator it is
+compared against coincide at the default operating point, that is not a convenience. It is
+the difference between measuring a method and measuring a bug.

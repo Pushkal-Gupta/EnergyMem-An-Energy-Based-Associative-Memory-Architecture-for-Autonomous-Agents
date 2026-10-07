@@ -65,8 +65,9 @@ def encode_conv(conv, encoder):
     return np.asarray(qemb, dtype=np.float64)
 
 
-def reduction_check(convs, qembs) -> bool:
-    """anchor=1.0 must reproduce cosine top-k exactly. If this fails, nothing else counts."""
+def reduction_check(convs, qembs):
+    """Returns (ok, agree, total) -- the counts are recorded in the results JSON so the
+    reduction verification leaves an artefact rather than only a console line."""
     print("\n[reduction] anchor=1.0 must equal exact cosine top-5")
     conv, qe = convs[0], qembs[0]
     dense = DenseTopK(); dense.index(conv.memories)
@@ -75,9 +76,10 @@ def reduction_check(convs, qembs) -> bool:
         dense.retrieve(q, k=K).ids == pinned.retrieve(q, k=K).ids
         for q in qe[:200]
     )
-    ok = agree == len(qe[:200])
-    print(f"    identical top-5 orderings: {agree}/{len(qe[:200])}  {'OK' if ok else 'FAIL'}")
-    return ok
+    total = len(qe[:200])
+    ok = agree == total
+    print(f"    identical top-5 orderings: {agree}/{total}  {'OK' if ok else 'FAIL'}")
+    return ok, agree, total
 
 
 def main() -> int:
@@ -97,7 +99,8 @@ def main() -> int:
     qembs = [encode_conv(c, encoder) for c in convs]
     print(f"encoded corpus in {time.perf_counter() - t0:.1f}s")
 
-    if not reduction_check(convs, qembs):
+    _ok, _agree, _total = reduction_check(convs, qembs)
+    if not _ok:
         print("    => reduction failed; the implementation is wrong. Stopping.")
         return 1
 
@@ -139,6 +142,26 @@ def main() -> int:
         m, lo, hi = bootstrap_ci(cov[name])
         tag = "  <-- = cosine" if "anchor=1.00" in name else ""
         print(f"  {name:<28}{m:>8.3f} [{lo:.3f},{hi:.3f}]{np.mean(rec[name]):>12.3f}{tag}")
+
+    # --- emit JSON so paper Table 2 is GENERATED, not typed (repo policy) ---
+    import json as _json
+    _sweep = {}
+    for name in order:
+        m, lo, hi = bootstrap_ci(cov[name])
+        _sweep[name] = {"coverage@5": float(m), "lo": float(lo), "hi": float(hi),
+                        "recall@5": float(np.mean(rec[name])), "n": len(cov[name]),
+                        "is_cosine": "anchor=1.00" in name}
+    _dst = Path(__file__).resolve().parents[1] / "experiments" / "results" / "locomo_anchored.json"
+    _dst.parent.mkdir(parents=True, exist_ok=True)
+    _dst.write_text(_json.dumps({
+        "n_questions": len(cov[order[0]]),
+        "n_turns": sum(len(c.memories) for c in convs),
+        "n_conversations": len(convs),
+        "encoder": ENCODER_NAME,
+        "reduction_check": {"agree": int(_agree), "total": int(_total)},
+        "sweep": _sweep,
+    }, indent=2))
+    print(f"\n  wrote {_dst}")
 
     best = order[0]
     print(f"\n  best configuration: {best}")

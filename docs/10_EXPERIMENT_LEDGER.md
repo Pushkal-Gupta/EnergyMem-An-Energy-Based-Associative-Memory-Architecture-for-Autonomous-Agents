@@ -138,6 +138,7 @@ one-hop positive is all that is left to externally validate.
 
 ---
 
+<<<<<<< HEAD
 ## Phase 5 — Is the 2-hop claim real, across more than one draw? (2026-09-15)
 
 **Why this phase exists.** Phase 4 gate build order names a pre-registered X19
@@ -174,3 +175,39 @@ rather than quietly patched, per this file's own append-only rule.
   power check before being written down — "majority of realizations individually
   significant" was intuitive but wrong for this effect size. A pooled or meta-analytic test
   should be the primary pre-registered criterion next time, not a secondary one.
+=======
+## Phase 5 — External validity (2026-10-07)
+
+**Why.** Every composition-regime number in this project (X16–X19, X25) is measured on a
+corpus we wrote. The one-hop positive is the project's only replicated claim, and its
+external validity was unestablished — the standing limitation, and the one a reviewer was
+most entitled to press. `experiments/locomo_assoc.py`, results in
+`experiments/results/x26_locomo_assoc.json`.
+
+**Design.** Same probe shape as X16, on LoCoMo. Cue = a conversational turn; gold = the turn
+that followed it. Candidate set = the **full pooled bank of 5,882 turns across all 10
+conversations**, so a prediction must beat distractors from nine unrelated conversations as
+well as its own. Ids namespaced by `sample_id` (the bug that invalidated an earlier capacity
+sweep). Split unit = **session** (272 of them); 4-fold rotation, every session in test
+exactly once; world model fitted on train-session transitions only; `k_P, τ` and `K, β, α`
+selected per fold on that fold's val sessions; cluster bootstrap over sessions.
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X26** | Does the one-hop association result hold on a public benchmark? | **Yes, and more strongly.** n=5,233 probes over 272 sessions. Cosine R@1 **0.064**, world model **0.107**, Δ **+0.043 [+0.036, +0.050], p<0.0001** — **+67% relative**. R@5: 0.174 → 0.251, Δ +0.077 [+0.067, +0.087], p<0.0001. | **The standing limitation is discharged for one hop.** The effect replicates on data built by another group, at ~20× the probe count and 2.2× the cluster count, with a larger relative effect than either of our own implementations (+46%, +33%). This is now the project's strongest claim and the only one with external validity. |
+| **X26b** | Does two-hop composition hold on LoCoMo? | **No.** n=5,013. R@1: cosine 0.043, world model 0.041, Δ **−0.002 [−0.008, +0.004], p=0.77**. R@5 shows a small positive (+0.012 [+0.004, +0.019]) an order of magnitude below the one-hop effect. | **X19 is resolved, negatively.** X25b suspended the 2-hop claim pending a pre-registered protocol; this is that protocol, on public data, at n=5,013. The 2-hop claim is **withdrawn**, not suspended. The original 0.446 figure must not be cited. |
+| **X26c** | Does the mixture readout lose on public data too? | **It wins, but by a quarter as much.** Mixture R@1 0.075 (Δ +0.011 [+0.006, +0.016] vs cosine) against averaging's 0.107. So mixture beats cosine and still loses decisively to averaging (−0.032). | **X25 replicates in sign on public data.** Keeping the modes is better than nothing and worse than averaging them. I4 stays falsified; R4 stays unsupported. |
+
+**Where Phase 5 leaves the claim.**
+
+- ✅ **One-hop association is now an externally validated positive**, replicated in three
+  independent implementations (+46% own corpus 50/50 split; +33% own corpus K-fold; **+67%
+  LoCoMo K-fold**), on two corpora, one of them public.
+- ❌ **Two-hop composition is dead.** Three measurements now: +0.185 (original, lost script),
+  null (own corpus K-fold), null (LoCoMo, n=5,013). The original was an artifact.
+- ❌ **I4 / mixture readout: falsified twice**, on both corpora.
+- 📉 **Absolute numbers are much lower on LoCoMo** (cosine R@1 0.064 vs 0.105 on our corpus),
+  i.e. the public task is harder — a 5,882-turn pooled bank with nine conversations of
+  distractors, and speaker-alternating turns. The effect is *larger* in relative terms on
+  the harder task, which is the direction that favours the mechanism.
+>>>>>>> 2bc4a45 (Validate on LoCoMo (X26), write the paper, and make every table generated)

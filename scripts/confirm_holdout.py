@@ -166,6 +166,32 @@ def main() -> int:
         print(f"    {int(lvl*100):>2}%: energy {en_test[sl].mean():.3f} vs cosine "
               f"{cos_test[sl].mean():.3f}   delta {m_:+.3f} [{l_:+.3f},{h_:+.3f}]  {tag}")
 
+    # --- emit JSON so paper Table 1 (contribution C3) is GENERATED, not typed ---
+    import json as _json
+    _levels = {}
+    for li, lvl in enumerate(LEVELS):
+        sl = slice(li * len(test_img), (li + 1) * len(test_img))
+        m_, l_, h_ = paired_bootstrap(en_test[sl], cos_test[sl])
+        _levels[f"{int(lvl*100)}"] = {
+            "cosine": float(cos_test[sl].mean()), "energy": float(en_test[sl].mean()),
+            "delta": float(m_), "lo": float(l_), "hi": float(h_),
+            "sig": bool(l_ > 0 or h_ < 0),
+        }
+    _dst = Path(__file__).resolve().parents[1] / "experiments" / "results" / "image_holdout.json"
+    _dst.parent.mkdir(parents=True, exist_ok=True)
+    _dst.write_text(_json.dumps({
+        "beta": float(best_b),
+        "n_instances": int(len(cos_test)),
+        "n_images": int(len(test_img)),
+        "levels": _levels,
+        "pooled": {"cosine": float(cos_test.mean()), "energy": float(en_test.mean()),
+                   "delta": float(mu), "lo": float(lo), "hi": float(hi),
+                   "sig": bool(lo > 0 or hi < 0)},
+        "disagreements": {"energy_wins": wins, "energy_loses": losses},
+        "tune_half_delta": float(best_d),   # the selection-bias check the paper cites
+    }, indent=2))
+    print(f"\n  wrote {_dst}")
+
     print("\n" + "=" * 78)
     if lo > 0:
         print("CONFIRMED: energy descent beats cosine on held-out data, with beta chosen")

@@ -123,25 +123,35 @@ def main() -> int:
           " ".join(f"{str(int(l*100)) + '%':>7}" for l in levels) + " | conv")
     print("  " + "-" * 74)
 
+    # cosine's own top-1 CHOICE per query, so we can measure decision agreement, not just
+    # accuracy agreement. Two methods can score identically while disagreeing on which
+    # memory they return; Corollary 1 is a claim about the choice.
+    cos_choice = {}
+    for li, lvl in enumerate(levels):
+        for si in range(len(seeds)):
+            for qi, q in enumerate(q_emb[li, si]):
+                cos_choice[(li, si, qi)] = dense.retrieve(q, 1).ids[0]
+
     rows = []
     t0 = time.perf_counter()
     for beta in BETAS:
         m = EnergyMemory(n_steps=8, beta=float(beta)); m.index(memories)
-        pooled, per_level, steps = [], {}, []
+        pooled, per_level, steps, agree = [], {}, [], []
         for li, lvl in enumerate(levels):
             hits = []
             for si in range(len(seeds)):
-                for q, g in zip(q_emb[li, si], q_cls):
+                for qi, (q, g) in enumerate(zip(q_emb[li, si], q_cls)):
                     r = m.retrieve(q, 1)
                     hits.append(float(id_to_class[r.ids[0]] == g))
+                    agree.append(float(r.ids[0] == cos_choice[(li, si, qi)]))
                     steps.append(r.n_steps)
             per_level[float(lvl)] = float(np.mean(hits))
             pooled.extend(hits)
         mu, lo, hi = bootstrap_ci(pooled)
-        rows.append((beta, mu, lo, hi, per_level))
+        rows.append((beta, mu, lo, hi, per_level, float(np.mean(agree))))
         print(f"  {beta:>6} | {mu:>7.3f} [{lo:.3f},{hi:.3f}] | " +
               " ".join(f"{per_level[float(l)]:>7.3f}" for l in levels) +
-              f" | {np.mean(steps):.1f}")
+              f" | {np.mean(steps):.1f} | agree(cos) {np.mean(agree):.3f}")
     print(f"\n  ({time.perf_counter() - t0:.1f}s)")
 
     # ------------------------------------------------------------------ analysis
@@ -170,6 +180,21 @@ def main() -> int:
     else:
         print("\n  => optimum sits at the high-beta boundary, i.e. the method is best when")
         print("     it has fully degenerated into cosine. No useful completion band here.")
+
+    # --- emit JSON: C2 is a headline contribution and had no results file ---
+    import json as _json
+    _dst = Path(__file__).resolve().parents[1] / "experiments" / "results" / "beta_band.json"
+    _dst.parent.mkdir(parents=True, exist_ok=True)
+    _dst.write_text(_json.dumps({
+        "cosine": {"pooled": float(cm), "lo": float(clo), "hi": float(chi),
+                   "per_level": {str(int(l * 100)): cos_by_level[float(l)] for l in levels}},
+        "betas": [{"beta": r[0], "pooled": r[1], "lo": r[2], "hi": r[3],
+                   "per_level": {str(int(l * 100)): r[4][float(l)] for l in levels},
+                   "top1_agreement_with_cosine": r[5]} for r in rows],
+        "best": {"beta": best[0], "pooled": best[1], "delta_vs_cosine": best[1] - cm},
+        "n_queries_per_cell": int(len(q_cls) * len(seeds)),
+    }, indent=2))
+    print(f"\n  wrote {_dst}")
 
     # per-level: does the band help more at heavy corruption?
     print("\n  best beta per occlusion level (does heavier damage want a softer beta?):")

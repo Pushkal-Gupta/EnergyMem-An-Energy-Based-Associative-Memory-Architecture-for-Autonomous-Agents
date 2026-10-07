@@ -1,9 +1,98 @@
-% Owner: Pushkal. Write AFTER method and results.
-% Beats, in order:
-%   1. Agent memory matters and is growing (MemGPT, A-MEM, MemoryBank, MemOS)
-%   2. Retrieval is near-universally cosine top-k -- state this as the observation
-%   3. Associative memory studies the retrieval OPERATOR, but on synthetic patterns
-%   4. The two literatures have not met under controlled conditions. Say why: Prop 1
-%      explains it -- at the standard operating point they are the SAME OPERATOR
-%   5. Contributions C1-C4 as a bulleted list
-%   6. A one-line honest preview of the headline finding, including what did NOT work
+A large language model is a function from text to text with no state between calls. An
+\emph{agent} is what results when that function is asked to operate over days or months,
+and the forgetting becomes the binding constraint. The standard remedy is an external
+store: write experience to it, and on each turn retrieve a few items to place back in
+context. The retrieval step is the subject of this paper.
+
+Across the agent-memory literature---MemGPT \citep{packer2023memgpt}, MemoryBank
+\citep{zhong2024memorybank}, A-MEM \citep{xu2025amem}, HippoRAG
+\citep{gutierrez2024hipporag}---the sophistication is concentrated almost entirely in
+\emph{what gets written and when it is evicted}. The read operator itself has been a frozen
+cosine nearest-neighbour lookup for a decade. Three objections to it are standard. It gets
+one shot at an ambiguous cue; it weights a memory recalled four hundred times identically to
+one glimpsed once, patched by hand-tuned recency and usage heuristics bolted to the side of
+a similarity score; and it can only return what is \emph{similar}, which is structurally the
+wrong relation for recall by association---lightning does not resemble thunder.
+
+A separate literature has studied exactly this operator for forty years. Associative memory
+treats recall as a dynamical process: a cue is released into an energy landscape whose minima
+are the stored patterns, and it descends until it settles \citep{hopfield1982}. Modern
+variants hold exponentially many patterns \citep{krotov2016dense,ramsauer2021hopfield} and
+repair a corrupted cue as a side effect of converging. The obvious experiment---use one as
+an agent's persistent memory and compare---has not been run under matched conditions.
+
+\paragraph{Why not.} We think the answer is Proposition~\ref{prop:reduction}, and that it is
+the reason this comparison has been quietly circular wherever it has been attempted. At the
+operating point everyone actually uses, the two methods are the \emph{same operator}. One
+step of the modern Hopfield update with the temperature turned up returns the top cosine
+neighbour exactly. Dense retrieval is not a rival sitting outside the energy formulation; it
+is a single corner of it. Any paper claiming that an energy-based memory beats similarity
+search must therefore say which coordinate it moved, and by how far---and if it ran at high
+$\beta$, it compared cosine against itself.
+
+Stating the reduction first changes the question from \emph{``is energy-based memory
+better?''}, which is not well posed, to \emph{``which departures from the dense corner pay
+for themselves, and in which regime?''}, which is. It also makes every comparison in this
+paper exact by construction: the baseline is our own code with different arguments, so there
+is no implementation advantage to argue about and no encoder mismatch to suspect.
+
+\paragraph{What we found.} Mostly that the departures do not pay, and---more usefully---why.
+Of the mechanisms available beyond the corner, every one that changes only \emph{how an
+answer is read off the landscape} fails on agent text: multi-step descent, residual peeling,
+repulsive parallel descent, vote-count readout, multi-scale and per-memory $\beta$. The one
+mechanism that helps does not touch the landscape at all; it is a model of \emph{what follows
+what}, fitted on the agent's own transitions.
+
+Between modalities the sign of the effect flips, and it flips for a reason we can state in
+one sentence and verify in both directions. Energy descent computes a weighted average of
+stored patterns and moves the retrieval state onto their span. That pays off exactly when the
+query is a degraded copy of something already stored, because moving toward the memory
+manifold restores lost signal; it costs accuracy when the query is not, because averaging
+smears the discriminative content of the cue. Image occlusion satisfies the premise and
+descent wins by more as damage increases. Question$\to$evidence retrieval violates it and
+descent loses monotonically. Both halves are measured, not argued.
+
+\paragraph{Contributions.}
+\begin{itemize}\itemsep2pt
+  \item[\textbf{C1}] \textbf{The reduction.} Dense top-$k$ retrieval is exactly the
+    $(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update
+    (Proposition~\ref{prop:reduction}), verified at $1000/1000$ queries on synthetic vectors
+    and $838/838$ on real sentence embeddings, both asserted in continuous integration. Every baseline in this paper is
+    a configuration of the method under test. (\xid{X1})
+  \item[\textbf{C2}] \textbf{The $\beta$ leverage band, and a hazard it implies.} $\beta$ has
+    influence only within a narrow band---${\approx}16$--$48$ for a 768-d sentence
+    encoder---bounded below by collapse of the state to the corpus centroid on the first step
+    and above by degeneration into cosine ($0.4995$ vs.\ $0.4996$ at $\beta{=}512$).
+    The band is a property of the encoder, not a constant: it is ${\approx}16$ on synthetic
+    vectors and ${\geq}64$ on real ones. A comparison outside it is uninterpretable.
+    (\xid{X3}, \xid{X11}, \S\ref{sec:band})
+  \item[\textbf{C3}] \textbf{A regime taxonomy with a falsifiable premise.} Completion,
+    composition and semantic match require mutually exclusive operating points, and which
+    one a query belongs to is predictable from whether the cue is a degraded instance of a
+    stored pattern. Evidence in both directions with dose-response: $+0.014$ pooled
+    \ci{+0.006}{+0.021} on held-out image completion rising to $+0.021$ at 70\% occlusion,
+    against a monotone $-0.084$ across an interpolation sweep on $1{,}977$ \textsc{LoCoMo}
+    questions. (\S\ref{sec:taxonomy})
+  \item[\textbf{C4}] \textbf{Eight diagnosed negative results.} Each is reported with the
+    mechanism that produces it rather than as a bare null, including two that overturn claims
+    we had previously made ourselves. (\S\ref{sec:negatives})
+  \item[\textbf{C5}] \textbf{One externally validated positive, and a sharp limit on it.}
+    A nonparametric predictor over the agent's own observed transitions beats cosine on
+    one-hop temporal association, in three independent implementations on two corpora. On
+    the public \textsc{LoCoMo} benchmark it raises Recall@1 from $0.064$ to $0.107$
+    ($+0.043$, \ci{+0.036}{+0.050}, $p<10^{-4}$, $+67\%$ relative) over $5{,}233$ probes in
+    $272$ sessions against a pooled $5{,}882$-turn bank. At \emph{two} hops the same
+    experiment returns $-0.002$ \ci{-0.008}{+0.004}: association does not compose, and we
+    withdraw a $+0.185$ two-hop figure of our own. (\S\ref{sec:composition}, \xid{X26})
+  \item[\textbf{C6}] \textbf{The measured price of five protocol shortcuts.} For each of
+    five errors we made, the magnitude of the false result it produced in our own data.
+    (\S\ref{sec:protocol})
+\end{itemize}
+
+\paragraph{What this paper is not.} It is not a system paper, and it does not claim a better
+agent memory. The thesis we began with---that energy-based retrieval improves agent
+recall---is refuted here by our own measurements, at adequate power, with the mechanism
+identified. We think the resulting object is more useful to the field than the system would
+have been: a reduction that makes the comparison exact, a taxonomy that predicts the sign of
+the effect before the experiment is run, and a quantified account of how easy it is to
+publish the opposite conclusion.

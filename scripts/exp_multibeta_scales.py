@@ -319,6 +319,21 @@ def main() -> int:
         print(f"  {name:<30}{r1.mean():>8.4f}{r5.mean():>8.4f}{rr.mean():>8.4f}"
               + "".join(f"{v:>8.4f}" for v in per_lvl) + tstr + mstr)
 
+    # --- emit JSON so paper Table 5 is GENERATED, not typed (repo policy) ---
+    _rows = {}
+    for name, sims in conds.items():
+        r1, r5, rr = metrics_from_scores(sims[:, test_mask], mem_cls_idx, gold_all[test_mask])
+        _rows[name] = {
+            "R@1": float(r1.mean()), "R@5": float(r5.mean()), "MRR": float(rr.mean()),
+            "matmuls": matmuls.get(name),
+            "ms_per_query": (timings[name] / Q_all.shape[1] * 1e3) if name in timings else None,
+            "per_level": {str(int(LEVELS[li] * 100)): float(r1[lvl_of[test_mask] == li].mean())
+                          for li in range(len(LEVELS))},
+            "is_control": name.startswith("CONTROL"),
+        }
+    _mb = {"rows": _rows, "best_beta": float(best_b), "best_set": list(best_set[1]),
+           "n_test_instances": int(test_mask.sum()), "T_steps": int(T_STEPS)}
+
     # ---------------------------------------------------------- seed variance
     print(f"\n  variance across occlusion seeds (Recall@1, held-out half):")
     for name in conds:
@@ -345,6 +360,19 @@ def main() -> int:
         mu, lo, hi = paired_bootstrap_by_image(res[a], res[b], img_te_c, n_img_te)
         verdict = "SIGNIFICANT" if lo > 0 else ("worse" if hi < 0 else "n.s.")
         print(f"    {a:<30} - {b:<26} {mu:>+8.4f}  [{lo:+.4f},{hi:+.4f}]  {verdict}")
+
+    _mb["n_test_images"] = int(n_img_te)
+    _mb["contrasts"] = {}
+    for _a, _b in [(mix_name, sgl_name), (mix_name, ens_name), (ens_name, sgl_name),
+                   (sgl_name, "cosine"), (mix_name, "cosine")]:
+        _m, _l, _h = paired_bootstrap_by_image(res[_a], res[_b], img_te_c, n_img_te)
+        _mb["contrasts"][f"{_a} - {_b}"] = {"delta": float(_m), "lo": float(_l),
+                                            "hi": float(_h), "sig": bool(_l > 0 or _h < 0)}
+    import json as _json
+    _dst = Path(__file__).resolve().parents[1] / "experiments" / "results" / "multibeta.json"
+    _dst.parent.mkdir(parents=True, exist_ok=True)
+    _dst.write_text(_json.dumps(_mb, indent=2))
+    print(f"\n  wrote {_dst}")
 
     mu_ms, lo_ms, _ = paired_bootstrap_by_image(res[mix_name], res[sgl_name], img_te_c, n_img_te)
     mu_me, lo_me, hi_me = paired_bootstrap_by_image(res[mix_name], res[ens_name], img_te_c, n_img_te)

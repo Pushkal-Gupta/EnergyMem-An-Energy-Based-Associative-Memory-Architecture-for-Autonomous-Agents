@@ -1,97 +1,184 @@
-% Method. Owner: Pushkal.
-%
-% Section 3.1 is the most important half-page in the paper. It concedes the reviewer's
-% strongest objection before they can raise it, and converts it into the paper's spine.
-% See docs/06_RISK_REGISTER.md R-1.
+\label{sec:method}
 
-\subsection{Memory as an energy landscape}
+\subsection{Setup and notation}
 
-% Setup: memories m_i in R^d, L2-normalized, stacked as X in R^{d x N}.
-% Query cue q; retrieval state xi initialized at q.
-%
-%   E(xi) = -lse(beta, X^T xi + b) + 0.5 ||xi||^2
-%
-% CCCP update (guaranteed descent):
-%   xi <- X softmax(beta (X^T xi + b))
-%   xi <- (1-eta) xi + eta R xi
-%   xi <- xi / ||xi||
-%
-% TODO(Pushkal): state the three generalization axes G1/G2/G3 as a table here.
+Memories $m_1,\dots,m_N$ are embedded by a frozen encoder $E$ into unit vectors
+$z_i = E(m_i) \in \mathcal{S}^{d-1}$ and stacked as $X = [z_1 \cdots z_N] \in \R^{d\times N}$.
+A cue $x$ is embedded to $q = E(x)$, and the retrieval state is initialised at
+$\xib^{(0)} = q$. Write $\Pi[\cdot]$ for projection back to the sphere, $b \in \R^N$ for a
+per-memory strength bias, $\beta>0$ for an inverse temperature, and $\lse(\cdot)$ for the
+log-sum-exp. The modern Hopfield energy \citep{ramsauer2021hopfield} is
+\begin{equation}
+E_M(\xib) \;=\; -\tfrac{1}{\beta}\lse\!\big(\beta(X^{\!\top}\xib + b)\big) \;+\; \tfrac12\|\xib\|^2,
+\label{eq:energy}
+\end{equation}
+minimised by the concave--convex (CCCP) update, which we run for $T$ steps:
+\begin{equation}
+\xib^{(t+1)} \;=\; \Pi\!\Big[(1-\eta)\,X\,\sm\!\big(\beta(X^{\!\top}\xib^{(t)}+b)\big) \;+\; \eta\, R\big(\xib^{(t)}\big)\Big].
+\label{eq:update}
+\end{equation}
+Equation~\eqref{eq:update} decreases \eqref{eq:energy} monotonically and converges for
+$\eta=0$. The operator $R$ is a \emph{routing} map, discussed in \S\ref{sec:axes}.
 
-\subsection{Dense retrieval is a special case}
+\subsection{Dense retrieval is a corner of this family}
 
-\begin{proposition}[Reduction]
+\begin{proposition}[The reduction]
 \label{prop:reduction}
-% For L2-normalized patterns, with T=1, b=0, R=I and beta -> infinity, the retrieval
-% operator returns exactly argmax_i <q, m_i>, i.e. top-1 cosine retrieval.
-%
-% Proof: softmax(beta z) -> one-hot(argmax z) as beta -> inf; hence xi_1 -> m_{i*} with
-% i* = argmax_i <q, m_i>. Readout by similarity to xi_1 returns m_{i*}.
+Let the patterns $z_i$ and the cue $q$ be $L_2$-normalised, and set $T=1$, $b=0$, $\eta=0$.
+Then as $\beta\to\infty$ the state after one update converges to the stored pattern of
+maximal cosine similarity to the cue,
+\[
+\lim_{\beta\to\infty}\ \Pi\!\big[X\,\sm(\beta X^{\!\top} q)\big] \;=\; z_{i^\star},
+\qquad i^\star = \arg\max_i\, \langle z_i, q\rangle ,
+\]
+whenever the maximiser is unique. Reading the top-$k$ patterns by $\langle z_i,\xib^{(1)}\rangle$
+therefore returns exactly the dense top-$k$ cosine neighbourhood of $q$.
 \end{proposition}
 
-% SAY THIS EXPLICITLY IN THE TEXT, do not leave it implicit:
-%
-%   "Proposition 1 means the standard dense-retrieval baseline is not an external
-%    competitor but a point in our own parameter space. We therefore implement it as a
-%    configuration of the same code path, which makes every comparison in Section 6 exact
-%    by construction. The research question is not whether energy minimization beats
-%    cosine similarity -- at that point they are the same operator -- but which
-%    departures from it pay for themselves."
-%
-% Verified numerically: 1000/1000 queries agree with exact cosine top-1
-% (tests/test_reduction.py, run in CI).
+\begin{proof}[Proof sketch]
+With $b=0$ the logits are $s_i = \langle z_i,q\rangle$. Let $\delta = s_{i^\star} - \max_{i\neq i^\star} s_i > 0$.
+Then $\sm(\beta s)_{i^\star} = \big(1 + \sum_{i\neq i^\star} e^{-\beta(s_{i^\star}-s_i)}\big)^{-1}
+\geq (1 + (N-1)e^{-\beta\delta})^{-1} \to 1$, and every other coordinate is
+$O(e^{-\beta\delta})$. Hence $X\sm(\beta X^{\!\top}q) \to z_{i^\star}$, and normalisation fixes
+the point since $\|z_{i^\star}\|=1$. The full argument, including the $k>1$ case and the
+rate, is in Appendix~\ref{app:proof}.
+\end{proof}
 
-\subsection{Multi-target retrieval by residual peeling}
+We treat Proposition~\ref{prop:reduction} as an executable claim rather than a remark. The
+test suite instantiates the configuration above and asserts agreement with an independent
+exact-cosine implementation on every query; it passes $1000/1000$ on synthetic vectors
+($d{=}64$) and $838/838$ on real sentence embeddings ($d{=}768$), to floating-point
+precision, and it gates continuous integration. If it ever fails, no downstream number in this paper is trustworthy
+(\xid{X1}).
 
-% docs/09_DAY0_FINDINGS.md F4/F5. This subsection reports a negative result and its fix.
-%
-% Descent converges to a single point xi*. Reading top-k by similarity to xi* ranks by
-% proximity to ONE attractor, whereas the original query retains evidence for all k
-% targets. Convergence therefore DESTROYS the multiplicity that top-k preserves --
-% measured Recall 0.257 vs 1.000 at k=4 on synthetic data.
-%
-% Fix (Algorithm 1): descend, commit to the nearest attractor, project it out of the
-% residual cue, re-descend. Matching pursuit over the energy landscape. Restores 1.000.
-%
-% This is a genuine contribution: no system in the related work performs multi-target
-% readout under attractor dynamics. Present it as such, but present the failure first.
-%
-% ABLATION -- the alternative readout (docs/09_DAY0_FINDINGS.md F7). Descend m particles in
-% PARALLEL with a repulsion term (Stein-variational descent over E) instead of peeling
-% sequentially. Report all four variants; two of them fail and the failures carry the argument:
-%   perturbation alone   0.142  -- no working sigma: collapse or uniform scatter, nothing between
-%   cosine top-m seeding 0.260  -- circular; stored patterns are exact fixed points, so the
-%                                 descent is a no-op and any ranking is cosine top-k again
-%   + repulsion          0.910  -- works; particles concentrate on the gold set
-%   residual peeling     1.000  -- wins ON SYNTHETIC. On real embeddings it does NOT (F13).
-%
-% CORRECTED 2026-09-04 (F8). The earlier claim -- "parallel descent has no ranking signal"
-% -- is FALSE and must not appear in the paper. Basin volume (how many perturbed cues drain
-% to an attractor) IS a query-dependent ranking signal, and it lifts the parallel readout
-% from 0.142 to 0.621.
-%
-% The correct claim is sharper: multi-target readout needs enforced diversity in the
-% DYNAMICS, not in the READOUT. Banning the winner from the shortlist leaves the next
-% descent starting from the same cue -- the second-most-voted attractor is a gold only
-% 0.02-0.10 of the time. Projecting the winner out of the CUE changes where the next
-% descent begins, and recovers 1.000 with or without voting.
-%
-% Report vote+ban as the headline negative result: it is the intuitive proposal, and it
-% fails for a precise measurable reason rather than a vague one.
-% Caveat to state: peeling is k sequential descents vs one batched matmul -- report the
-% latency crossover at realistic N, do not generalize from the CPU/N=1000 numbers.
+Two consequences organise everything that follows.
 
-\subsection{Memory strength as basin depth}
+\emph{First, the baseline cannot be disadvantaged.} ``Dense top-$k$'' in every table below
+is Equation~\eqref{eq:update} with the arguments of Proposition~\ref{prop:reduction}, run
+through the same code path, the same encoder and the same candidate set as the method under
+test. The most common rejection reason for papers of this shape---that the authors tuned
+their own method and not the baseline---is unavailable here by construction.
 
-% G2. b_i = w_u log(1+usage_i) + w_r exp(-dt_i/tau) + w_s surprise_i.
-% Reinforcement, decay and forgetting become one term rather than three heuristics.
-% MUST be compared against a cosine retriever given the SAME signals as a score prior --
-% if that matches, this is engineering, not contribution. Say which it turned out to be.
+\emph{Second, the research question becomes finite.} The reduction identifies a specific
+point in a parameter space; the scientific content is which coordinates are worth moving.
 
-\subsection{Learned associative topology}
+\subsection{Three axes away from the corner}
+\label{sec:axes}
 
-% G3. R learned from temporal co-occurrence, NEVER from cosine similarity.
-% Position carefully against PAM (Dury 2026), which already does association-beyond-
-% similarity with an EXTERNAL predictor. Our claim is the INTEGRATION -- association
-% reshapes the same landscape retrieval descends -- not the idea of association itself.
-% See docs/07_CITATION_AUDIT.md.
+Exactly three coordinates of Equation~\eqref{eq:update} are free, and each encodes a
+distinct hypothesis about what agent memory needs.
+
+\begin{description}\itemsep3pt
+\item[\textnormal{\textbf{G1} --- depth, $T>1$.}] Iterating repairs a degraded cue.
+  Cosine cannot imitate this: it has no mechanism for revisiting a cue.
+\item[\textnormal{\textbf{G2} --- basin depth, $b\neq 0$.}] A memory used constantly earns a
+  deeper basin and therefore a wider one, so a vaguer cue still finds it. This folds usage,
+  recency and surprise into a single term of the energy instead of three heuristics blended
+  by hand outside it. Cosine can partially imitate it with an additive score bonus.
+\item[\textnormal{\textbf{G3} --- routing, $R\neq I$.}] Memories that co-occur in time pull
+  on one another, so falling into one drags the state toward its companions. This is the only
+  axis that can express a relation cosine structurally cannot represent, and it is the axis
+  on which our one positive result lives. Critically, $R$ must be fitted from temporal
+  co-occurrence and never from embedding similarity: fitting it on similarity collapses G3
+  back into the baseline and silently invalidates the claim.
+\end{description}
+
+\subsection{The $\beta$ leverage band}
+\label{sec:band}
+
+Proposition~\ref{prop:reduction} has a corollary that is easy to state and, we will argue,
+widely consequential.
+
+\begin{corollary}[High-$\beta$ degeneracy]
+\label{cor:degeneracy}
+For any $T$, as $\beta\to\infty$ with $b=0,\eta=0$ the trajectory of
+Equation~\eqref{eq:update} is constant after the first step, because stored patterns are
+exact fixed points. Multi-step descent at high $\beta$ is therefore \emph{identical} to
+one-step descent, which by Proposition~\ref{prop:reduction} is cosine retrieval.
+\end{corollary}
+
+Empirically the degeneracy arrives early, and accuracy is the wrong way to see it. Two
+retrievers can score identically while disagreeing about which memory they return, so we
+measure \emph{top-1 decision agreement} with cosine --- the fraction of queries on which
+descent returns the exact memory cosine would have (Figure~\ref{fig:band},
+\texttt{sweep\_beta\_transition.py}).
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.84\textwidth]{figures/beta_band.pdf}
+\caption{The $\beta$ leverage band, on held-out image completion. \textbf{Left axis:}
+Recall@1 against the cosine baseline (dashed). \textbf{Right axis:} the fraction of queries
+on which descent returns the \emph{same memory} as cosine. Below the band the state
+collapses to the corpus centroid and accuracy falls to chance ($0.100 = 1/10$); above it
+descent makes cosine's decision on $99.4\%$ of queries. The usable interval is the narrow
+region where the method is neither collapsed nor dissolved.}
+\label{fig:band}
+\end{figure}
+
+The curve has two failures and one working region. Below $\beta \approx 24$ the softmax is
+flat enough that the first step averages a large fraction of the bank and the state lands at
+its centroid: Recall@1 is $0.100$ at $\beta{=}12$, which is exactly chance for a ten-class
+bank, and decision agreement with cosine is $1\%$. Above the band, descent converges on
+cosine's own answer --- agreement rises through $86\%$ at $\beta{=}64$ and $96\%$ at
+$\beta{=}128$ to $\mathbf{99.4\%}$ at $\beta{=}512$, where accuracy is $0.4986$ against
+cosine's $0.5000$. Between them is a genuine interior optimum: $\beta{=}48$ reaches $0.514$,
+$+0.014$ over cosine, while still disagreeing with it on $27\%$ of queries. The band is
+narrow --- roughly $[32, 64]$ on this encoder, with useful leverage over perhaps a factor of
+two in $\beta$.
+
+Three implications. (i) The apparent \emph{plateau} in accuracy above $\beta \approx 64$,
+which a coarse sweep reads as a robust operating region, is the method dissolving into the
+baseline rather than working; the agreement curve distinguishes the two and the accuracy
+curve cannot. (ii) The band is a property of the encoder and must be re-measured per
+encoder: the interval above is for ResNet-18 features ($d{=}512$), while on
+\texttt{all-mpnet-base-v2} ($d{=}768$) the lower edge sits higher --- at $\beta{=}16$ the
+effective number of patterns in the blend is $377$ (\xid{X11}), against a threshold of
+$\approx 16$ on isotropic synthetic vectors (\xid{X3}). The threshold survives as a
+mechanism and dies as a number. (iii) Any experiment comparing ``Hopfield retrieval''
+against ``cosine retrieval'' at high $\beta$ is comparing cosine against cosine on nearly
+every query, and will correctly report no difference for the wrong reason. We flag this as
+a live hazard for this literature; we committed it ourselves, and \S\ref{sec:protocol}
+reports what it cost us.
+
+\subsection{Beyond the landscape: memory as a model of what follows what}
+\label{sec:worldmodel}
+
+Every mechanism in \S\ref{sec:axes} except G3 changes how an answer is \emph{read off} a
+fixed landscape. None of them changes the landscape. The results in \S\ref{sec:negatives}
+make that distinction empirically load-bearing: readout mechanisms uniformly fail on agent
+text.
+
+G3 is different in kind, and the formulation we adopt for it is the joint-embedding
+predictive one \citep{lecun2022path,assran2023ijepa}: predict the \emph{representation} of
+the next episode, not its tokens. An agent's episode stream is a trajectory, and temporal
+adjacency is free supervision---no labelling is required to know which episode followed
+which.
+
+Let $\mathcal{T}$ be the set of observed consecutive index pairs, $Z_c$ the matrix of cue
+representations over $\mathcal{T}$, and $\Delta_i = z_{\text{next}(i)} - z_{\text{cue}(i)}$
+the displacement each transition took. We consider two instantiations.
+
+\emph{Parametric.} A low-rank predictor trained with an InfoNCE objective against a frozen
+target encoder. This is the natural first choice and it fails completely
+(\S\ref{sec:composition}): it memorises the storylines it was fitted on.
+
+\emph{Nonparametric.} Carry the transitions rather than compressing them, and transfer
+displacements locally:
+\begin{equation}
+P(q) \;=\; \Pi\!\Big[q \;+\; \alpha \textstyle\sum_{i \in \mathcal{N}_k(q)} w_i\, \Delta_i\Big],
+\qquad w = \sm\big(\tau\, Z_c^{\!\top} q\big)\big|_{\mathcal{N}_k(q)} ,
+\label{eq:knnwm}
+\end{equation}
+where $\mathcal{N}_k(q)$ are the $k$ nearest remembered cues and $\alpha$ is a step size.
+This is still a world model---it predicts what comes next in embedding space---and it
+composes: iterating it rolls the model forward. It is the one mechanism in this paper that
+beats cosine on held-out data.
+
+The step size $\alpha$ is not cosmetic, and \S\ref{sec:protocol} explains why we are
+emphatic about it. A single remembered displacement has norm $1.157$ against a unit-norm
+cue, so at $\alpha{=}1$ the prediction is dominated by the displacement and lands
+essentially on $z_{\text{next}(i)}$---a \emph{stored training episode}, $100\%$ of the time
+on our corpus against a bank prior of $14\%$. The kernel in \eqref{eq:knnwm} implicitly
+applies $\alpha \approx 0.34$ through cancellation among near-orthogonal displacements, and
+that shrinkage, not the weighting, is what keeps the cue in control of where the prediction
+lands (\xid{X23b}). Any comparison between predictors that does not match effective step
+size measures step size.

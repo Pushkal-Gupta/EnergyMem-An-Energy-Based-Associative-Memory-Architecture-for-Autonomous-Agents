@@ -1,13 +1,230 @@
-% Owner: Pushkal + Anshveer. Tables GENERATED from experiments/results/, never typed.
-%
-% Table 1  Main -- DegradeBench, all methods, Recall@1/@5, MRR, WITH latency column
-% Table 2  Ablation -- build-up AND knock-out (docs/04_EXPERIMENT_PROTOCOL.md section 3)
-% Table 3  Agent benchmarks -- LongMemEval (5 categories separately) + LoCoMo
-% Fig 1    Corruption severity vs Recall@1
-% Fig 2    beta stability threshold (findings F2) -- a real diagnostic result
-% Fig 3    Accuracy/latency Pareto frontier
-% Fig 4    Consolidation: compression ratio vs recall, episodic vs semantic queries
-%          (look for the CROSSOVER -- do not tune it away)
-%
-% Report convergence rate, blend rate and energy margins. A high blend rate is a
-% finding about embedding geometry, not an embarrassment.
+\label{sec:results}
+
+All numbers below are paired against the dense baseline of
+Proposition~\ref{prop:reduction} on identical queries, with cluster-bootstrap intervals.
+Ledger identifiers index \texttt{docs/10\_EXPERIMENT\_LEDGER.md}.
+
+\subsection{Completion: energy descent beats cosine, by more as the cue degrades}
+\label{sec:completion}
+
+\begin{table}[t]\centering\small
+\caption{Image occlusion recovery, Recall@1. $\beta$ selected on a disjoint tune half; one
+pre-committed paired test on the held-out half. $n{=}5{,}847$ query instances from
+$1{,}949$ distinct images; bootstrap resamples images. The tune-half estimate was $+0.016$
+against a held-out $+0.014$, indicating no selection bias.}
+\label{tab:images}
+\input{generated/tab_images}
+\end{table}
+
+Table~\ref{tab:images} is the paper's one clean positive for the energy mechanism itself.
+The effect is small in absolute terms and grows with corruption severity exactly as
+Claim~\ref{claim:premise} predicts, with no effect where there is nothing to reconstruct. It
+costs $21\times$ cosine's wall-clock latency ($0.0502$\,ms vs.\ $0.0024$\,ms per query).
+
+Two qualifications belong next to it rather than in a limitations section. First, the
+advantage is \emph{capacity-dependent}: growing the bank from $100$ to $4{,}000$ patterns at
+fixed $\beta{=}32$, cosine overtakes descent past $N\approx 800$. Whether this is a
+$\beta$-scaling artefact or a genuine capacity limit is unresolved, and it bears directly on
+any claim about agent-scale memory. Second, descent wins at rank 1 and \emph{loses badly on
+the shortlist}: Recall@5 is $0.605$ against cosine's $0.759$ and MRR $0.589$ against $0.643$
+(Table~\ref{tab:multibeta}). Converging to a single attractor means ranks 2--5 measure
+proximity to that attractor rather than to the query. A better top-1 and a worse
+shortlist is a different product decision from a uniformly better retriever, and reporting
+one without the other would misrepresent the method.
+
+\paragraph{An earlier verdict of ours, withdrawn.} A previous version of this study used $80$
+distinct images with unpaired intervals roughly $5\times$ the effect size and $\beta$ tuned
+on the test images. Its conclusions were underpowered and are withdrawn; Table~\ref{tab:images}
+supersedes them.
+
+\subsection{Semantic match: every increment of descent costs accuracy}
+\label{sec:semantic}
+
+\begin{table}[t]\centering\small
+\caption{\textsc{LoCoMo}, $1{,}977$ questions over $5{,}882$ turns. \texttt{anchor}
+interpolates between pure cosine ($1.0$) and pure descent ($0.0$); the baseline is a point in
+our own parameter space, so the sweep measures exactly what descent adds. The reduction check
+passes $196/196$ at $\texttt{anchor}{=}1.0$.}
+\label{tab:locomo}
+\input{generated/tab_locomo}
+\end{table}
+
+Table~\ref{tab:locomo} is monotone: the optimum sits at the boundary where the method
+\emph{is} the baseline. The table shows the best $\mathrm{pp}_0$ at each anchor; the worst
+cell of the full sweep is $\texttt{anchor}{=}0.00,\ \mathrm{pp}_0{=}32$ at $0.201$
+\ci{0.184}{0.218}, which is the broad-start annealing failure of \S\ref{sec:band} compounding
+with the absent query anchor. There is no interior operating point at which descent helps on
+question$\to$evidence retrieval, which is the dominant query type in deployed agent memory.
+
+\paragraph{A data bug that invalidated an earlier result.} \textsc{LoCoMo} dialogue
+identifiers are unique only \emph{within} a conversation: $5{,}882$ turns carry $1{,}033$
+distinct identifiers, and $132$ of conversation~0's $134$ gold identifiers recur in other
+conversations. Our first capacity sweep pooled banks without namespacing, so distractors
+satisfied gold identifiers and scored as hits. Its headline---``adaptive $\beta$ improves as
+the bank grows''---was an artefact; with namespaced identifiers adaptive $\beta$ \emph{degrades}
+($0.250 \to 0.231$), merely less steeply than fixed $\beta$ ($0.244 \to 0.216$). We report
+this because the failure mode is specific to this widely used benchmark and will recur.
+
+\subsection{Composition: the one mechanism that works}
+\label{sec:composition}
+
+\paragraph{The gate.} Before building a predictor we checked whether cosine already solves
+``what happened next''. It does not: Recall@1 is $0.105$ with the gold episode at median rank
+$24$ of $1{,}319$. The failures are instructive---they are lexical collisions across
+unrelated storylines, where a cue about a cottage drive returns ``forty minutes each way''
+from an apartment-hunting thread. Oracle-restricting candidates to the correct storyline
+still reaches only $0.488$, so the difficulty is not merely retrieval breadth. Temporal
+succession is genuinely not a similarity relation (\xid{X16}).
+
+\paragraph{The parametric predictor fails completely.} A low-rank JEPA predictor trained on
+some storylines and evaluated on others scores $0.784$ Recall@1 on storylines it was fitted
+on and $0.008$ on unseen ones, against the cosine baseline's $0.106$---worse than doing
+nothing. This holds at every capacity from rank 2 to rank 32. The diagnostic explains why:
+displacement vectors between consecutive episodes are near-orthogonal (mean pairwise cosine
+$0.006$) and the top ten principal components carry only $24\%$ of their variance. There is
+no global ``and then'' direction to fit, and ${\sim}107$ transitions in $768$ dimensions
+cannot teach one (\xid{X17}). We report this as a result about inductive bias, not as a
+tuning failure.
+
+\paragraph{The nonparametric predictor works, on our corpus and on a public one.}
+Equation~\eqref{eq:knnwm}, with $(k,\tau)$ selected on held-out storylines or sessions only,
+beats cosine on one-hop association in three independent implementations
+(Table~\ref{tab:assoc}). The third is the one that matters: it runs the same probe design on
+\textsc{LoCoMo}, a benchmark built by another group, against the \emph{full pooled bank} of
+$5{,}882$ turns from all ten conversations, so a prediction must beat distractors from nine
+unrelated conversations as well as its own. Dialogue identifiers are namespaced by
+conversation---without that, $5{,}882$ turns carry only $1{,}033$ distinct identifiers and
+distractors satisfy gold identifiers, the bug described in \S\ref{sec:semantic}.
+
+\begin{table}[t]\centering\small
+\caption{One-hop temporal association. Three implementations, two corpora. ``Clusters'' is
+the bootstrap resampling unit---storylines for the episodic corpus, sessions for
+\textsc{LoCoMo}. Implementations (ii) and (iii) were written without reference to (i).
+Absolute scores are lower on \textsc{LoCoMo} because the task is harder: a larger pooled
+bank, nine conversations of distractors, and speaker-alternating turns. The relative effect
+is \emph{larger} there.}
+\label{tab:assoc}
+\input{generated/tab_assoc}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.78\textwidth]{figures/assoc_hops.pdf}
+\caption{Paired $\Delta$ Recall@1 against cosine, both corpora, one and two hops. Intervals
+are 95\% cluster bootstrap (storylines for the episodic corpus, sessions for
+\textsc{LoCoMo}). The one-hop effect is positive on both corpora and larger on the public,
+harder one; the two-hop effect is null on both. Generated by
+\texttt{scripts/make\_tables.py}.}
+\label{fig:hops}
+\end{figure}
+
+On \textsc{LoCoMo} the effect is $+67\%$ relative at Recall@1 and $+0.077$
+\ci{+0.067}{+0.087} at Recall@5 ($0.174 \to 0.251$). This is the only claim in the paper with
+external validity, and the only one reproduced three times; we weight it accordingly, and we
+have restricted the paper's positive claims to it.
+
+\paragraph{Multi-hop composition does not hold. We withdraw our own earlier result.}
+An earlier run of ours indicated that iterating the predictor recovers two-hop chains it was
+never trained on: Recall@5 of $0.446$ against cosine's $0.262$, $\Delta = +0.185$
+\ci{+0.076}{+0.297}, $p<0.001$. That was the strongest result we had recorded. It does not
+survive.
+
+Three subsequent measurements (Table~\ref{tab:twohop}) return nulls, the last of them on
+public data at $n{=}5{,}013$ with $272$ clusters---roughly $37\times$ the probe count of the
+original. We therefore withdraw the two-hop claim as an artifact rather than suspending it.
+The $+0.185$ figure should not be cited, including from our own ledger, where it now carries
+a pointer to this result.
+
+\begin{table}[t]\centering\small
+\caption{Two-hop composition, every measurement we have. The original script was lost before
+it was committed, so (a) cannot be re-run; (b) and (c) are independent reimplementations
+under storyline- and session-disjoint rotation. Row (c) is $p{=}0.77$; the claim is withdrawn.}
+\label{tab:twohop}
+\input{generated/tab_twohop}
+\end{table}
+
+A residual signal does exist at two hops on \textsc{LoCoMo} at Recall@5 ($+0.012$
+\ci{+0.004}{+0.019}), an order of magnitude below the one-hop effect and not visible at
+Recall@1. We report it for completeness and do not build on it. The honest summary is that
+association helps one step ahead and does not compose: the error introduced by predicting
+from a prediction exceeds whatever compositional signal the second step carries.
+
+\paragraph{Why we report this at length.} The withdrawn result was, for several weeks, the
+headline of this project and the organising claim of a design document built on top of it.
+It was overturned by reimplementation, not by review---twice---and the version that finally
+settled it is the public-benchmark run that a reviewer would have demanded anyway. We regard
+the sequence as the strongest available evidence for \S\ref{sec:protocol}'s argument that
+independent reimplementation is a distinct and stronger property than peer inspection.
+
+\subsection{Eight mechanisms that do not pay for themselves}
+\label{sec:negatives}
+
+\begin{table}[t]\centering\small
+\caption{Negative results, each with its diagnosed mechanism. ``Regime'' indicates where the
+test was run. Two of these overturn claims we previously made ourselves.}
+\label{tab:negatives}
+\begin{tabular}{@{}p{0.235\textwidth}p{0.20\textwidth}p{0.45\textwidth}@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Result} & \textbf{Diagnosed mechanism} \\
+\midrule
+Multi-step descent (G1) & no effect & Identical to one step above the $\beta$ threshold---precisely what Corollary~\ref{cor:degeneracy} predicts. Once $\beta$ commits on step one there is nothing left to do (\xid{X2}). \\
+Residual peeling & $0.268$ vs.\ repulsion $0.290$ & Restores multi-answer recall on orthogonal synthetic patterns ($0.258 \to 1.000$) and inverts on real embeddings: non-orthogonal golds mean projecting one out damages the others (\xid{X5}, \xid{X13}). \\
+Repulsive parallel descent & $+0.004$, $p{=}0.43$ & Survives to $146$ questions but not to held-out selection. The $+0.042$ trend was hyperparameter overfitting (\xid{X15}). \\
+Noise-seeded parallel descent & fails at every $\sigma$ & No intermediate value exists. Too little noise and all chains land in one basin; too much and they scatter uniformly, where correct answers are no likelier than any others. Isotropic noise carries no information about where the other answers are (\xid{X7}). \\
+Cosine-seeded parallel descent & exactly chance & Circular. Stored patterns are exact fixed points, so descent is a no-op; ranking the landing sites requires a signal the descent has already destroyed. Ranking them by similarity to the cue scores $1.000$---but that ranking \emph{is} cosine top-$k$ (\xid{X7}). \\
+Multi-scale $\beta$ & $+0.0003$ \ci{-0.0014}{+0.0021} & Expressively distinct and performance-neutral. An integrated mixture is provably not reducible to any single $\beta$ \citep{yang2018softmax}, and diverges from an ensemble at $T{=}8$ ($63\%$ top-1 agreement), yet changes \emph{which} queries are answered, not how many (\texttt{exp\_multibeta\_scales.py}; this study predates the ledger and has no \xid{X} identifier). \\
+Per-memory / learned $\beta$ & inert & The learned values ($51$--$88$) land above the leverage band, and a shuffle control with the same values randomly reassigned scores identically. Conditioning $\beta$ on the query is motivated---the optimum does differ by corruption level---but the learned function converged to a near constant ($\beta{\approx}31$ everywhere). \\
+Predictor coupled into the energy & never exceeds external & Interpolating the routing operator inside the descent step gives $0.130$ at $\eta{=}0.5$ and $0.154$ at $\eta{=}1.0$---the latter merely \emph{recovering} the external predictor, since $\eta{=}1$ replaces the Hopfield step entirely (\xid{X18}). This was our stated novelty against prior work \citep{dury2026pam} and it is withdrawn. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]\centering\small
+\caption{Multi-$\beta$ scales on image completion, with compute, ordered by Recall@1.
+Bootstrap resamples images. Controls were pre-registered to collapse and did. Note the
+R@5/MRR columns: descent's shortlist is substantially worse than cosine's at every setting,
+which is the shortlist regression of \S\ref{sec:completion} and Remark~\ref{rem:shortlist}.
+Single $\beta$ beats cosine by $+0.0130$ \ci{+0.0074}{+0.0186}; no mixture beats single
+$\beta$.}
+\label{tab:multibeta}
+\input{generated/tab_multibeta}
+\end{table}
+
+Two findings survive from the controls in Table~\ref{tab:multibeta}. The integrated
+$[1,5,20]$ control collapsed to exact chance ($0.108 = 1/10$) with \emph{identical} accuracy
+at every occlusion level: one bad scale inside a shared trajectory poisons the entire state.
+The ensemble version of the same scales reaches $0.282$, because there a bad scale only
+dilutes one vote among independent runs. This is direct evidence that the coupling between
+scales is real and can hurt as easily as it can fail to help.
+
+\subsection{The multi-modality result, and why it does not help}
+\label{sec:modes}
+
+The predictor of Equation~\eqref{eq:knnwm} returns a weighted average. A natural hypothesis,
+and one we committed to in a design document before testing it, is that this is a mistake:
+if a cue has several legitimate successors, their average is a point in embedding space where
+nothing is stored---a ridge between basins rather than a basin. Preserving the modes should
+therefore help, and should motivate a stochastic (Boltzmann) rather than deterministic
+relaxation \citep{ackley1985boltzmann,welling2011sgld}.
+
+The premise is correct. Among the top three modes of $P(\cdot\mid q)$ the mean mutual cosine
+is $0.353$, and $97\%$ of cues have modes that mutually disagree (\xid{X24}). There is
+genuinely a distribution for averaging to destroy.
+
+The conclusion is wrong. With step size matched (\S\ref{sec:method}), the mixture readout
+\[
+\mathrm{score}(m) \;=\; \lse_s\!\big[\beta\langle \xib_s, z_m\rangle + \log w_s\big]
+\]
+\emph{loses} to the averaged predictor at one hop, $\Delta = -0.062$ \ci{-0.094}{-0.034}, and
+ties at two (\xid{X25}). The off-manifold gap the hypothesis rested on is also much smaller than assumed:
+mean nearest-neighbour cosine is $0.482$ for a real stored episode against $0.462$ for an
+averaged prediction, a gap of $-0.021$.
+
+The mechanism is the step size. Averaging does two things at once, and the one that matters
+is not the one the hypothesis named: it shrinks the displacement by a factor of $0.34$
+through cancellation among near-orthogonal transitions, and that shrinkage keeps the cue in
+control of where the prediction lands. Preserving the modes removes the shrinkage. On this
+data, averaging is not a failure to be fixed---it is what makes the predictor work.
+
+We report this at length because it is the clearest instance in the paper of a correct
+premise licensing a wrong design, and because the first version of the experiment was
+confounded by our own implementation in exactly the way \S\ref{sec:protocol} describes.

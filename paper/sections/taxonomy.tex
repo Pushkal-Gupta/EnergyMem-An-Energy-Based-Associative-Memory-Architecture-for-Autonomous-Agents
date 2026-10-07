@@ -1,0 +1,67 @@
+\label{sec:taxonomy}
+
+The results in \S\ref{sec:results} flip sign between modalities. We claim this is not a
+modality effect but a \emph{query-type} effect, and that one sentence predicts the sign in
+advance.
+
+\begin{claimbox}[The completion premise]
+\label{claim:premise}
+Associative descent improves retrieval when, and only when, the cue is a degraded instance
+of a stored pattern. The descent step computes a convex combination of stored patterns and
+moves the state onto their span. Where the cue is a corrupted copy of a memory, that motion
+restores signal the corruption removed. Where it is not, the same motion destroys the cue's
+discriminative content with nothing to recover.
+\end{claimbox}
+
+Claim~\ref{claim:premise} is falsifiable in two directions and we test both.
+
+\emph{Satisfied, and descent wins, more as the premise is satisfied harder.} An occluded
+image \emph{is} a degraded copy of a stored image. Descent's advantage is null at light
+corruption, where little has been removed ($+0.003$, \ci{-0.008}{+0.014}, n.s.\ at 30\%),
+and grows monotonically with severity to $+0.021$ \ci{+0.007}{+0.034} at 70\%. A
+dose-response relationship in the predicted direction, on a pre-committed held-out split.
+
+\emph{Violated, and descent loses, more as descent is applied harder.} A \textsc{LoCoMo}
+question is not a corrupted conversational turn. Interpolating from pure cosine to pure
+descent costs accuracy at every increment, $0.336 \to 0.252$, with the optimum at the
+cosine boundary. A dose-response relationship in the predicted direction again, with the
+reduction check passing $196/196$ at the boundary so that the monotonicity is a property of
+the method rather than an implementation artefact.
+
+\subsection{Three regimes}
+
+Claim~\ref{claim:premise} partitions agent retrieval into regimes that want mutually
+exclusive operating points (Table~\ref{tab:regimes}).
+
+\begin{table}[t]\centering\small
+\caption{The three regimes, the operating point each requires, and the evidence. No single
+fixed configuration serves more than one.}
+\label{tab:regimes}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Regime} & \textbf{The cue is} & \textbf{What wins} & \textbf{Operating point} \\
+\midrule
+Completion & a degraded copy of a stored pattern & multi-step descent & $T>1$, $\beta\in[16,48]$, $H{=}0$ \\
+Composition & $h$ steps upstream of the answer & predictor rollout & $H\geq 1$ \\
+Semantic match & a question about stored evidence & plain cosine & $T{=}1$, $\beta\to\infty$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The practical consequence is sharper than a taxonomy usually is. A deployed agent meets all
+three regimes in one workload, so any system with a \emph{fixed} retrieval configuration must
+lose two of them. This is an argument for query-conditional inference---selecting the
+operating point per query rather than per system---which we state as the natural next
+architecture and explicitly do not evaluate here. We note that it is also the component most
+exposed to the selection error of \S\ref{sec:protocol}: ``choose the budget that maximises
+the score'' is test-set tuning with extra steps unless the selector is fitted and frozen on
+training data.
+
+\subsection{What the taxonomy predicts that we have not yet run}
+
+The cheapest discriminating test is a text occlusion study: hold the \textsc{LoCoMo} corpus
+and encoder fixed and swap the queries from questions to \emph{masked turns}. Only the query
+type changes. Claim~\ref{claim:premise} predicts that descent regains its advantage; if it
+does not, the premise is wrong and the modality explanation is right. We flag this as the
+experiment most likely to falsify our own central claim, and its absence as a limitation
+rather than as future work.

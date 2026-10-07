@@ -1,0 +1,50 @@
+\label{sec:protocol}
+
+This section reports five errors we made, and for each one the magnitude of the false result
+it produced in our own data. We include it because the errors are not exotic---each is a
+default that a reasonable person reaches for---and because their cost here is large enough
+to flip conclusions. The point is not confession. It is that for this class of experiment,
+the protocol is not a hygiene matter around the result; it \emph{is} the result, and we can
+put numbers on that.
+
+\begin{table}[t]\centering\small
+\caption{Five protocol errors and what each was worth. ``Reported'' is the number the error
+produced; ``corrected'' is the number after the fix. Every one would have been publishable.}
+\label{tab:errors}
+\begin{tabular}{@{}p{0.26\textwidth}p{0.16\textwidth}p{0.15\textwidth}p{0.33\textwidth}@{}}
+\toprule
+\textbf{Error} & \textbf{Reported} & \textbf{Corrected} & \textbf{Direction and why} \\
+\midrule
+Hyperparameter not dimensionless & $0.016$ & $0.277$ & \textbf{False negative.} At $d{=}768$, a nominal $\sigma{=}0.35$ perturbation applied without a $1/\sqrt{d}$ factor has norm $9.7$ against a unit cue, giving $\cos(q, q{+}\epsilon){=}0.124$: the cue is destroyed. The method appeared not to work. \\
+Pseudo-replicated bootstrap & $p{=}0.0005$ & $p{=}0.076$ & \textbf{False positive.} $185$ rows were $5$ correlated seeds over the same $37$ questions. Resampling rows treats them as independent; resampling questions is the correct cluster. A $150\times$ difference in $p$. \\
+Test-set hyperparameter selection & $+0.042$ & $+0.004$ ($p{=}0.43$) & \textbf{False positive.} $\beta$ was swept on the questions it was then scored on. Two corrections---more questions, then a storyline-disjoint split---took the effect to zero in stages ($+0.042 \to +0.027 \to +0.004$). \\
+Asymmetric candidate exclusion & $0.000$ exactly & --- & \textbf{False negative, disguised as a finding.} The cue was excluded from the candidate set for the baseline but not for the method under test. An exact zero alongside an unchanged Recall@5 looked like a structural result. \\
+Unmatched step size & $-0.115$ & $-0.062$ & \textbf{Inflated effect.} Comparing predictor variants at $\alpha{=}1$ against an average that implicitly applies $\alpha{\approx}0.34$ confounds the comparison with step size. Roughly half the apparent effect was the confound. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations we think generalise beyond this paper.
+
+\paragraph{The errors are not symmetric in how they feel.} Two of the five produced false
+\emph{negatives}, and those were by far the harder to find, because a null result invites no
+scrutiny. The dimensionless-hyperparameter bug reported a working mechanism as $0.016$ when
+its true value was $0.277$; it was found only because the number was suspiciously round. A
+field that publishes negative results---which we are arguing it should---inherits an
+obligation to audit them as hard as positives.
+
+\paragraph{Self-replication caught more than review would have.} The two-hop result in
+\S\ref{sec:composition} and the mode-averaging result in \S\ref{sec:modes} were both
+contradicted by reimplementation, not by inspection. In both cases the original code had been
+read, reviewed and believed. We now treat ``has this been written twice, independently'' as a
+distinct and stronger property than ``has this been reviewed'', and we report which of our
+claims have it: one does.
+
+\paragraph{The reduction is what made the audit possible.} Because the baseline is a
+configuration of the same code (Proposition~\ref{prop:reduction}), four of the five errors
+above were detectable as a \emph{violation of a known equivalence}---the method failing to
+reproduce cosine where it provably must. An architecture in which every component has a null
+setting that reduces to the component below it converts a class of silent bugs into failing
+assertions. We regard this as the main transferable engineering claim of the paper, separate
+from any empirical finding: build the baseline as a corner of the method, and assert the
+reduction in continuous integration.
