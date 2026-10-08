@@ -12,7 +12,7 @@ blocker.
 | Claim | Ledger | Script | Raw output | Test | Paper |
 |---|---|---|---|---|---|
 | **C1** Dense top-k is the `(T=1, β→∞, b=0, R=I)` corner | X1 | `tests/test_reduction.py` | `results/reduction_check.json` | exact top-1 equality: **1000/1000** synthetic *d*=64, **838/838** real mpnet *d*=768 | Prop. 1, §3.2, App. A |
-| **C2** β leverage band ≈[16,48]; β=512 → 0.4995 vs cosine 0.4996 | X3, X11 | `scripts/sweep_beta_transition.py` | ⚠️ stdout only | descriptive sweep; no interval claimed | Cor. 1, §3.4 |
+| **C2** β band; **99.4% top-1 decision agreement with cosine at β=512** | X3, X11 | `scripts/sweep_beta_transition.py` | `results/beta_band.json` | decision-agreement sweep (accuracy cannot see the upper edge) | Cor. 1, §3.4, Fig. 1 |
 | **C2** Effective blend size 377 patterns at β=16 | X11 | `experiments/run_real.py` | ⚠️ stdout only | descriptive | §3.4 |
 | **C3** Image completion +0.014 pooled [+0.006,+0.021] | — (pre-ledger) | `scripts/confirm_holdout.py` | `results/image_holdout.json` | paired bootstrap, **resampling images**; β on disjoint tune half | Tab. 1 *(generated)*, §5.1 |
 | **C3** Dose-response: +0.003 n.s. → +0.021 sig across occlusion | — (pre-ledger) | `scripts/confirm_holdout.py` | `results/image_holdout.json` | per-level paired bootstrap | Tab. 1 *(generated)*, §5.1 |
@@ -26,11 +26,11 @@ blocker.
 | **C4** Multi-scale β +0.0003 [−0.0014,+0.0021] | — (pre-ledger) | `scripts/exp_multibeta_scales.py` | `results/multibeta.json` | paired bootstrap resampling images | Tab. 5 *(generated)*, §5.4 |
 | **C4** Per-memory/learned β inert; shuffle control identical | — (pre-ledger) | `scripts/train_cluster_beta.py`, `verify_trained_beta.py` | ⚠️ stdout only | shuffle control | Tab. 4 |
 | **C4** Coupling predictor into energy never exceeds external | X18 | `experiments/run_E5.py` | `experiments/results/real/` | η sweep, same probes | Tab. 4 |
-| **C5** One-hop association, own corpus 50/50: +0.049 [+0.000,+0.100] p=0.032 | X17b | ⚠️ script lost | ⚠️ none | cluster bootstrap over threads | Tab. 3 row (i) |
+| **C5** One-hop, own corpus 50/50: **+0.024 [−0.032,+0.083] p=0.24 (n.s.)** | **X17b-r** | `experiments/x17b_single_split.py` | `results/x17b_single_split.json` | cluster bootstrap over storylines; (k_P,τ) on dev only | Tab. 3 row (i) *(generated)* — **supersedes** the unreproducible +0.049 |
 | **C5** One-hop, own corpus 4-fold: +0.035 [+0.012,+0.061] p=0.002 | X25 | `experiments/x23_mode_diagnostics.py` | `results/x23_mode_diagnostics.json` | cluster bootstrap over threads; per-fold val selection | Tab. 3 row (ii) |
 | **C5** One-hop, **LoCoMo** 4-fold: +0.043 [+0.036,+0.050] p<1e-4 | **X26** | `experiments/locomo_assoc.py` | `results/x26_locomo_assoc.json` | cluster bootstrap over 272 sessions; per-fold val selection; namespaced ids | Tab. 3 row (iii), Fig. 1 |
 | **C5** Two-hop **withdrawn**: LoCoMo −0.002 [−0.008,+0.004] p=0.77 | **X26b** | `experiments/locomo_assoc.py` | `results/x26_locomo_assoc.json` | as above, n=5,013 | Tab. 6, §5.3 |
-| **C5** Parametric JEPA memorises: 0.784 fitted / 0.008 unseen | X17 | `src/energymem/world/jepa.py` + driver | ⚠️ driver lost | rank sweep 2→32, thread-disjoint | §5.3 |
+| **C5** Parametric JEPA memorises: **1.000 fitted / 0.000 unseen** (rank 32); best unseen 0.016 vs cosine 0.131 | **X17-r** | `experiments/x17_parametric.py` | `results/x17_parametric.json` | rank sweep 2→32, storyline-disjoint | §5.3 |
 | **C5** X16 gate: cosine R@1 0.105, gold median rank 24/1319 | X16 | `experiments/x23_mode_diagnostics.py` (reproduced) | `results/x23_mode_diagnostics.json` | descriptive | §5.3, App. C |
 | **C6** σ not dimensionless: 0.016 → 0.277 | X10 | `experiments/run_real.py` | `experiments/results/real/` | before/after on identical probes | Tab. 7 |
 | **C6** Pseudo-replication: p=0.0005 → 0.076 | X14 | `experiments/paired_test.py` | `results/real/paired_vs_dense.json` | naive vs cluster bootstrap, same data | Tab. 7 |
@@ -43,7 +43,7 @@ blocker.
 
 ## Open blockers visible in this table
 
-⚠️ marks every row whose number is **typed, not generated**. Six remain, down from nine.
+⚠️ marks every row whose number is **typed, not generated**. Two remain, down from nine.
 
 **Closed on 2026-10-07:**
 
@@ -68,11 +68,20 @@ blocker.
   compiles with zero errors. A clean build is not evidence a generated table is correct, so
   the generator now rejects malformed rows before they reach the paper.
 
+- ✅ **Both lost drivers rewritten** (`x17_parametric.py`, `x17b_single_split.py`). The
+  modules had survived; only the drivers were missing. **No row in the paper now depends on
+  code nobody can run.** X17 reproduced more starkly than recorded (1.000 / 0.000 vs the
+  original 0.784 / 0.008). X17b **did not reproduce** — same split, cosine baseline exact,
+  but n=123 not 37 and the effect is n.s. The re-run replaces it and the supersession is
+  stated in §5.3. Logged as ledger Phase 6 and as the sixth entry in the error taxonomy.
+- ✅ **C2 measured properly.** Decision agreement, not accuracy: at β=512 descent returns
+  cosine's own memory on 99.4% of queries. Figure 1.
+
 **Still open:**
 
-1. **Two scripts are lost** — the X17b driver and the X17 JEPA driver. X17b is Table 3
-   row (i); it is corroborated by rows (ii) and (iii) and could be dropped with no loss to
-   the claim. X17 (parametric failure) has no surviving driver and should be re-run before
-   it is cited as a result.
-2. **Table 4 (negatives) stays hand-assembled**, deliberately: it is a prose synthesis of
+1. **Table 5 (negatives) stays hand-assembled**, deliberately: it is a prose synthesis of
    the ledger, not a numeric table. Its individual numbers trace to rows above.
+2. **Three pre-ledger studies carry no X identifier** — image completion, the anchored
+   LoCoMo sweep, multi-scale β. All three now emit JSON and are cited by script name.
+   Deliberately *not* back-numbered: inserting entries into an append-only record
+   retrospectively is the manipulation the record exists to prevent.

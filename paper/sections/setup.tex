@@ -17,13 +17,19 @@ result in this paper can be attributed to representation quality.
 \item \textbf{\textsc{LoCoMo} (semantic-match regime).} $1{,}977$ real questions over
   $5{,}882$ conversational turns \citep{maharana2024locomo}. Metric: Coverage@5 over gold
   evidence turns.
+\item \textbf{\textsc{LoCoMo} (composition regime).} The same $5{,}882$ turns, re-used as
+  temporal-association probes: cue a turn, retrieve the turn that followed it in the same
+  session. $5{,}233$ probes at one hop and $5{,}013$ at two, over $272$ sessions. The
+  candidate set is the full pooled bank of all ten conversations, with dialogue identifiers
+  namespaced by conversation (Appendix~\ref{app:locomo}). This is the external-validity
+  evidence for \S\ref{sec:composition}, and it is a corpus we did not build.
 \item \textbf{Episodic corpus (composition regime).} A purpose-built store of $1{,}319$
   episodes across $122$ storylines with $146$ multi-target questions, plus $900$
   compositional filler episodes and planted near-miss distractors. Association probes are
   generated from it as consecutive (or $h$-distant) within-storyline pairs: $257$ probes at
-  one hop and $135$ at two. We state plainly that this corpus is ours, that it is the main
-  external-validity limitation of \S\ref{sec:composition}, and that it is not a substitute
-  for a public benchmark.
+  one hop and $135$ at two. This corpus is ours, it is generated rather than collected, and
+  on its own it would not support a claim; every composition result measured on it is
+  reported beside the \textsc{LoCoMo} measurement of the same quantity.
 \end{itemize}
 
 \paragraph{Baselines.} Dense top-$k$ (Proposition~\ref{prop:reduction}), BM25
@@ -32,9 +38,9 @@ composition regime---a parametric JEPA predictor. All lexical and hybrid baselin
 the same tuning budget as our methods, stated per experiment in Appendix~\ref{app:grids}.
 
 \paragraph{Splits and selection.} Hyperparameters are never selected on the data a number is
-reported on. In the composition regime the split unit is the \emph{storyline}, not the
-question: a model fitted on transitions from one storyline is never evaluated on that
-storyline. Because the corpus holds only $122$ storylines, a single $50/25/25$ split leaves
+reported on. In the composition regime the split unit is the \emph{storyline} on our corpus
+and the \emph{session} on \textsc{LoCoMo}, never the question: a model fitted on transitions
+from one storyline or session is never evaluated on it. Because the corpus holds only $122$ storylines, a single $50/25/25$ split leaves
 $61$ one-hop and $30$ two-hop test probes, intervals on which span most of the plausible
 range before the experiment begins. We therefore use thread-level $4$-fold rotation: every
 storyline is in the test set exactly once and is never in the train or validation fold that

@@ -211,3 +211,35 @@ selected per fold on that fold's val sessions; cluster bootstrap over sessions.
   distractors, and speaker-alternating turns. The effect is *larger* in relative terms on
   the harder task, which is the direction that favours the mechanism.
 >>>>>>> 2bc4a45 (Validate on LoCoMo (X26), write the paper, and make every table generated)
+
+---
+
+## Phase 6 — Closing the unreproducible rows (2026-10-08)
+
+**Why.** Two drivers were lost before they were committed, so two results in the paper had
+no reproducible path: X17 (parametric predictor fails) and X17b (the one-hop positive under
+a single 50/50 split, Table 3 row i). `world/jepa.py` and `world/knn_wm.py` both survived —
+only the drivers were missing — so both were rewritten rather than left as caveats.
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X17-r** | Does the parametric-failure result reproduce? | **Yes, and more starkly.** `experiments/x17_parametric.py`, 134 train transitions, 61 unseen storylines. Fitted Recall@1 reaches **1.000** at rank ≥8; unseen Recall@1 is **0.000** at ranks 8/16/32 and peaks at **0.016** (rank 2) against a cosine baseline of **0.131**. Diagnostic: displacements are near-orthogonal (mean pairwise cosine **+0.004**) and the top-10 principal components carry only **30.8%** of their variance. | **Closed.** The original reported 0.784 fitted / 0.008 unseen; the re-run is 1.000 / 0.000, i.e. the same finding with a cleaner separation. The paper now cites the reproducible numbers. A free-form learned map is the wrong inductive bias here, and that is what forces module P to be nonparametric. |
+| **X17b-r** | Does Table 3 row (i) reproduce? | **No.** `experiments/x17b_single_split.py`, same 50/50 storyline split, `(k_P, τ)` chosen on dev only. Cosine R@1 **0.106** — identical to the original — but the world model reaches **0.130**, not 0.154, giving **+0.024 [−0.032, +0.083], p=0.238** over 123 probes and 61 storylines. The original recorded +0.049 [+0.000, +0.100], p=0.032 at **n=37**. | ⚠️ **The original row (i) is superseded.** Its n=37 does not match the 123 probes this split actually yields, so the two are not the same measurement and the discrepancy cannot be resolved — the original code is gone. The re-run value replaces it in the paper, marked n.s. |
+
+**What this does to the claim.** Nothing, and that is the point worth stating. The one-hop
+positive never rested on row (i): it is significant at n=257 on our corpus (p=0.002) and at
+n=5,233 on LoCoMo (p<10⁻⁴). What the re-run shows is that a 123-probe split **cannot resolve
+an effect of this size**, which is exactly what a real small effect looks like — the point
+estimate stays positive and the interval shrinks as n grows:
+
+| protocol | n | Δ Recall@1 | |
+|---|---|---|---|
+| episodic, 50/50 (re-run) | 123 | +0.024 [−0.032, +0.083] | n.s. |
+| episodic, 4-fold | 257 | +0.035 [+0.012, +0.061] | p=0.002 |
+| LoCoMo, 4-fold | 5,233 | +0.043 [+0.036, +0.050] | p<10⁻⁴ |
+
+**A sixth protocol error, for the record.** The original row (i) was a significant result at
+n=37 that does not survive re-measurement at n=123 on the same split. We do not know what
+the original driver did differently. The lesson is the one Phase 5 already drew and this
+makes concrete: **an uncommitted script is not a result.** Both re-runs exist precisely so
+that no row in the paper depends on code nobody can run.

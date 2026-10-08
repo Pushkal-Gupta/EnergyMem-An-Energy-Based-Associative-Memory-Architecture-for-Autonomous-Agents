@@ -1,0 +1,103 @@
+% =====================================================================
+%  Dense Retrieval Is Degenerate Associative Memory
+% =====================================================================
+%  TARGET: TMLR (primary). Acceptance criteria are "claims supported by
+%  evidence" + "interesting to some audience", with no novelty bar -- which is
+%  exactly the shape of this paper. JMLR is the stretch; see
+%  docs/05_VENUE_STRATEGY.md.
+%
+%  SUBMISSION IS DOUBLE-BLIND. The author block below stays anonymous until
+%  camera-ready; the de-anonymised block is kept commented out directly beneath it.
+%
+%  EVERY NUMBER IN THIS PAPER TRACES TO docs/10_EXPERIMENT_LEDGER.md BY ID.
+%  Before submission, regenerate every table from experiments/results/*.json with
+%  scripts/make_tables.py rather than trusting the values typed here.
+% =====================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{capt-of}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[numbers]{natbib}
+\usepackage[colorlinks=true,allcolors=blue!55!black]{hyperref}
+
+% Float placement: the defaults push every wide table onto a page of its own, leaving
+% half-empty pages through the results and appendix. Let more of a page be float.
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{4}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{claimbox}{Claim}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\ci}[2]{{\small[#1,\,#2]}}
+\newcommand{\xid}[1]{\textsc{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\xib}{\boldsymbol{\xi}}
+\newcommand{\lse}{\operatorname{lse}}
+\newcommand{\sm}{\operatorname{softmax}}
+
+\title{\bfseries Dense Retrieval Is Degenerate Associative Memory:\\
+       A Reduction and a Regime Taxonomy for Agent Long-Term Memory}
+
+\author{Anonymous Authors\\\small Paper under double-blind review}
+% CAMERA-READY: replace the block above with the author list and affiliation.
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\section{Introduction}
+\input{sections/intro}
+
+\section{Related Work}
+\input{sections/related_work}
+
+\section{The Reduction}
+\input{sections/method}
+
+\section{Experimental Protocol}
+\input{sections/setup}
+
+\section{Results}
+\input{sections/results}
+
+\section{The Regime Taxonomy}
+\input{sections/taxonomy}
+
+\section{What the Protocol Was Worth}
+\input{sections/protocol_errors}
+
+\section{Limitations}
+\input{sections/limitations}
+
+\section{Conclusion}
+\input{sections/conclusion}
+
+\small
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\normalsize
+\appendix
+\input{sections/appendix}
+
+\end{document}

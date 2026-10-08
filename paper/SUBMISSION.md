@@ -1,56 +1,47 @@
 # Submission status
 
-**Compiles clean: 27 pages, zero overfull boxes, zero undefined references or citations.**
-Built with `tectonic` (already installed at `/usr/local/bin/tectonic`).
+**TMLR template applied. Compiles clean: 25 pages named / 24 anonymous, 0 overfull boxes,
+0 undefined references, 0 undefined citations, 0 TODOs.**
 
 ```bash
-python3 scripts/make_tables.py && cd paper && tectonic -X compile main.tex
-# or: pdflatex main && bibtex main && pdflatex main && pdflatex main
+bash scripts/rebuild_paper.sh     # regenerates every number, then builds BOTH PDFs
 ```
+
+| file | what it is |
+|---|---|
+| `paper/main-anonymous.pdf` | **submit this.** `\usepackage{tmlr}` — "Under review as submission to TMLR", anonymous, contributions suppressed |
+| `paper/main-preprint.pdf` | named version (= `main.pdf`), `\usepackage[preprint]{tmlr}` — for arXiv, circulation, camera-ready |
+
+⚠️ **TMLR's style file is explicit: "Non-anonymous submissions will be rejected without
+review."** The default build is the *named* one, so submit `main-anonymous.pdf`, or flip the
+line marked `[SUBMIT]` in `main.tex` before building.
 
 ## Venue
 
 | | Venue | Why | Risk |
 |---|---|---|---|
 | **1st** | **TMLR** | Criteria are *claims supported by evidence* + *interesting to some audience*, no novelty bar. A reduction, a taxonomy, eight diagnosed negatives and one externally validated positive is exactly the shape. Rolling submission. | Lower prestige than JMLR. |
-| **2nd** | **JMLR** | Top ML journal, takes long-form methodological work. **Now materially more viable** — the external-validity hole that would have drawn a major revision is closed (X26). | Will likely still ask for a second public corpus (LongMemEval) and a downstream-task result. |
+| **2nd** | **JMLR** | Top ML journal, takes long-form methodological work. The external-validity hole that would have drawn a major revision is now closed (X26). | Will likely ask for a second public corpus and a downstream-task result. |
 | Alt | NeurIPS D&B / position track | If the taxonomy leads over the theorem. | |
 
-## Checklist status
+**Recommendation: TMLR.**
 
-### 🟢 Done this pass
-- **Public-corpus association experiment (was the single biggest blocker).** `experiments/locomo_assoc.py`, LoCoMo, 5,882-turn pooled bank, 272 session clusters, 4-fold rotation, namespaced ids. **One hop: +0.043 Recall@1 [+0.036, +0.050], p<1e-4, +67% relative.** Ledger X26.
-- **Two-hop resolved, negatively.** Null on public data at n=5,013 (X26b). The `0.446` figure is **withdrawn**, not suspended, and now carries a forward pointer in the ledger.
-- **Appendix A: full proof.** Softmax-concentration lemma with the `O((N−1)e^{−βδ})` rate, state convergence, rank-1 agreement, the `k>1` case stated honestly as a *non*-result (it is the mechanism behind the shortlist regression), the tie case tied to low-β centroid collapse, and the scope of the empirical high-β claim separated from the theorem.
-- **Appendix B** hyperparameter grids with per-baseline budget. **Appendix C** corpus construction + the three X16 failure cases in full. **Appendix F** LoCoMo protocol and full results.
-- **Table/figure generation from JSON.** `scripts/make_tables.py` → `paper/generated/*.tex` + `paper/figures/assoc_hops.pdf`. Tables 3 and 6 are now generated; the script **prints which tables it could not generate** on every run.
-- **Claim traceability.** `docs/13_CLAIM_TRACE.md` — 29 claims → ledger ID → script → raw output → test → paper location.
-- **Test suite** 15/15.
-- **Citation audit against publisher-deposited metadata.** `scripts/verify_refs.py` queries Crossref REST and the arXiv API for all 24 entries. **22 verified, 1 genuine error found and corrected, 2 not machine-verifiable and flagged inline.**
-  - 🔴 **`robertson2009bm25` was wrong**: cited as *Found. Trends IR* 3(4):333–389; correct is **4(1–2):1–174** (DOI 10.1561/1500000019). Exactly the class of error the repo's citation policy exists to stop.
-  - **`xu2025amem` upgraded** from arXiv preprint to the NeurIPS proceedings version (pp. 20004–20031).
-  - DOIs or arXiv ids added to 20 entries; pages added where Crossref had them.
-  - ⚠️ **`lecun2022path`** is in neither Crossref nor arXiv, and an arXiv title search returns a **different** document (Dawid & LeCun 2023, arXiv:2306.02572). Flagged inline; confirm the OpenReview URL and version string by hand, and do not merge the two.
-  - ⚠️ **`welling2011sgld`** — ICML 2011 predates PMLR DOI coverage. Page numbers need a manual check.
-  - Three year "mismatches" are correct as written (arXiv posting year vs proceedings year: ramsauer 2020→ICLR 2021, yang 2017→ICLR 2018, wu 2024→ICLR 2025); noted in the bib so nobody 'fixes' them.
+## Ready
 
-### 🟢 Also done (second pass)
-- **Compiled and read the PDF.** Five overfull boxes fixed, a `remark` environment added, three tables moved to `tabularx`.
-- **Two rendering bugs caught by reading the pages, not the log.** A generator emitted `\\` inside table cells, which LaTeX reads as a row break: Table 4 silently split and rows spilled into the margin, **with a zero-error build**. `make_tables.py` now validates its own output and refuses malformed rows.
-- **Tables 1, 2, 3, 5 and 6 are generated from JSON.** `confirm_holdout.py`, `exp_locomo_anchored.py`, `exp_multibeta_scales.py` and `sweep_beta_transition.py` all emit results files now. Both re-runs reproduced their typed values exactly — Table 1 pooled +0.014 [+0.006, +0.021] and per-level +0.003/+0.017/+0.021; Table 2 all eight conditions and the 196/196 reduction check.
-- **C1 leaves an artefact, and doing so exposed a false claim.** The paper said the reduction was verified on "synthetic (*d*=256) and real (*d*=768), 1000/1000 in both". The suite was **synthetic-only at *d*=64**. A real-embedding test now exists (838/838, *d*=768) and all four places in the paper are corrected. The anisotropic case is the one that matters: random high-dimensional vectors are near-orthogonal, so δ is large and concentration is trivial.
-- **Appendices D and E written.** Ledger provenance (including why pre-ledger studies are *not* back-numbered) and reproducibility: exact environment, one-command rebuild, the two environmental frictions (no CA bundle for Python; `torchvision` not in `make setup`), and what cannot be reproduced.
-- **Citation audit applied** — see below.
+- **Every number is reproducible.** Both lost drivers rewritten; no row depends on code nobody can run. `scripts/rebuild_paper.sh` rebuilds the paper end to end.
+- **Every results-backed table generated from JSON.** `make_tables.py` validates its own output and prints any table it could not generate. Only Table 5 (negatives) is hand-assembled, deliberately — it is prose, not numbers.
+- **All 24 new citations verified** against Crossref / arXiv / the official ICML 2011 BibTeX. One genuine error found and corrected (`robertson2009bm25`: 3(4):333–389 → **4(1–2):1–174**). Internal provenance moved to `annote` so it no longer prints.
+- **Statements written** — code/data availability, reproducibility, funding, competing interests, ethics.
+- **Every page read.** Issues found and fixed: a bibliography leaking internal notes, Table 4 silently split by an escaped backslash, a clipped axis label, a stale "two implementations" in the conclusion, a stale C2 bullet, a stale corpus caveat, a Table 5 caption promising a column that did not exist, and a latency figure (8×) that had never been checked against a clock (21×).
+- **Appendices A–G complete**: full proof with the `O((N−1)e^{−βδ})` rate; grids with per-baseline budget; corpus construction; ledger provenance; LoCoMo protocol; statements; reproducibility.
 
-### 🔴 Still blocking
-1. **Two scripts are lost.** The X17b driver (Table 3 row i) and the X17 JEPA driver. Row (i) is corroborated by rows (ii)–(iii) and can simply be dropped. X17 (parametric failure) should be re-run before it is cited.
-2. **Resolve the two manual citations** — `lecun2022path` and `welling2011sgld`, both flagged inline in `refs.bib`.
-3. **Read the remaining PDF pages.** I inspected pages 1–2, 9, 11–13. Nobody has read 3–8, 14–27.
-5. ~~**Citation audit.**~~ **Done** — see below. Two entries remain flagged for manual check and must be resolved by hand.
-6. **Appendices D and E.** Ledger verbatim; reproducibility (commit SHA, hardware, versions, wall-clock, one-command rebuild).
+## Before you submit
 
-### 🟡 Decide
-- **Figures 2–4 from the original plan** (β stability curve, accuracy/latency Pareto, consolidation crossover) are unbuilt. The β curve is the most valuable — it is the visual evidence for C2 — and needs `sweep_beta_transition.py` to emit JSON.
-- **Title.** Current: *Dense Retrieval Is Degenerate Associative Memory: A Reduction and a Regime Taxonomy for Agent Long-Term Memory*. "Degenerate" is mathematically exact (Cor. 1) and reads as rhetoric to some. Milder: *Dense Retrieval as a Limit of Associative Memory*. Appendix A.5 now separates the theorem from the empirical claim, which is the substantive protection either way.
-- **Downstream task.** Every number is retrieval quality. A reviewer may ask whether +0.043 Recall@1 changes agent behaviour. Stated as a limitation.
-- **Author block.** `main.tex` is anonymous; de-anonymised block commented beneath.
+1. **Submit `main-anonymous.pdf`**, not `main.pdf`. See the warning above.
+2. **Attach supplementary material:** `docs/10_EXPERIMENT_LEDGER.md` verbatim (Appendix D promises it), and the repository link once it is public.
+3. **Fill in the OpenReview link** in `main.tex` (`\def\openreview`) at camera-ready, and switch `[preprint]` to `[accepted]`.
+4. **Table 3 row (i) is kept, deliberately.** It is now n.s. (+0.024, p=0.24). Dropping an unfavourable row after seeing the final results is worse than showing it, and the three rows together make the paper's own methodological point: the point estimate stays positive while the interval narrows from [−0.032,+0.083] at n=123 to [+0.036,+0.050] at n=5,233. That is what a real small effect looks like.
+
+## Known limitations, stated in the paper
+
+One public benchmark and one task shape; association does not compose and we do not know why; retrieval quality is not downstream task success; capacity crossover at N≈800 unresolved; the shortlist regression (R@5 0.605 vs cosine 0.759) means the positive is narrower than "better retrieval"; G2 and the controller are specified and unbuilt.

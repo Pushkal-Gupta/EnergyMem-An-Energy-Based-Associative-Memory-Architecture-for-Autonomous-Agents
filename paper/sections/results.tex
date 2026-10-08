@@ -76,15 +76,17 @@ from an apartment-hunting thread. Oracle-restricting candidates to the correct s
 still reaches only $0.488$, so the difficulty is not merely retrieval breadth. Temporal
 succession is genuinely not a similarity relation (\xid{X16}).
 
-\paragraph{The parametric predictor fails completely.} A low-rank JEPA predictor trained on
-some storylines and evaluated on others scores $0.784$ Recall@1 on storylines it was fitted
-on and $0.008$ on unseen ones, against the cosine baseline's $0.106$---worse than doing
-nothing. This holds at every capacity from rank 2 to rank 32. The diagnostic explains why:
-displacement vectors between consecutive episodes are near-orthogonal (mean pairwise cosine
-$0.006$) and the top ten principal components carry only $24\%$ of their variance. There is
-no global ``and then'' direction to fit, and ${\sim}107$ transitions in $768$ dimensions
-cannot teach one (\xid{X17}). We report this as a result about inductive bias, not as a
-tuning failure.
+\paragraph{The parametric predictor fails completely.} A low-rank JEPA predictor fitted on
+some storylines and evaluated on others reaches Recall@1 of $1.000$ on the storylines it was
+fitted on and $0.000$ on unseen ones, against the cosine baseline's $0.131$---worse
+than doing nothing. No capacity escapes it: across ranks $2$ to $32$ the best unseen
+Recall@1 at any setting is $0.016$, and the two largest capacities score exactly zero.
+The diagnostic explains why: displacement vectors between consecutive episodes are
+near-orthogonal (mean pairwise cosine $+0.004$) and the top ten principal
+components carry only $31\%$ of their variance. There is no global ``and then''
+direction to fit, and $134$ transitions in $768$ dimensions cannot teach one
+(\xid{X17}, re-run as \xid{X17-r}). We report this as a result about inductive bias, not as
+a tuning failure.
 
 \paragraph{The nonparametric predictor works, on our corpus and on a public one.}
 Equation~\eqref{eq:knnwm}, with $(k,\tau)$ selected on held-out storylines or sessions only,

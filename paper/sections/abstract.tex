@@ -24,9 +24,9 @@ completion requires the cue to be a degraded instance of a stored pattern; image
 satisfies that premise and question answering violates it.
 
 We further show that $\beta$---the only dial with leverage---is influential only inside a
-narrow band (${\approx}16$--$48$ for a 768-dimensional sentence encoder), above which
-descent degenerates into cosine to three decimal places ($0.4995$ vs.\ $0.4996$ at
-$\beta{=}512$). A comparison run above that band compares cosine against itself, which we
+narrow, encoder-specific band (${\approx}[32,64]$ on the vision backbone we measure it on), above which
+descent degenerates into cosine --- at $\beta{=}512$ it returns cosine's own
+memory on $99.4\%$ of queries. A comparison run above that band compares cosine against itself, which we
 argue is a live hazard for this literature rather than a detail of ours. Of eight
 mechanisms tested beyond the reduction corner, exactly one survives: a nonparametric
 predictor over the agent's own observed transitions beats cosine on one-hop temporal
@@ -41,11 +41,13 @@ vote-count readout, multi-scale $\beta$, per-memory $\beta$, retrieval-margin ca
 and coupling the predictor into the energy functional all fail, each with a diagnosed
 mechanism rather than a bare null.
 
-Finally, we report the measured magnitude of five protocol errors we committed and
+Finally, we report the measured magnitude of six protocol errors we committed and
 corrected. Each would have yielded a publishable but false result: a non-dimensionless
 hyperparameter ($0.016$ vs.\ $0.277$ after normalisation), a pseudo-replicated bootstrap
 ($p{=}0.0005$ vs.\ $p{=}0.076$), test-set hyperparameter selection ($+0.042$ vs.\
-$+0.004$), asymmetric candidate exclusion (an exact $0.000$ that read as a finding), and an
-unmatched step size ($-0.115$ vs.\ $-0.062$). We release all code, the regime taxonomy, and
+$+0.004$), asymmetric candidate exclusion (an exact $0.000$ that read as a finding), an
+unmatched step size ($-0.115$ vs.\ $-0.062$), and a significant result whose script was
+never committed and does not reproduce ($+0.049$, $p{=}0.032$ vs.\ $+0.024$, $p{=}0.24$).
+Two of the six were false \emph{negatives}, which proved materially harder to find. We release all code, the regime taxonomy, and
 an append-only experiment ledger in which every entry above appears with its date, its
 question, and the entries it overturned.

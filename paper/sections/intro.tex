@@ -60,11 +60,13 @@ descent loses monotonically. Both halves are measured, not argued.
     and $838/838$ on real sentence embeddings, both asserted in continuous integration. Every baseline in this paper is
     a configuration of the method under test. (\xid{X1})
   \item[\textbf{C2}] \textbf{The $\beta$ leverage band, and a hazard it implies.} $\beta$ has
-    influence only within a narrow band---${\approx}16$--$48$ for a 768-d sentence
-    encoder---bounded below by collapse of the state to the corpus centroid on the first step
-    and above by degeneration into cosine ($0.4995$ vs.\ $0.4996$ at $\beta{=}512$).
-    The band is a property of the encoder, not a constant: it is ${\approx}16$ on synthetic
-    vectors and ${\geq}64$ on real ones. A comparison outside it is uninterpretable.
+    influence only within a narrow band, bounded below by collapse of the state to the corpus
+    centroid on the first step and above by degeneration into cosine. Accuracy cannot see the
+    upper edge---two retrievers can score identically while disagreeing about what they
+    return---so we measure top-1 \emph{decision} agreement with cosine, which rises to
+    $\mathbf{99.4\%}$ at $\beta{=}512$. A comparison run above the band therefore compares
+    cosine against itself on nearly every query and will correctly report no difference for
+    the wrong reason. The band is a property of the encoder, not a constant.
     (\xid{X3}, \xid{X11}, \S\ref{sec:band})
   \item[\textbf{C3}] \textbf{A regime taxonomy with a falsifiable premise.} Completion,
     composition and semantic match require mutually exclusive operating points, and which
@@ -84,8 +86,9 @@ descent loses monotonically. Both halves are measured, not argued.
     $272$ sessions against a pooled $5{,}882$-turn bank. At \emph{two} hops the same
     experiment returns $-0.002$ \ci{-0.008}{+0.004}: association does not compose, and we
     withdraw a $+0.185$ two-hop figure of our own. (\S\ref{sec:composition}, \xid{X26})
-  \item[\textbf{C6}] \textbf{The measured price of five protocol shortcuts.} For each of
-    five errors we made, the magnitude of the false result it produced in our own data.
+  \item[\textbf{C6}] \textbf{The measured price of six protocol shortcuts.} For each of six
+    errors we made, the magnitude of the false result it produced in our own data. Two were
+    false \emph{negatives}, which proved far harder to find than the false positives.
     (\S\ref{sec:protocol})
 \end{itemize}
 
