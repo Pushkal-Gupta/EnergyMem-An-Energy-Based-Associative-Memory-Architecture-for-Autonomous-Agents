@@ -1,0 +1,239 @@
+{
+  "git_sha": "a1792aa",
+  "utc": "2026-10-09T11:25:18.443956+00:00",
+  "encoder": "all-mpnet-base-v2",
+  "n_clusters": 10,
+  "X50": {
+    "1": {
+      "name": "multi-hop",
+      "n_multi": 276,
+      "mean_m": 3.131672597864769,
+      "gold_eps": 0.5182378895122571,
+      "random_eps": 0.39380466485214505,
+      "bank_background": 0.39788425355123846,
+      "frac_gold_tighter": 0.7608695652173914
+    },
+    "2": {
+      "name": "temporal",
+      "n_multi": 40,
+      "mean_m": 1.16875,
+      "gold_eps": 0.5895955889665865,
+      "random_eps": 0.36956092114866823,
+      "bank_background": 0.3845165490299151,
+      "frac_gold_tighter": 0.875
+    },
+    "3": {
+      "name": "open-domain",
+      "n_multi": 47,
+      "mean_m": 2.2134831460674156,
+      "gold_eps": 0.49835892316674735,
+      "random_eps": 0.4135544663517169,
+      "bank_background": 0.3840353822794723,
+      "frac_gold_tighter": 0.6808510638297872
+    },
+    "4": {
+      "name": "single-hop",
+      "n_multi": 46,
+      "mean_m": 1.0642092746730083,
+      "gold_eps": 0.5351587037418769,
+      "random_eps": 0.3470046254735829,
+      "bank_background": 0.369553910453921,
+      "frac_gold_tighter": 0.7608695652173914
+    },
+    "5": {
+      "name": "adversarial",
+      "n_multi": 14,
+      "mean_m": 1.031390134529148,
+      "gold_eps": 0.5632046907831091,
+      "random_eps": 0.36957335032013466,
+      "bank_background": 0.3789156211569424,
+      "frac_gold_tighter": 0.7857142857142857
+    }
+  },
+  "X51": {
+    "per-conversation": {
+      "1": {
+        "name": "multi-hop",
+        "n_tested": 40,
+        "frac_separable": 1.0
+      },
+      "4": {
+        "name": "single-hop",
+        "n_tested": 40,
+        "frac_separable": 1.0
+      }
+    },
+    "pooled": {
+      "1": {
+        "name": "multi-hop",
+        "n_tested": 40,
+        "frac_separable": 1.0
+      },
+      "4": {
+        "name": "single-hop",
+        "n_tested": 40,
+        "frac_separable": 1.0
+      }
+    },
+    "caveat": "per-conversation n(588) < d(768) so separability is automatic by Cover's theorem and that row is uninformative by construction; the pooled row uses the 2500 hardest distractors against d=768, so it is the only row that can fail",
+    "d": 768,
+    "pooled_distractor_cap": 2500
+  },
+  "X52": {
+    "global_mutual_cos": 0.26972193854749144,
+    "local_mutual_cos": 0.4297910796782503,
+    "n_local_samples": 2582
+  },
+  "X53": {
+    "overall": {
+      "top1_margin": {
+        "rho": 0.02025880029172182,
+        "p": 0.36796104099056137
+      },
+      "score_entropy": {
+        "rho": -0.04834730685829142,
+        "p": 0.03158794420646038
+      },
+      "local_coherence": {
+        "rho": 0.02026657488666772,
+        "p": 0.36777721522813966
+      },
+      "top1_score": {
+        "rho": 0.057579367567586116,
+        "p": 0.010446640739416587
+      }
+    },
+    "cat1": {
+      "top1_margin": {
+        "rho": 0.037129611620851044,
+        "p": 0.5353597775680924
+      },
+      "score_entropy": {
+        "rho": -0.003473539743899897,
+        "p": 0.9537743076438888
+      },
+      "local_coherence": {
+        "rho": 0.06389004881571933,
+        "p": 0.28583223946541914
+      },
+      "top1_score": {
+        "rho": 0.0377097194958432,
+        "p": 0.5289980056297223
+      }
+    },
+    "mean_gain": -0.06102350456235928,
+    "mean_gain_cat1": -0.05151886780468912
+  },
+  "X54": {
+    "K=5": {
+      "1": 0.14837153196622438,
+      "2": 0.11097708082026538,
+      "3": 0.08926417370325694,
+      "unreached": 0.6513872135102533,
+      "n": 829
+    },
+    "K=10": {
+      "1": 0.24246079613992763,
+      "2": 0.18214716525934863,
+      "3": 0.13751507840772015,
+      "unreached": 0.4378769601930036,
+      "n": 829
+    },
+    "K=20": {
+      "1": 0.3558504221954162,
+      "2": 0.25934861278648974,
+      "3": 0.18094089264173704,
+      "unreached": 0.20386007237635706,
+      "n": 829
+    }
+  },
+  "X55": {
+    "bank turns": {
+      "n": 5882,
+      "top10_var": 0.3289153095638488,
+      "participation_ratio": 60.95992233104661,
+      "eff_rank": 134.30568173969897
+    },
+    "cat1 questions": {
+      "n": 281,
+      "top10_var": 0.4171655557114517,
+      "participation_ratio": 38.01780062690524,
+      "eff_rank": 69.13773964598553
+    },
+    "cat2 questions": {
+      "n": 320,
+      "top10_var": 0.41299362881422796,
+      "participation_ratio": 37.944371498700214,
+      "eff_rank": 73.6371767272224
+    },
+    "cat3 questions": {
+      "n": 89,
+      "top10_var": 0.4651399840537871,
+      "participation_ratio": 32.052701201692045,
+      "eff_rank": 47.7398946513019
+    },
+    "cat4 questions": {
+      "n": 841,
+      "top10_var": 0.36614661187967035,
+      "participation_ratio": 47.52004789072491,
+      "eff_rank": 98.3614073480701
+    },
+    "cat5 questions": {
+      "n": 446,
+      "top10_var": 0.34942148493066616,
+      "participation_ratio": 50.887792560423975,
+      "eff_rank": 95.40340439619472
+    }
+  },
+  "X56": {
+    "conv-26": {
+      "skew": 1.5488696820653254,
+      "max_innn": 47,
+      "mean_innn": 10.0,
+      "top20_retrieved_share": 0.3224489795918367,
+      "top20_gold_frac": 0.55,
+      "bank_gold_frac": 0.31742243436754175
+    },
+    "conv-30": {
+      "skew": 1.2998972078394535,
+      "max_innn": 43,
+      "mean_innn": 10.0,
+      "top20_retrieved_share": 0.3333333333333333,
+      "top20_gold_frac": 0.3,
+      "bank_gold_frac": 0.2032520325203252
+    },
+    "conv-41": {
+      "skew": 2.6252828196103923,
+      "max_innn": 88,
+      "mean_innn": 10.0,
+      "top20_retrieved_share": 0.3455958549222798,
+      "top20_gold_frac": 0.5,
+      "bank_gold_frac": 0.19306184012066366
+    },
+    "conv-42": {
+      "skew": 1.6378413793287172,
+      "max_innn": 52,
+      "mean_innn": 10.0,
+      "top20_retrieved_share": 0.2403846153846154,
+      "top20_gold_frac": 0.5,
+      "bank_gold_frac": 0.2861685214626391
+    }
+  },
+  "X57": {
+    "1": {
+      "name": "multi-hop",
+      "n_distractors": 2545,
+      "same_session_as_gold": 0.21335952848722986,
+      "same_speaker_as_gold": 0.8585461689587426,
+      "within_2_turns_of_gold": 0.10648330058939097
+    },
+    "4": {
+      "name": "single-hop",
+      "n_distractors": 7850,
+      "same_session_as_gold": 0.17656050955414013,
+      "same_speaker_as_gold": 0.7754140127388535,
+      "within_2_turns_of_gold": 0.10127388535031848
+    }
+  },
+  "X51_note": "rerun after fixing a distractor cap below d that made the test vacuous"
+}

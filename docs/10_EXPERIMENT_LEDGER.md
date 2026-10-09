@@ -138,7 +138,6 @@ one-hop positive is all that is left to externally validate.
 
 ---
 
-<<<<<<< HEAD
 ## Phase 5 — Is the 2-hop claim real, across more than one draw? (2026-09-15)
 
 **Why this phase exists.** Phase 4 gate build order names a pre-registered X19
@@ -175,8 +174,7 @@ rather than quietly patched, per this file's own append-only rule.
   power check before being written down — "majority of realizations individually
   significant" was intuitive but wrong for this effect size. A pooled or meta-analytic test
   should be the primary pre-registered criterion next time, not a secondary one.
-=======
-## Phase 5 — External validity (2026-10-07)
+## Phase 5b — External validity (2026-10-07)
 
 **Why.** Every composition-regime number in this project (X16–X19, X25) is measured on a
 corpus we wrote. The one-hop positive is the project's only replicated claim, and its
@@ -210,7 +208,6 @@ selected per fold on that fold's val sessions; cluster bootstrap over sessions.
   i.e. the public task is harder — a 5,882-turn pooled bank with nine conversations of
   distractors, and speaker-alternating turns. The effect is *larger* in relative terms on
   the harder task, which is the direction that favours the mechanism.
->>>>>>> 2bc4a45 (Validate on LoCoMo (X26), write the paper, and make every table generated)
 
 ---
 
@@ -243,3 +240,111 @@ n=37 that does not survive re-measurement at n=123 on the same split. We do not 
 the original driver did differently. The lesson is the one Phase 5 already drew and this
 makes concrete: **an uncommitted script is not a result.** Both re-runs exist precisely so
 that no row in the paper depends on code nobody can run.
+
+---
+
+## Phase 7 — The LoCoMo QA task, families A–D of the backlog (2026-10-09)
+
+**Why.** LoCoMo ships 1,986 QA pairs annotated with the dialogue turns that answer them.
+`src/energymem/eval/locomo.py` has parsed them into `LocomoQuery` since Phase 5b and
+**nothing had ever imported it** — all three LoCoMo scripts used only the turn bank. That
+is 1,977 resolvable gold-annotated queries on a third-party benchmark, with a pre-labelled
+difficulty axis (category 1 multi-hop, mean 3.13 gold turns, 95.4% cross-session;
+category 4 single-hop, 1.06), unused. Phase 7 runs the whole of backlog families A–D on it.
+
+**New shared machinery.** `src/energymem/eval/setmetrics.py` (full-set and mean-gold recall;
+blocked permutation; two-level bootstrap) plus 10 fixture tests — every pre-existing metric
+assumed a single gold item, so none of them could see a multi-target failure.
+`experiments/locomo_qa.py` holds the banks, folds, methods and the sweep/selection
+machinery. Protocol: leave-one-conversation-out (10 folds), hyperparameters chosen on the
+nine training conversations only, conversation as the bootstrap cluster, primary metric
+`gold@10`, primary test a paired permutation with signs flipped within conversation.
+**Ten clusters is few and the intervals are correspondingly wide.**
+
+### Family A — the task and the method
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X27** | Is the single-query failure an expressivity limit or a query-formation limit? | **Query formation.** The dilution ceiling `sqrt((1+(m−1)ε)/m)` binds for **0.0%** of questions in every category (cat 1: ceiling 0.835 vs 10th-distractor 0.452), while the **actual** encoder query leaves a gold turn below the 10th distractor for **87.9%** of cat 1 and 37.5% of cat 4. | A certificate, not an impossibility result. There is large headroom and it is not blocked by the single-query form. The bound must never be written up as an impossibility theorem — at the measured ε it is vacuous. |
+| **X28** | Is that headroom reachable by association? | **Yes, with an ORACLE anchor.** Residual Recall@10 (anchor excluded): query **16.6%** → anchor alone **24.2% [19.8%, 29.0%]**, +46% relative; cat 1 16.2% → 23.0%. Finite-β `logsumexp` (22.7–23.5%) does **not** beat the anchor alone (24.2%). | Upper bound only — the anchor is chosen using gold labels. Adding the query back as a mode *hurts*. The reachable headroom exists; nothing here shows it is reachable without labels. |
+| **X29** | What is the real baseline? | **RRF, by a wide margin.** `gold@10`: cosine 0.527, BM25 0.531, MMR 0.527, **RRF 0.651** (Δ vs cosine **+0.124 [+0.098, +0.152], p=0.002**). BM25 vs cosine is null on `gold@10` (+0.004, p=0.87) despite winning `gold@1` (0.242 vs 0.170). **MMR is a no-op: +0.0004, p=0.91.** | **The bar is RRF at 0.651, not cosine at 0.527.** Every claim in this phase is measured against it. MMR being null is the one piece of good news for the mechanism question: diversity reranking is not what is on the table. |
+| **X30** | Does the metric choice change the method ordering? | **Yes, on single-hop.** By `gold@1`: rrf > bm25 > cosine > mmr. By `full@10`: rrf > cosine > mmr > bm25. BM25 moves from 2nd to 4th. | Single-gold `R@1` and full-set recall are not interchangeable. Reporting only `R@1`, as every earlier table in this project does, can invert a ranking. |
+| **X31 / X33** | Does two-stage expansion beat cosine? | **No. It backs off to the null in 10/10 folds, on every category.** With `K0=0` available to every method, per-fold selection chose the cosine null for mixture, mixture-averaged and Rocchio alike — no expansion setting beat plain cosine on the training side. Forced non-trivially (first run), Rocchio was *worse* than cosine on cat 1 (−0.017, p=0.016) and cat 4 (−0.027, p=0.012). | **Mode expansion does not work on this task.** Against RRF the gap is −0.124 [−0.152, −0.098], p=0.002. |
+| **X32** | The pre-registered interaction (`PREREG_X32.md`). | **Prediction 1 NOT met; there is no effect to decompose.** Δ₁ = +0.0000, Δ₄ = +0.0000, interaction +0.0000, because both methods selected the null. | **I4 is not rescued by the multi-target regime.** The pre-registration's own outcome table assigns this reading: "Δ₁ ≈ 0 → I4 stays falsified." It now stays falsified on a third corpus, in the regime most favourable to it, with gold labels and n=281 multi-hop questions. |
+
+> **A false positive this phase produced and then killed.** The first X31 run reported
+> `mixture − mixture_avg = +0.051 [+0.020, +0.082], p=0.008` on cat 4 and +0.055 p=0.024 on
+> cat 2 — an apparent I4 confirmation. It was an artifact of the grid. `K0` ranged to 10
+> while the primary metric was `gold@10`; with `with_query=True` the `K0` feedback modes
+> *are* cosine's top-10 and each scores 1.0 against itself, so they are lifted above
+> everything else and **the top-10 set is pinned to cosine's by construction**. Selection
+> picked `K0=10` for all 10 folds, mixture became a no-op scoring exactly cosine
+> (`Δ = +0.0000`, zero-width interval — the signature), while `mixture_avg`, whose grid also
+> lacked `K0=0`, was forced into a genuinely worse configuration. The "gap" was a no-op
+> beating a handicapped baseline. Fixed by capping `K0 < k` and giving every method a
+> reachable null; `x31_expansion.py` now asserts both before producing a number.
+> **Seventh protocol error: a metric cutoff at or below the expansion depth is blind to the
+> expansion, and a zero-width confidence interval means a bug, not a null.**
+
+### Family B — geometry (`x5x_geometry.py`)
+
+| ID | Result | Consequence |
+|---|---|---|
+| **X50** | Gold evidence sets are **tighter** than random size-matched sets: ε 0.518 vs 0.394 on cat 1 (76.1% of questions), against a bank background of 0.398. | This is *why* X27's bound is vacuous. High ε keeps the single-query ceiling high. The bound would bite on a benchmark whose evidence sets were near-orthogonal; LoCoMo's are not. |
+| **X51** | Gold sets are linearly separable from the bank in **40/40** cases tested, on the pooled 5,882-turn bank against the 2,500 hardest distractors with d=768. | **Expressivity is definitively not the constraint.** Reinforces X27 with a non-vacuous test. ⚠️ A first version used a 400-distractor cap against d=768; with fewer constraints than dimensions feasibility is automatic by Cover's theorem, and the 100% it reported was an artifact of the cap. The cap must exceed d. |
+| **X52** | Displacement coherence: global **+0.270**, local (within the cue's 10-NN) **+0.430**, ratio 1.6×. | Local exceeds global, so a local kernel is the right shape. **Not comparable to X17-r's +0.004** — that measured adjacent-turn displacements, this measures question→gold-evidence displacements. +0.270 is *not* near zero, and a global offset is not refuted by this measurement. |
+| **X53** | Expansion gain is **not predictable** from geometry: Spearman ρ ≤ 0.064 for top-1 margin, score entropy, local coherence and top-1 score, all n.s. on cat 1. Mean gain at the probed setting is **negative** (−0.051 on cat 1). | The geometry-gated-α idea (backlog X53) has no basis. No pre-answer signal identifies the questions expansion would help, because at this setting it helps none of them. |
+| **X54** | Residual gold within the kNN graph: at K=10, hop-1 24.2%, hop-2 18.2%, hop-3 13.8%, **unreached 43.8%**; at K=20, unreached 20.4%. | Roughly 40–60% of missed evidence sits within two association hops. The structure X28 exploits is real; the problem is selecting the anchor without labels. |
+| **X55** | Cat 1 questions are more anisotropic than cat 4: top-10 PC variance 41.7% vs 36.6%; effective rank 69 vs 98. Bank turns 32.9% / 134. | Multi-hop questions occupy a lower-dimensional subspace than single-hop ones. |
+| **X56** | Hubness present (k-occurrence skew 1.3–2.6, max in-10NN up to 88), and **hubs are enriched for gold** (50% of top-20 hubs are gold vs a 19–32% base rate). | Hubness is ruled out as the explanation for the failure — here the hubs are mostly the *right* answers, not distractors. |
+| **X57** | Of top-10 false positives: **85.9%** same speaker as a gold turn, 21.3% same session, 10.6% within 2 turns (cat 1). | A speaker prior is useless (speakers alternate, so it is near-constant). This predicted X62's result before X62 ran. |
+
+### Family C — the energy axis (`x6x_energy.py`)
+
+| ID | Result | Consequence |
+|---|---|---|
+| **X60** | Top-1 **decision agreement** with cosine rises 0.0% (β=1) → 30.4% (β=16) → 94.9% (β=64) → **99.9% (β=512)**. But `gold@10` peaks at **0.397** (β=32) and settles at 0.356 — never reaching cosine's **0.527**. | Proposition 1 is confirmed **at the decision**: the argmax converges to cosine's. It is *not* confirmed for the ranking, because this driver ranks by similarity to the converged state ξ rather than to the query — a readout choice of the driver, not a refutation. Stated so the gap is not mistaken for evidence against Prop 1. |
+| **X61** | `T>1` **never** helps, at any β: Δ(T=10 − T=1) is −0.0004 (β=1) to **−0.203 (β=16)**, p=0.002 at every β≥8. | Corollary 1 confirmed and strengthened — multi-step descent is not merely degenerate at high β, it is actively harmful at the β where the trajectory actually moves. |
+| **X62** | **Every** strength-bias prior hurts, monotonically in scale: recency −0.077/−0.252/−0.408 at scale 0.05/0.15/0.50; centrality, session-size and length likewise (all p=0.002, except length@0.05 null). | Module G2 buys nothing on this task. Predicted by X57. |
+| **X63** | **Every** learned routing hurts: diagonal R −0.029 (p=0.006) to −0.108; full R −0.211 to −0.471, all p=0.002. | `R=I` — the corner — is the best routing available. Module G3 buys nothing. The least-explored knob is now explored and it is empty. |
+| **X64** | Matching pursuit: r=3 null (+0.003, p=0.83), r=5 −0.014, r=10 **−0.169** (p=0.002). | Deflation does not beat top-k. |
+| **X65** | Adaptive β beats **fixed β=16** (+0.067, p=0.004 for β∼1/std). | ⚠️ Reads as a win and is not one: fixed β=16 scores 0.241 against cosine's 0.527. This is "less bad than a bad reference". Recorded to stop it being cited as a positive. |
+| **X66** | Trajectory: ‖ξ₈−ξ₁‖ = 0.031 (β=1), **0.502 (β=16)**, 0.185 (β=64), 0.055 (β=256); top-1 changes after step 1 in 93.3% of cases at β=16 and **0.0%** at β=256. | Corollary 1 measured on the trajectory rather than argued from algebra. The band where descent does something is precisely the band where accuracy is worst (0.241 at β=16). |
+
+### Family D — predictor variants (`x7x_predictor.py`)
+
+World model fit on the nine training conversations' question→gold displacements, applied to
+the held-out tenth. Banks are disjoint, so this is a genuine generalization test.
+
+| ID | Result | Consequence |
+|---|---|---|
+| **X70 / X71** | Best cell is `mixture, K=5, α=0.10`: **+0.0063 [−0.0016, +0.0137], p=0.049**. The matched averaged collapse is **+0.0070, p=0.014** — i.e. **averaging is marginally better than keeping the modes.** At α=1.0 everything collapses (−0.094 to −0.179, p=0.002). | I4 falsified again, in sign, on a third corpus. ⚠️ **24 cells were tested; 3 reach nominal p<0.05 where 1.2 are expected by chance, and the Bonferroni threshold is 0.002. None survive.** Treated as null. Also `averaged` and `predict` are algebraically identical here and their rows are duplicates, not independent evidence. |
+| **X72** | Rollout on cat 1: H=1,K=2 **+0.030 [−0.005, +0.070], p=0.098**; H=2 +0.017/+0.027 n.s.; H=3 negative. | The largest point estimate in family D, and still not significant at n=281. Consistent with X26b: composition does not help. H=1 being best is the one-hop story again. |
+| **X73** | Step norms on this field: mean per-mode ‖Δ‖ **1.074**, ‖Σ wΔ‖ **0.722**, implied α **0.672**. | The implicit shrinkage is 0.672 here, not the 0.34 measured in X23b on the adjacent-turn field. α must be recalibrated per displacement field; it is not a constant of the method. |
+| **X74** | Transition source: QA-derived +0.002 (n.s.); **adjacent-turn −0.023 (p=0.002)**; same-session −0.063 (p=0.002). | The label-free transition sources that worked in X26's next-turn task actively hurt on QA retrieval. The predictor does not transfer across task shape. |
+| **X75** | Repulsive modes: 0.0 null, 0.3 null, **0.6 −0.035/−0.023 (p=0.002/0.006)**. | The principled version of diversity fails, consistent with MMR's null in X29. |
+
+### What Phase 7 establishes
+
+- ✅ **A genuinely new task is now wired up** — 1,977 gold-annotated LoCoMo QA queries, set
+  metrics, cluster-correct inference, 24 experiments, 11 result JSONs.
+- ✅ **The headroom is real and well-characterized**: not an expressivity limit (X27, X51),
+  partly reachable in principle (X28, X54), and the nearest thing to a cause is
+  query formation.
+- ❌ **Nothing in the architecture closes it.** Expansion backs off to the null (X31/X32);
+  every energy knob — `T`, `b`, `R`, β schedule, matching pursuit — is neutral or harmful
+  (X61–X66); every predictor variant is null after multiplicity (X70–X75).
+- ❌ **I4 stays falsified**, now on a third corpus, in the multi-target regime built to
+  favour it, with the matched-mode comparison that isolates the readout.
+- 📉 **The strongest method on this task is RRF**, a standard lexical–dense hybrid that
+  predates this project, at `gold@10` 0.651 vs the architecture's 0.527.
+- 🧹 Two bugs in **this phase's own code** were found and killed before they became claims
+  (the `K0 ≥ k` metric blindness; the sub-dimensional separability cap), and one unresolved
+  **merge conflict committed into this ledger** since Phase 5b was resolved by keeping both
+  phases and renumbering the 2026-10-07 one to Phase 5b.
+
+**Nothing from Phase 7 belongs in the submitted paper.** The paper's claims are unaffected:
+it does not claim anything about LoCoMo QA evidence retrieval. If any of this is written up
+it is a second paper, and its honest headline is that the reduction's corner is hard to
+improve on and a lexical hybrid beats the architecture on a task the architecture was
+designed for.

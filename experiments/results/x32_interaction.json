@@ -1,0 +1,86 @@
+{
+  "id": "X32",
+  "git_sha": "a1792aa",
+  "utc": "2026-10-09T11:32:26.290250+00:00",
+  "prereg": "experiment-backlog/PREREG_X32.md",
+  "primary": "gold@10",
+  "prediction": "delta_1 > 0; delta_4 ~ 0; delta_1 - delta_4 > 0",
+  "per_category": {
+    "1 multi-hop": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0,
+      "n": 281,
+      "mixture": 0.32919854905245427,
+      "averaged": 0.32919854905245427,
+      "mean_m": 3.131672597864769
+    },
+    "4 single-hop": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0,
+      "n": 841,
+      "mixture": 0.6353547364248909,
+      "averaged": 0.6353547364248909,
+      "mean_m": 1.0642092746730083
+    },
+    "2 temporal": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0,
+      "n": 320,
+      "mixture": 0.5674479166666666,
+      "averaged": 0.5674479166666666,
+      "mean_m": 1.16875
+    },
+    "3 open-domain": {
+      "delta": -0.016853932584269662,
+      "lo": -0.060240963855421686,
+      "hi": 0.0,
+      "p": 0.5047747612619369,
+      "n": 89,
+      "mixture": 0.26751487111698613,
+      "averaged": 0.2843688037012558,
+      "mean_m": 2.2134831460674156
+    },
+    "5 adversarial": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0,
+      "n": 446,
+      "mixture": 0.46300448430493274,
+      "averaged": 0.46300448430493274,
+      "mean_m": 1.031390134529148
+    },
+    "all": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "p": 1.0,
+      "n": 1977,
+      "mixture": 0.5269247761658159,
+      "averaged": 0.5269247761658159,
+      "mean_m": 1.419322205361659
+    }
+  },
+  "interaction": {
+    "delta_1": 0.0,
+    "delta_4": 0.0,
+    "dod": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "p": 1.0,
+    "n_1": 281,
+    "n_4": 841,
+    "p_note": "clamped to 1.0; the all-zero bootstrap made 2*min(tails) return 2.0"
+  },
+  "predictions_met": {
+    "d1_positive": false,
+    "d4_null": true,
+    "interaction_positive": false
+  }
+}

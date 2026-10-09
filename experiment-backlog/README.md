@@ -130,19 +130,63 @@ one that never failed.
 
 ---
 
+## 1b. STATUS — families A–D are done (2026-10-09)
+
+Ran in Phase 7 of `docs/10_EXPERIMENT_LEDGER.md`. **Do not redo these**; pick from E–J, or
+from the sweep grids, or extend one of the open threads below.
+
+| ID | verdict | where |
+|---|---|---|
+| X27 headroom certificate | ✅ ran — ceiling binds 0.0%, actual query fails 87.9% (cat 1) | `x27_headroom.json` |
+| X28 reachability | ✅ ran — oracle anchor 24.2% vs query 16.6% residual R@10 | `x28_reachability.json` |
+| X29 baselines | ✅ ran — **RRF wins, 0.651 vs cosine 0.527**; MMR a no-op | `x29_baselines.json` |
+| X30 set metrics | ✅ ran — ordering does change on single-hop | `x29_baselines.json` |
+| X31 expansion | ❌ **null** — backs off to the cosine null in 10/10 folds | `x31_expansion.json` |
+| X32 interaction | ❌ **prediction not met** — no effect to decompose; I4 stays falsified | `x32_interaction.json` |
+| X33 Rocchio | ❌ worse than cosine when forced non-trivial | `x31_expansion.json` |
+| X50–X57 geometry | ✅ ran — all eight | `x5x_geometry.json` |
+| X60–X66 energy | ❌ **every knob neutral or harmful** (T, b, R, β, pursuit) | `x6x_energy.json` |
+| X70–X75 predictors | ❌ **null after multiplicity** (3/24 cells nominal, Bonferroni 0.002) | `x7x_predictor.json` |
+
+**Headline: the corner is hard to beat.** The headroom is real and is *not* an expressivity
+limit, but nothing in the architecture closes it, and a standard lexical–dense hybrid (RRF)
+beats it by +0.124 `gold@10`. New machinery available to reuse:
+`src/energymem/eval/setmetrics.py` and `experiments/locomo_qa.py`.
+
+**Open threads worth more than a fresh ID**
+
+- **X28 without the oracle.** The anchor is picked with gold labels. Everything turns on
+  selecting it label-free; X31 shows top-K0 is not the answer. A calibrated
+  "is my top-1 actually relevant?" gate is the live question.
+- **Why does RRF win?** It is the only method using lexical signal. Mode expansion on top of
+  RRF rather than cosine was never tried, and RRF's margin is bigger than any effect
+  this project has measured.
+- **X54 says 40–60% of missed evidence is within two hops.** The structure exists; the
+  selection policy is what is missing.
+- Two of this phase's own bugs are written up as the seventh protocol error in the ledger.
+  Read it before adding a sweep: a metric cutoff at or below the expansion depth is blind
+  to the expansion, and a zero-width interval means a bug, not a null.
+
+---
+
 ## 2. Priority
 
-Run in this order if you don't care which you take. Rough cost on a laptop CPU; the
+Revised after families A–D came back null (see 1b). Rough cost on a laptop CPU; the
 embedding cache makes everything after the first run much cheaper.
 
 | tier | IDs | why | cost each |
 |---|---|---|---|
-| **P0** | X27, X28, X29, X31, X32 | the load-bearing path: certificate → reachability → baselines → method → interaction | 10–60 min |
-| **P1** | X30, X33–X38, X41, X55, X60, X70–X73 | makes P0 defensible: set metrics, strong baselines, controls, cost | 10–40 min |
-| **P2** | everything in families C, D, E | maps the knobs; where most of the sweep volume lives | 5–30 min |
-| **P3** | families H, I, J | second corpus, other modalities, reader-in-the-loop | hours–days |
+| **P0** | X38, X95, X99 | the controls that gate everything already run. X38 (shuffled gold) **must** come back at chance or family A is void — it was not reached | 5–20 min |
+| **P0** | X102 | HotpotQA / 2WikiMultihop: multi-hop by construction, large *m*, huge *n*. The one place the X32 effect could still exist | hours |
+| **P1** | X34–X37, X39–X41 | the family-A entries not reached: displacement on QA, answer coverage, adversarial specificity, bank scope, metadata, paraphrase modes | 10–40 min |
+| **P1** | X80, X90 | encoder swap and wall-clock — RRF's +0.124 needs to be shown robust and costed | 20–60 min |
+| **P2** | families E, sweep grids | robustness and volume; lower expected value now the knobs are mapped | 5–30 min |
+| **P3** | families H, I, J | other corpora, modalities, reader-in-the-loop | hours–days |
 
-**If you only run one thing: X32.** If you only run two: X29 then X32.
+**If you only run one thing: X38.** Family A's numbers are not safe to cite until the
+shuffled-gold control comes back at chance. **If you only run two: X38 then X102** — the
+interaction X32 was built to find could still be real on a benchmark whose evidence sets
+are genuinely near-orthogonal, which LoCoMo's (ε=0.52) are not.
 
 ---
 
