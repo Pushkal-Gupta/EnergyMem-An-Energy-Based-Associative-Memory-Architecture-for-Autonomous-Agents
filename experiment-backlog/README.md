@@ -288,7 +288,49 @@ every rung of the ladder reduces exactly (X98). **The negative is no longer prov
 
 ---
 
+## 1d. STATUS — families H and I are done (2026-10-10)
+
+Ran in Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`, against `PREREG_HI.md`, which was
+**committed alone before any corpus was opened**. Drivers: `x10x_corpora.py` (shared
+machinery in `corpus_qa.py`), `x101_msc.py`, `x102_checks.py`, `x11x_modalities.py`.
+Family G was already closed (1c). Family J needs an API key and was not run.
+
+| ID | verdict | where |
+|---|---|---|
+| X100 LongMemEval | ❌ expansion null (−0.007); **RRF +0.156**, +0.255 on temporal | `x10x_longmemeval.json` |
+| **X101 MSC** | ✅ **one-hop association replicates**: +0.016 R@1 [+0.014, +0.018], +33% rel., 30k-turn bank | `x101_msc.json` |
+| **X102 HotpotQA / 2Wiki** | ✅ **first non-null expansion**: bridge +0.023; 2Wiki inference +0.171 and beats RRF by +0.094. ❌ cardinality interaction **reversed** (m=4 < m=2) | `x10x_hotpot.json`, `x10x_2wiki.json` |
+| X102-checks (exploratory) | ✅ gain survives a disjoint sample, bge, ½× and 2× banks, and random modes. ❌ the I4 (mixture > averaging) part does **not** survive bge | `x102_checks.json` |
+| X103 QASPER (for QuALITY/NarrativeQA, which have no evidence labels) | ❌ expansion hurts on multi-evidence (−0.027); RRF best | `x10x_qasper.json` |
+| X104 BEIR | ⚠️ SciFact: RRF wins. NFCorpus (m≈41): mixture +0.017, ties RRF | `x10x_scifact.json`, `x10x_nfcorpus.json` |
+| X105 transfer | ❌ LoCoMo selects the null, so transfer gives up every in-corpus gain | in each `x10x_*.json` |
+| **X110 occlusion** | ❌ **C3 is class smoothing**: image energy +0.0135 reproduces, but **k-NN vote beats it by +0.031**; on text energy is null and k-NN +0.10 | `x110_occlusion.json` |
+| X111 image mosaics | ❌ mixture null at every m; **MMR +0.07** (diversity, not association) | `x111_mosaic.json` |
+| X112 cross-modal | ❌ interaction reversed: on i→t (m=5) averaging beats the mixture | `x112_crossmodal.json` |
+
+**Headline.** I4 is not resurrected by multiple targets anywhere: the pre-registered
+interaction was reversed on three corpora and null on a fourth. What *does* predict an
+expansion gain is **hop type**: when the second piece of evidence is reachable from the
+first rather than from the question (encyclopedic bridge/chain questions), two-stage
+expansion is robust and sometimes beats RRF. On conversational memory (LoCoMo,
+LongMemEval), lexical fusion is what works and expansion is null. Separately, the
+paper's image positive (C3) is beaten by a k-NN class vote and does not transfer to
+text, so its "memory" framing needs rewriting.
+
+**Open threads worth more than a fresh ID**
+
+- **Expansion on top of RRF**, on 2Wiki/HotpotQA. Both work there and they may stack.
+- **A hop-type predictor.** Can a label-free signal tell a chain question from a
+  comparison question before retrieval? That would make expansion deployable.
+- **C3 rewrite.** Report k-NN vote next to energy descent wherever the image result
+  appears.
+
+---
+
 ## 2. Priority
+
+> **Superseded 2026-10-10:** X102 and the rest of H and I have run (see 1d). The live items
+> are the open threads listed there, plus family J (needs an API key) and the sweep grids.
 
 Revised after families A–D came back null (see 1b). Rough cost on a laptop CPU; the
 embedding cache makes everything after the first run much cheaper.
@@ -687,7 +729,7 @@ the same suspicion.
 
 ---
 
-## Family H — Second corpus (external validity)
+## Family H — Second corpus (external validity) — **RAN (Phase 9), see 1d**
 
 The single biggest open item in `paper/SUBMISSION.md`. One public corpus is one corpus.
 
@@ -704,7 +746,7 @@ the X32 effect is real it must appear there, and if it doesn't, the effect was L
 
 ---
 
-## Family I — Other modalities
+## Family I — Other modalities — **RAN (Phase 9), see 1d**
 
 `data/imagenette2-160` is present; `scripts/test_imagenet_hopfield.py`,
 `exp_multibeta_scales.py`, `confirm_holdout.py` already run on it. Needs `torchvision`.

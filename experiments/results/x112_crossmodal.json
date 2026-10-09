@@ -1,0 +1,1071 @@
+{
+  "id": "X112",
+  "git_sha": "18e7150",
+  "utc": "2026-10-09T16:13:39.871812+00:00",
+  "prereg": "experiment-backlog/PREREG_HI.md",
+  "encoder": "clip-ViT-B-32 (sentence-transformers), both modalities",
+  "corpus": "Flickr8k test (jxie/flickr8k)",
+  "n_images": 1000,
+  "text_to_image": {
+    "corpus": "x112_t2i",
+    "n_banks": 10,
+    "n_queries": 5000,
+    "mean_bank": 100.0,
+    "cluster_level": "bank",
+    "n_groups": 10,
+    "grids": {
+      "cosine": {},
+      "mmr": {
+        "lam": [
+          "0.3",
+          "0.5",
+          "0.7",
+          "0.9"
+        ],
+        "pool": [
+          "20",
+          "50"
+        ]
+      },
+      "rocchio": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "gamma": [
+          "0.0",
+          "0.25",
+          "0.5",
+          "1.0"
+        ]
+      },
+      "mixture": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "beta": [
+          "4.0",
+          "16.0",
+          "64.0"
+        ],
+        "with_query": [
+          "True",
+          "False"
+        ]
+      },
+      "mixture_avg": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "beta": [
+          "4.0",
+          "16.0",
+          "64.0"
+        ],
+        "with_query": [
+          "True",
+          "False"
+        ]
+      }
+    },
+    "certificate": {
+      "m=1": {
+        "n": 5000,
+        "mean_m": 1.0,
+        "mean_eps": null,
+        "mean_bound": 1.0,
+        "mean_gold_min": 0.3170419646843412,
+        "mean_d10": 0.22649381797237142,
+        "mean_bank": 100.0,
+        "frac_bound_binds": 0.0,
+        "frac_query_fails": 0.006
+      },
+      "all": {
+        "n": 5000,
+        "mean_m": 1.0,
+        "mean_eps": null,
+        "mean_bound": 1.0,
+        "mean_gold_min": 0.3170419646843412,
+        "mean_d10": 0.22649381797237142,
+        "mean_bank": 100.0,
+        "frac_bound_binds": 0.0,
+        "frac_query_fails": 0.006
+      }
+    },
+    "strata": {
+      "all": {
+        "cosine": {
+          "metrics": {
+            "full@1": 0.815,
+            "full@5": 0.9798,
+            "full@10": 0.994,
+            "full@20": 0.9992,
+            "gold@1": 0.815,
+            "gold@5": 0.9798,
+            "gold@10": 0.994,
+            "gold@20": 0.9992,
+            "mrr": 0.8856582477852478,
+            "ndcg@10": 0.9123870584677557
+          },
+          "n": 5000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "default",
+              "train_score": 0.9951111111111111
+            },
+            {
+              "group": 1,
+              "picked": "default",
+              "train_score": 0.994
+            },
+            {
+              "group": 2,
+              "picked": "default",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 3,
+              "picked": "default",
+              "train_score": 0.994
+            },
+            {
+              "group": 4,
+              "picked": "default",
+              "train_score": 0.9942222222222222
+            },
+            {
+              "group": 5,
+              "picked": "default",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 6,
+              "picked": "default",
+              "train_score": 0.9937777777777778
+            },
+            {
+              "group": 7,
+              "picked": "default",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 8,
+              "picked": "default",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 9,
+              "picked": "default",
+              "train_score": 0.9937777777777778
+            }
+          ],
+          "folds_backed_off_to_null": null
+        },
+        "mmr": {
+          "metrics": {
+            "full@1": 0.815,
+            "full@5": 0.9778,
+            "full@10": 0.9936,
+            "full@20": 0.9992,
+            "gold@1": 0.815,
+            "gold@5": 0.9778,
+            "gold@10": 0.9936,
+            "gold@20": 0.9992,
+            "mrr": 0.8846346262923617,
+            "ndcg@10": 0.9114363994530109
+          },
+          "n": 5000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9946666666666667
+            },
+            {
+              "group": 1,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 2,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9933333333333333
+            },
+            {
+              "group": 3,
+              "picked": "lam=0.9,pool=50",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 4,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 5,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9931111111111111
+            },
+            {
+              "group": 6,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 7,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 8,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9933333333333333
+            },
+            {
+              "group": 9,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.9942222222222222
+            }
+          ],
+          "folds_backed_off_to_null": null,
+          "vs_cosine": {
+            "a": 0.9936,
+            "b": 0.994,
+            "delta": -0.0004,
+            "lo": -0.0034,
+            "hi": 0.0022,
+            "p": 0.859375,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 5000,
+            "n_clusters": 10
+          }
+        },
+        "rocchio": {
+          "metrics": {
+            "full@1": 0.815,
+            "full@5": 0.9798,
+            "full@10": 0.994,
+            "full@20": 0.9992,
+            "gold@1": 0.815,
+            "gold@5": 0.9798,
+            "gold@10": 0.994,
+            "gold@20": 0.9992,
+            "mrr": 0.8856582477852478,
+            "ndcg@10": 0.9123870584677557
+          },
+          "n": 5000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9951111111111111
+            },
+            {
+              "group": 1,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.994
+            },
+            {
+              "group": 2,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 3,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.994
+            },
+            {
+              "group": 4,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9942222222222222
+            },
+            {
+              "group": 5,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 6,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9937777777777778
+            },
+            {
+              "group": 7,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 8,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 9,
+              "picked": "K0=0,gamma=0.0",
+              "train_score": 0.9937777777777778
+            }
+          ],
+          "folds_backed_off_to_null": 10,
+          "vs_cosine": {
+            "a": 0.994,
+            "b": 0.994,
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "p": 1.0,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 5000,
+            "n_clusters": 10
+          }
+        },
+        "mixture": {
+          "metrics": {
+            "full@1": 0.815,
+            "full@5": 0.9798,
+            "full@10": 0.994,
+            "full@20": 0.9992,
+            "gold@1": 0.815,
+            "gold@5": 0.9798,
+            "gold@10": 0.994,
+            "gold@20": 0.9992,
+            "mrr": 0.8856582477852478,
+            "ndcg@10": 0.9123870584677557
+          },
+          "n": 5000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9951111111111111
+            },
+            {
+              "group": 1,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.994
+            },
+            {
+              "group": 2,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 3,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.994
+            },
+            {
+              "group": 4,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9942222222222222
+            },
+            {
+              "group": 5,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 6,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9937777777777778
+            },
+            {
+              "group": 7,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 8,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 9,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9937777777777778
+            }
+          ],
+          "folds_backed_off_to_null": 10,
+          "vs_cosine": {
+            "a": 0.994,
+            "b": 0.994,
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "p": 1.0,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 5000,
+            "n_clusters": 10
+          }
+        },
+        "mixture_avg": {
+          "metrics": {
+            "full@1": 0.815,
+            "full@5": 0.9798,
+            "full@10": 0.994,
+            "full@20": 0.9992,
+            "gold@1": 0.815,
+            "gold@5": 0.9798,
+            "gold@10": 0.994,
+            "gold@20": 0.9992,
+            "mrr": 0.8856582477852478,
+            "ndcg@10": 0.9123870584677557
+          },
+          "n": 5000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9951111111111111
+            },
+            {
+              "group": 1,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.994
+            },
+            {
+              "group": 2,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 3,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.994
+            },
+            {
+              "group": 4,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9942222222222222
+            },
+            {
+              "group": 5,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 6,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9937777777777778
+            },
+            {
+              "group": 7,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9944444444444445
+            },
+            {
+              "group": 8,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9935555555555555
+            },
+            {
+              "group": 9,
+              "picked": "K0=0,beta=4.0,with_query=True",
+              "train_score": 0.9937777777777778
+            }
+          ],
+          "folds_backed_off_to_null": 10,
+          "vs_cosine": {
+            "a": 0.994,
+            "b": 0.994,
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "p": 1.0,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 5000,
+            "n_clusters": 10
+          }
+        },
+        "I4_contrast": {
+          "a": 0.994,
+          "b": 0.994,
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "p": 1.0,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 5000,
+          "n_clusters": 10
+        },
+        "mixture_vs_rocchio": {
+          "a": 0.994,
+          "b": 0.994,
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "p": 1.0,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 5000,
+          "n_clusters": 10
+        },
+        "mixture_vs_mmr": {
+          "a": 0.994,
+          "b": 0.9936,
+          "delta": 0.0004,
+          "lo": -0.0022,
+          "hi": 0.0034,
+          "p": 0.859375,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 5000,
+          "n_clusters": 10
+        }
+      }
+    },
+    "interactions": {}
+  },
+  "image_to_text": {
+    "corpus": "x112_i2t",
+    "n_banks": 10,
+    "n_queries": 1000,
+    "mean_bank": 500.0,
+    "cluster_level": "bank",
+    "n_groups": 10,
+    "grids": {
+      "cosine": {},
+      "mmr": {
+        "lam": [
+          "0.3",
+          "0.5",
+          "0.7",
+          "0.9"
+        ],
+        "pool": [
+          "20",
+          "50"
+        ]
+      },
+      "rocchio": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "gamma": [
+          "0.0",
+          "0.25",
+          "0.5",
+          "1.0"
+        ]
+      },
+      "mixture": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "beta": [
+          "4.0",
+          "16.0",
+          "64.0"
+        ],
+        "with_query": [
+          "True",
+          "False"
+        ]
+      },
+      "mixture_avg": {
+        "K0": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
+        "beta": [
+          "4.0",
+          "16.0",
+          "64.0"
+        ],
+        "with_query": [
+          "True",
+          "False"
+        ]
+      }
+    },
+    "certificate": {
+      "m=5": {
+        "n": 1000,
+        "mean_m": 5.0,
+        "mean_eps": 0.7750287513321262,
+        "mean_bound": 0.9050516059812799,
+        "mean_gold_min": 0.289768078303901,
+        "mean_d10": 0.26267172569322994,
+        "mean_bank": 500.0,
+        "frac_bound_binds": 0.0,
+        "frac_query_fails": 0.202
+      },
+      "all": {
+        "n": 1000,
+        "mean_m": 5.0,
+        "mean_eps": 0.7750287513321262,
+        "mean_bound": 0.9050516059812799,
+        "mean_gold_min": 0.289768078303901,
+        "mean_d10": 0.26267172569322994,
+        "mean_bank": 500.0,
+        "frac_bound_binds": 0.0,
+        "frac_query_fails": 0.202
+      }
+    },
+    "strata": {
+      "all": {
+        "cosine": {
+          "metrics": {
+            "full@1": 0.0,
+            "full@5": 0.366,
+            "full@10": 0.699,
+            "full@20": 0.895,
+            "gold@1": 0.18560000000000001,
+            "gold@5": 0.781,
+            "gold@10": 0.916,
+            "gold@20": 0.976,
+            "mrr": 0.9578031135531134,
+            "ndcg@10": 0.8951157392611685
+          },
+          "n": 1000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "default",
+              "train_score": 0.9160000000000001
+            },
+            {
+              "group": 1,
+              "picked": "default",
+              "train_score": 0.9160000000000001
+            },
+            {
+              "group": 2,
+              "picked": "default",
+              "train_score": 0.9157777777777778
+            },
+            {
+              "group": 3,
+              "picked": "default",
+              "train_score": 0.9153333333333333
+            },
+            {
+              "group": 4,
+              "picked": "default",
+              "train_score": 0.9182222222222222
+            },
+            {
+              "group": 5,
+              "picked": "default",
+              "train_score": 0.9166666666666666
+            },
+            {
+              "group": 6,
+              "picked": "default",
+              "train_score": 0.9159999999999999
+            },
+            {
+              "group": 7,
+              "picked": "default",
+              "train_score": 0.9168888888888889
+            },
+            {
+              "group": 8,
+              "picked": "default",
+              "train_score": 0.9131111111111111
+            },
+            {
+              "group": 9,
+              "picked": "default",
+              "train_score": 0.9159999999999999
+            }
+          ],
+          "folds_backed_off_to_null": null
+        },
+        "mmr": {
+          "metrics": {
+            "full@1": 0.0,
+            "full@5": 0.192,
+            "full@10": 0.583,
+            "full@20": 0.895,
+            "gold@1": 0.18560000000000001,
+            "gold@5": 0.692,
+            "gold@10": 0.879,
+            "gold@20": 0.976,
+            "mrr": 0.9573916666666668,
+            "ndcg@10": 0.8461103868550907
+          },
+          "n": 1000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8804444444444446
+            },
+            {
+              "group": 1,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8791111111111112
+            },
+            {
+              "group": 2,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8806666666666667
+            },
+            {
+              "group": 3,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8784444444444444
+            },
+            {
+              "group": 4,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8797777777777778
+            },
+            {
+              "group": 5,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8791111111111112
+            },
+            {
+              "group": 6,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8775555555555555
+            },
+            {
+              "group": 7,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8797777777777778
+            },
+            {
+              "group": 8,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.8751111111111111
+            },
+            {
+              "group": 9,
+              "picked": "lam=0.9,pool=20",
+              "train_score": 0.88
+            }
+          ],
+          "folds_backed_off_to_null": null,
+          "vs_cosine": {
+            "a": 0.879,
+            "b": 0.916,
+            "delta": -0.037,
+            "lo": -0.045599999999999995,
+            "hi": -0.028399999999999998,
+            "p": 0.001953125,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 1000,
+            "n_clusters": 10
+          }
+        },
+        "rocchio": {
+          "metrics": {
+            "full@1": 0.0,
+            "full@5": 0.461,
+            "full@10": 0.769,
+            "full@20": 0.924,
+            "gold@1": 0.18560000000000001,
+            "gold@5": 0.8164000000000001,
+            "gold@10": 0.935,
+            "gold@20": 0.9812000000000001,
+            "mrr": 0.9566150183150184,
+            "ndcg@10": 0.9118633721291078
+          },
+          "n": 1000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9344444444444444
+            },
+            {
+              "group": 1,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9342222222222222
+            },
+            {
+              "group": 2,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9353333333333332
+            },
+            {
+              "group": 3,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9348888888888889
+            },
+            {
+              "group": 4,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9362222222222221
+            },
+            {
+              "group": 5,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9368888888888888
+            },
+            {
+              "group": 6,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9348888888888889
+            },
+            {
+              "group": 7,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.935111111111111
+            },
+            {
+              "group": 8,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9335555555555556
+            },
+            {
+              "group": 9,
+              "picked": "K0=2,gamma=0.25",
+              "train_score": 0.9344444444444444
+            }
+          ],
+          "folds_backed_off_to_null": 0,
+          "vs_cosine": {
+            "a": 0.935,
+            "b": 0.916,
+            "delta": 0.018999999999999996,
+            "lo": 0.010999999999999998,
+            "hi": 0.027,
+            "p": 0.001953125,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 1000,
+            "n_clusters": 10
+          }
+        },
+        "mixture": {
+          "metrics": {
+            "full@1": 0.0,
+            "full@5": 0.433,
+            "full@10": 0.729,
+            "full@20": 0.872,
+            "gold@1": 0.17940000000000003,
+            "gold@5": 0.7984000000000001,
+            "gold@10": 0.9196000000000001,
+            "gold@20": 0.9656,
+            "mrr": 0.9340285714285714,
+            "ndcg@10": 0.894095633523659
+          },
+          "n": 1000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9182222222222223
+            },
+            {
+              "group": 1,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9177777777777778
+            },
+            {
+              "group": 2,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9197777777777778
+            },
+            {
+              "group": 3,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9206666666666667
+            },
+            {
+              "group": 4,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9211111111111111
+            },
+            {
+              "group": 5,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9222222222222223
+            },
+            {
+              "group": 6,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9177777777777778
+            },
+            {
+              "group": 7,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9197777777777777
+            },
+            {
+              "group": 8,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9193333333333334
+            },
+            {
+              "group": 9,
+              "picked": "K0=5,beta=4.0,with_query=True",
+              "train_score": 0.9193333333333334
+            }
+          ],
+          "folds_backed_off_to_null": 0,
+          "vs_cosine": {
+            "a": 0.9196000000000001,
+            "b": 0.916,
+            "delta": 0.0035999999999999986,
+            "lo": -0.008,
+            "hi": 0.014999999999999996,
+            "p": 0.47265625,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 1000,
+            "n_clusters": 10
+          }
+        },
+        "mixture_avg": {
+          "metrics": {
+            "full@1": 0.0,
+            "full@5": 0.458,
+            "full@10": 0.749,
+            "full@20": 0.895,
+            "gold@1": 0.18660000000000002,
+            "gold@5": 0.815,
+            "gold@10": 0.9278,
+            "gold@20": 0.9736,
+            "mrr": 0.957270646020646,
+            "ndcg@10": 0.910540469713379
+          },
+          "n": 1000,
+          "picks": [
+            {
+              "group": 0,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9291111111111111
+            },
+            {
+              "group": 1,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.928
+            },
+            {
+              "group": 2,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9297777777777778
+            },
+            {
+              "group": 3,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9286666666666668
+            },
+            {
+              "group": 4,
+              "picked": "K0=5,beta=16.0,with_query=True",
+              "train_score": 0.9297777777777777
+            },
+            {
+              "group": 5,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9322222222222222
+            },
+            {
+              "group": 6,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9291111111111111
+            },
+            {
+              "group": 7,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.93
+            },
+            {
+              "group": 8,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9288888888888889
+            },
+            {
+              "group": 9,
+              "picked": "K0=5,beta=64.0,with_query=True",
+              "train_score": 0.9288888888888889
+            }
+          ],
+          "folds_backed_off_to_null": 0,
+          "vs_cosine": {
+            "a": 0.9278,
+            "b": 0.916,
+            "delta": 0.0118,
+            "lo": 0.0017999999999999982,
+            "hi": 0.021199999999999997,
+            "p": 0.013671875,
+            "p_method": "exact",
+            "p_floor": 0.001953125,
+            "n": 1000,
+            "n_clusters": 10
+          }
+        },
+        "I4_contrast": {
+          "a": 0.9196000000000001,
+          "b": 0.9278,
+          "delta": -0.008199999999999999,
+          "lo": -0.0156,
+          "hi": -0.0011999999999999997,
+          "p": 0.0078125,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 1000,
+          "n_clusters": 10
+        },
+        "mixture_vs_rocchio": {
+          "a": 0.9196000000000001,
+          "b": 0.935,
+          "delta": -0.015399999999999999,
+          "lo": -0.023399999999999997,
+          "hi": -0.007200000000000001,
+          "p": 0.00390625,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 1000,
+          "n_clusters": 10
+        },
+        "mixture_vs_mmr": {
+          "a": 0.9196000000000001,
+          "b": 0.879,
+          "delta": 0.0406,
+          "lo": 0.025999999999999995,
+          "hi": 0.054799999999999995,
+          "p": 0.001953125,
+          "p_method": "exact",
+          "p_floor": 0.001953125,
+          "n": 1000,
+          "n_clusters": 10
+        }
+      }
+    },
+    "interactions": {}
+  },
+  "interaction_i2t_minus_t2i": {
+    "dod": -0.008199999999999999,
+    "lo": -0.013,
+    "hi": -0.0038000000000000004,
+    "p": 0.0,
+    "n1": 1000,
+    "n2": 5000
+  }
+}

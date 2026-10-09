@@ -536,3 +536,69 @@ this project should be written as a floor, not as a measurement.
 
 **Families A–G are closed.** The only P0 left is X102 (HotpotQA / 2WikiMultihop) — after
 Phase 8 there is nowhere else on LoCoMo to look.
+
+---
+
+## Phase 9 — Families H and I: other corpora, other modalities (2026-10-09)
+
+**Why.** After Phase 8 there was nowhere left to look on LoCoMo. The one live hypothesis was
+X32's: LoCoMo's evidence is too similar (ε=0.52) for a mixture to help, so the effect
+could exist on corpora built for multi-hop. Family I carried the paper's own open item:
+does the image-occlusion positive (C3) survive on text?
+
+**Protocol.** `experiment-backlog/PREREG_HI.md` was **committed alone (18e7150) before any
+of these corpora was opened** — the fix for PREREG_X32's "written before, committed
+with" caveat. Each corpus goes through the unchanged `locomo_qa.py` methods and grids via
+`experiments/corpus_qa.py`, with leave-one-group-out selection on the training side only
+and per-fold picks in every JSON. Drivers: `x10x_corpora.py`, `x101_msc.py`,
+`x102_checks.py`, `x11x_modalities.py`. One deviation is logged in the prereg: the
+X102 robustness checks were chosen **after** seeing X102, so they are exploratory.
+
+**Environment.** This was a fresh checkout on a different machine (Apple M3). Before
+anything new ran, cosine `gold@10` on LoCoMo reproduced Phase 7's 0.5269 exactly.
+
+### Family H — the second (to sixth) corpus
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X102 HotpotQA** | Does expansion help on purpose-built multi-hop? (2,000 dev q, 100 q pooled per bank, ~1k paragraphs, 20 clusters) | **Yes, the first time in this project.** Bridge (n=1,591): the mixture is selected over the null in **0/10** folds (K0∈{1,3}, β=16). Cosine 0.889 → mixture **0.912**, Δ **+0.023 [+0.010, +0.037]**. It beats Rocchio and averaging (I4 Δ +0.006 bridge, **+0.009 [+0.002, +0.016] all**, p=0.0025). Comparison (n=409) backs off to null 10/10. **RRF is still higher: 0.924, and mixture − RRF = −0.017 [−0.030, −0.005] (all).** | **P-H1 met on HotpotQA, P-H3 met.** It holds only against cosine and the averaging baselines. RRF, the one lexical method, still wins in absolute terms. |
+| **X102 2Wiki** | Same, plus the within-corpus cardinality axis m=2 vs m=4. | **Large gains, organized by hop *type* rather than by m.** Inference: cosine 0.724 → mixture **0.894** (+0.171), beating RRF by **+0.094 [+0.045, +0.140]**. Compositional: +0.067, with **averaging better than the mixture** (I4 −0.022). Comparison: null 10/10. **Bridge_comparison (m=4): null**. All: I4 **+0.027 [+0.017, +0.036]**. **P-H2's interaction comes out reversed: Δ(m=4) − Δ(m=2) = −0.023 [−0.044, −0.004].** | **P-H1 met, P-H2 not met; it is the opposite sign.** The gain sits on *chain* questions, where the second document is reachable from the first rather than from the question, and not on questions with more targets. |
+| **X102-checks** (exploratory) | Does X102 survive a disjoint sample, the bge encoder, banks ½× and 2×, and random modes? | **The expansion-over-cosine gain survives all of them**: HotpotQA bridge +0.020 to +0.026 in every variant; 2Wiki inference +0.10 to +0.19 and compositional +0.07 to +0.17. **Random modes lose by +0.13 to +0.39 (HotpotQA) and +0.16 to +0.36 (2Wiki), 9/9 cells each.** **The I4-specific part does not survive**: HotpotQA's mixture-over-averaging advantage drops to −0.000 under bge and +0.004 n.s. at 200 q/bank. Mixture − RRF flips sign with the encoder (−0.017 mpnet, **+0.021 bge**). | **The robust finding is association-driven expansion on chain-shaped multi-hop questions.** Whether the modes are kept apart (mixture) or averaged is a second-order, encoder-dependent detail. |
+| **X103 QASPER** (substitutes for QuALITY/NarrativeQA, which have no evidence labels; declared in the prereg) | Long scientific documents, bank = one paper (~47 paragraphs). | **Expansion hurts where m>1.** Multi-evidence (m=3.31): mixture **−0.027 [−0.049, −0.010]** vs cosine, I4 −0.041. Single-evidence: +0.036 (p=0.04). RRF best overall: **0.659 vs cosine 0.593**. Interaction **−0.036 [−0.070, −0.001]**. | A third corpus where more targets do not help a mixture. With a 47-paragraph bank the top-K0 modes are mostly redundant neighbours. |
+| **X104 BEIR** | SciFact (300 q), NFCorpus (323 q; m≈41). | SciFact: **RRF wins (0.832 vs cosine 0.790, p=0.025)**; the mixture is n.s. NFCorpus multi-relevant: **mixture +0.017 [+0.008, +0.027], p=0.0003**, which ties RRF (+0.008, n.s.); I4 +0.011 [+0.002, +0.022]. | PRF-style expansion helps on the one corpus with huge relevant sets. It does not beat RRF on either corpus. |
+| **X105 transfer** | Do LoCoMo-selected configs transfer? | **For expansion, trivially, because LoCoMo selected the null.** Transferring K0=0 gives up the entire in-corpus gain (HotpotQA bridge −0.023, 2Wiki inference −0.171, 2Wiki all −0.043). RRF's k=10 transfers within 0.012 everywhere. | **P-H5 not met for expansion.** The LoCoMo null is a property of LoCoMo, not of the method. Any deployment would have to tune on its own corpus. |
+| **X101 MSC** | Does X26's one-hop association replicate on a second public corpus? (30,320 pooled turns, 2,505 sessions, 501 dialogues) | **Yes.** Hop 1, n=27,815: cosine R@1 **0.049**, world model **0.065**, Δ **+0.016 [+0.014, +0.018]**, p<10⁻⁴ (**+33% relative**); R@5 +0.029. Mixture +0.006, again below averaging (as in X26c). Hop 2: +0.005 [+0.003, +0.006], small but positive, where LoCoMo was null. | **P-H4 met. The project's one positive claim now replicates on two public corpora**, here with a bank 5× LoCoMo's. The mixture-loses-to-averaging pattern (I4 falsified) replicates too. |
+| **X100 LongMemEval-S** | Chat-assistant memory, each question with its own ~490-turn haystack (479 q with gold turns, question = cluster). | **Null for expansion, decisive for RRF.** Mixture − cosine **−0.007 [−0.032, +0.018]** (all); multi-session −0.012; knowledge-update −0.049 [−0.083, −0.014]. Interaction (multi-session − single-session) **+0.002 [−0.040, +0.045]**. **RRF − cosine +0.156 [+0.125, +0.189]** overall, **+0.255** on temporal-reasoning, +0.218 on knowledge-update; mixture − RRF −0.163. | **P-H1/P-H3 not met here.** The second conversational-memory corpus shows LoCoMo's pattern again, more strongly: the lexical signal (dates, names, exact phrases) is what memory QA over chat needs, and association adds nothing to it. Expansion helps on encyclopedic chains (X102), not on chat. |
+
+### Family I — other modalities
+
+| ID | Question | Result | Consequence |
+|---|---|---|---|
+| **X110 image arm** | Re-run the C3 image result with a k-NN class-vote control. | **Reproduced exactly, then explained away.** Energy − cosine **+0.0135 [+0.0055, +0.0219]**, identical to `image_holdout.json`. The k-NN vote (k=10 chosen on the tune half) gets **+0.045 [+0.035, +0.055]** vs cosine, and **beats energy descent by +0.031 [+0.023, +0.040]**, at every occlusion level (30/50/70%). | **The C3 positive is class smoothing, and a weak form of it.** Cosine top-1 is 1-NN classification, and the task scores class match. Energy descent recovers about a third of what a plain k-NN vote gets. The paper's "memory" framing for C3 does not survive this control. |
+| **X110 text arm** | Does span occlusion of text behave like image occlusion? (Yahoo Answers, 10 classes, 400-text bank, 4,000 held-out × 3 levels) | **No.** Energy − cosine **+0.003 [−0.000, +0.006]**, n.s., with deletion and with `[MASK]` alike. k-NN gains **+0.104** (deletion) and **+0.111** (`[MASK]`). | **Prediction not met.** In the backlog's words, "the image result may not be about memory at all", and that is now the reading: on text the energy path does nothing, and the smoothing it partially captured on images is available in full from k-NN. |
+| **X111 image mosaics** | X32's interaction with m set by construction: 2×2 mosaics of m∈{1..4} bank images, gold = the sources. | **Null for the mixture at every m.** It backs off to cosine 10/10 in every stratum, so the interaction is exactly 0. **MMR wins: +0.070 / +0.069 / +0.068 at m=2/3/4** (p at the 2/1024 floor). | **Prediction not met. This is PREREG_X32's kill criterion: on constructed multi-target retrieval the useful mechanism is diversity, not association.** |
+| **X112 cross-modal** | CLIP ViT-B/32, Flickr8k test. t→i (m=1) vs i→t (m=5). | t→i: everything backs off to null. i→t: **Rocchio +0.019** and averaging +0.012 beat cosine; the mixture is n.s. (+0.004); **I4 −0.008 [−0.016, −0.001]**. Interaction (i→t − t→i) **−0.008 [−0.013, −0.004]**. | **Prediction not met, reversed.** The five gold captions are near-paraphrases (high ε), the regime where averaging should and does win. |
+
+### What Phase 9 establishes
+
+- ✅ **One-hop association has external validity on two public corpora** (LoCoMo X26, MSC
+  X101). This is still the project's strongest claim.
+- ✅ **Two-stage expansion works on chain-shaped multi-hop text** (HotpotQA bridge, 2Wiki
+  compositional/inference). It survives a disjoint sample, a second encoder and two
+  bank sizes, and random modes lose to it by large margins. This is new, and it is a
+  method result rather than a mechanism result: Rocchio (averaged PRF) gets much of it
+  too.
+- ❌ **I4 is not resurrected.** The pre-registered cardinality interaction came out
+  **reversed** on 2Wiki (m=4 < m=2), QASPER (multi < single) and Flickr8k (m=5 < m=1),
+  and was null on mosaics. Keeping modes apart beats averaging on some strata and loses
+  on others, and the advantage disappears under bge. **What predicts a gain is hop type
+  (is the second piece of evidence reachable from the first?), not m.**
+- ❌ **C3's framing must change.** The image positive reproduces, but a k-NN class vote
+  beats it by 3 points, and on text the energy path is null. The honest reading is
+  "nonparametric class smoothing, partially captured by energy descent", not "memory".
+- 📉 **RRF stays the bar in most places, and on conversational memory it is the only thing
+  that works**: +0.124 on LoCoMo and +0.156 on LongMemEval, where expansion is null. It loses to
+  expansion on 2Wiki and to the mixture under bge. It wins on HotpotQA (mpnet), QASPER,
+  SciFact and LongMemEval.
+
+**Families H and I are closed.** Family J needs an API key and was not run.

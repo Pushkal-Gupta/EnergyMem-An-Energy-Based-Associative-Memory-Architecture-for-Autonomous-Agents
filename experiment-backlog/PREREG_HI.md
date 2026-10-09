@@ -125,3 +125,13 @@ image partitions.
 ## Deviations
 
 Append here with date and reason; the original text stays.
+
+**2026-10-09, after the HotpotQA and 2Wiki runs, before anything below was computed.**
+X102 came back with expansion selected over the cosine null (0/10 null folds on HotpotQA
+bridge and 2Wiki compositional/inference). Four robustness checks were added **after
+seeing that result** and are therefore exploratory, not confirmatory:
+`experiments/x102_checks.py` — (A) a disjoint 2,000-question replication sample,
+(B) the bge-base-en-v1.5 encoder swap, (C) bank size 50 and 200 questions, (D) X95
+random modes on this corpus. Head-to-head rows (mixture − rocchio, − rrf, − mmr) were
+added to `run_corpus` at the same time, and HotpotQA / 2Wiki are re-run once with
+them from cached embeddings. Their primary numbers do not change.

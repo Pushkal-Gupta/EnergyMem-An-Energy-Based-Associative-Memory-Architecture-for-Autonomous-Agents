@@ -36,3 +36,6 @@ experiments/cache/
 
 # scratch notes, not part of the project
 .git-scratch/
+
+# editable-install metadata
+*.egg-info/
