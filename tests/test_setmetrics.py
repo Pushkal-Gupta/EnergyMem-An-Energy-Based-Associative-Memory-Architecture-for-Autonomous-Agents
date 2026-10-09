@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from energymem.eval.setmetrics import (
+    exact_blocked_permutation,
     blocked_permutation, full_set_recall_at_k, hierarchical_bootstrap,
     mean_gold_recall_at_k, ndcg_at_k, reciprocal_rank,
 )
@@ -83,3 +84,41 @@ def test_hierarchical_interval_is_wider_than_naive():
     _, lo, hi = hierarchical_bootstrap(v, blocks, n=2000)
     naive = np.percentile([rng.choice(v, 200).mean() for _ in range(2000)], [2.5, 97.5])
     assert (hi - lo) > (naive[1] - naive[0])
+
+
+# ------------------------------------------------- the exact permutation null
+# Added in X99. With B blocks the blocked null has exactly 2**B points, so the exact
+# p-value is enumerable -- and the floor it implies is the reason these tests exist:
+# a reader who sees "p = 0.002" on ten conversations should know it is the smallest
+# value the design can produce, not a measurement of effect strength.
+
+def test_exact_matches_monte_carlo():
+    rng = np.random.default_rng(0)
+    d = rng.normal(0.1, 1.0, 200)
+    b = np.repeat(np.arange(10), 20)
+    assert abs(exact_blocked_permutation(d, b)
+               - blocked_permutation(d, b, n=50_000, seed=1)) < 0.01
+
+
+def test_exact_hits_the_floor_when_every_block_agrees():
+    """All-positive differences cannot do better than 2 / 2**B, because the all-flipped
+    sign pattern always ties the observed statistic."""
+    b = np.repeat(np.arange(10), 20)
+    assert exact_blocked_permutation(np.full(200, 0.5), b) == pytest.approx(2 / 1024)
+
+
+def test_exact_floor_scales_with_block_count():
+    for B in (4, 6, 8):
+        b = np.repeat(np.arange(B), 5)
+        assert exact_blocked_permutation(np.full(5 * B, 1.0), b) == pytest.approx(2 / 2**B)
+
+
+def test_exact_refuses_too_many_blocks():
+    b = np.arange(40)
+    with pytest.raises(ValueError, match="patterns"):
+        exact_blocked_permutation(np.ones(40), b)
+
+
+def test_exact_is_one_when_there_is_nothing_there():
+    b = np.repeat(np.arange(10), 4)
+    assert exact_blocked_permutation(np.zeros(40), b) == pytest.approx(1.0)

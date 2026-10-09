@@ -1,0 +1,470 @@
+{
+  "x38": {
+    "chance": {
+      "gold@1": 0.0017230702243896557,
+      "gold@5": 0.008615351121948278,
+      "gold@10": 0.017230702243896556,
+      "gold@20": 0.03446140448779311
+    },
+    "shuffled": {
+      "cosine/random": {
+        "mean": 0.017854434564361886,
+        "sd": 0.003152320606392271,
+        "seeds": [
+          0.019663631765300962,
+          0.0206264528982363,
+          0.017910735361418212,
+          0.011795897178454482,
+          0.019275455618399474
+        ]
+      },
+      "cosine/permuted": {
+        "mean": 0.02835012657896096,
+        "sd": 0.002275383996632695,
+        "seeds": [
+          0.025509542576399664,
+          0.027923627987520648,
+          0.028311494889643598,
+          0.02753613580600713,
+          0.03246983163523376
+        ]
+      },
+      "rrf/random": {
+        "mean": 0.01586225703588534,
+        "sd": 0.001962379055648033,
+        "seeds": [
+          0.01667991425199316,
+          0.01930612847472523,
+          0.013775299056027434,
+          0.014830069610039262,
+          0.014719873786641616
+        ]
+      },
+      "rrf/permuted": {
+        "mean": 0.024903944922314063,
+        "sd": 0.0031092572443614298,
+        "seeds": [
+          0.026547083439504175,
+          0.023929956403401016,
+          0.022771394850302284,
+          0.02121578605086312,
+          0.03005550386749971
+        ]
+      },
+      "mixture/random": {
+        "mean": 0.017951337890193556,
+        "sd": 0.002927046732695451,
+        "seeds": [
+          0.01772466700387793,
+          0.019656241583403948,
+          0.0192005684418431,
+          0.012428289474616352,
+          0.020746922947226437
+        ]
+      },
+      "mixture/permuted": {
+        "mean": 0.02567391109111607,
+        "sd": 0.003303975938167525,
+        "seeds": [
+          0.022446353617985273,
+          0.0308405054112266,
+          0.025791442862763043,
+          0.02187597789339804,
+          0.027415275670207385
+        ]
+      }
+    },
+    "real": {
+      "cosine": 0.5269247761658159,
+      "rrf": 0.5915282991749822,
+      "mixture": 0.4282583500954285
+    },
+    "pass_random": true,
+    "pass_permuted": true
+  },
+  "x95": {
+    "rows": [
+      {
+        "K0": 1,
+        "beta": 4.0,
+        "real": 0.4148505894190791,
+        "random": 0.12423286695552425,
+        "delta": 0.2906177224635549,
+        "lo": 0.25878811212859576,
+        "hi": 0.32089539050008237,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.1120741867467368,
+        "rand_vs_cos": -0.40269190921029163
+      },
+      {
+        "K0": 1,
+        "beta": 16.0,
+        "real": 0.3768918415969018,
+        "random": 0.09836671362750686,
+        "delta": 0.27852512796939494,
+        "lo": 0.24614755455877213,
+        "hi": 0.30942389982815,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.1500329345689141,
+        "rand_vs_cos": -0.428558062538309
+      },
+      {
+        "K0": 1,
+        "beta": 64.0,
+        "real": 0.36650854479478856,
+        "random": 0.09679025097365422,
+        "delta": 0.2697182938211344,
+        "lo": 0.2385745479300751,
+        "hi": 0.30000716463368193,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.16041623137102734,
+        "rand_vs_cos": -0.43013452519216167
+      },
+      {
+        "K0": 3,
+        "beta": 4.0,
+        "real": 0.4505527579241387,
+        "random": 0.17994211582900232,
+        "delta": 0.2706106420951364,
+        "lo": 0.22685203844780966,
+        "hi": 0.3141073490071896,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.07637201824167722,
+        "rand_vs_cos": -0.3469826603368136
+      },
+      {
+        "K0": 3,
+        "beta": 16.0,
+        "real": 0.4282583500954285,
+        "random": 0.06403818630603123,
+        "delta": 0.3642201637893973,
+        "lo": 0.3200889947116675,
+        "hi": 0.4045783923990387,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.09866642607038739,
+        "rand_vs_cos": -0.4628865898597847
+      },
+      {
+        "K0": 3,
+        "beta": 64.0,
+        "real": 0.42131563002676,
+        "random": 0.05279781087749191,
+        "delta": 0.3685178191492681,
+        "lo": 0.3253020139535738,
+        "hi": 0.4093784805633625,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.10560914613905592,
+        "rand_vs_cos": -0.474126965288324
+      },
+      {
+        "K0": 5,
+        "beta": 4.0,
+        "real": 0.475774681389014,
+        "random": 0.20256468562216864,
+        "delta": 0.2732099957668454,
+        "lo": 0.23017068682570407,
+        "hi": 0.31944042786400717,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.05115009477680188,
+        "rand_vs_cos": -0.32436009054364723
+      },
+      {
+        "K0": 5,
+        "beta": 16.0,
+        "real": 0.4669378130421225,
+        "random": 0.05187111899544816,
+        "delta": 0.4150666940466744,
+        "lo": 0.37108589275869797,
+        "hi": 0.45715501215688253,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.05998696312369339,
+        "rand_vs_cos": -0.47505365717036774
+      },
+      {
+        "K0": 5,
+        "beta": 64.0,
+        "real": 0.46680692470941326,
+        "random": 0.041940247304333676,
+        "delta": 0.42486667740507955,
+        "lo": 0.38032598643698046,
+        "hi": 0.4687093411648191,
+        "p": 0.0021498925053747312,
+        "cosine": 0.5269247761658159,
+        "real_vs_cos": -0.06011785145640264,
+        "rand_vs_cos": -0.48498452886148224
+      }
+    ],
+    "cosine": 0.5269247761658159,
+    "n_cells_random_ge_real": 0,
+    "cats_n": 1977
+  },
+  "x96": {
+    "static": [
+      {
+        "fn": "s_cosine",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_bm25",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_rrf",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_mmr",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_rocchio",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_mixture",
+        "label_attrs": []
+      },
+      {
+        "fn": "s_mixture_avg",
+        "label_attrs": []
+      }
+    ],
+    "functional": [
+      {
+        "method": "cosine",
+        "gold_invariant": true
+      },
+      {
+        "method": "bm25",
+        "gold_invariant": true
+      },
+      {
+        "method": "rrf",
+        "gold_invariant": true
+      },
+      {
+        "method": "mmr",
+        "gold_invariant": true
+      },
+      {
+        "method": "rocchio",
+        "gold_invariant": true
+      },
+      {
+        "method": "mixture",
+        "gold_invariant": true
+      },
+      {
+        "method": "mixture_avg",
+        "gold_invariant": true
+      }
+    ],
+    "static_ok": true,
+    "functional_ok": true,
+    "selection_ok": true
+  },
+  "x97": {
+    "rows": [
+      {
+        "method": "cosine",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "bm25",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 1,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "rrf",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "mmr",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "rocchio",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "mixture",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      },
+      {
+        "method": "mixture_avg",
+        "finite": [
+          419
+        ],
+        "nans": 0,
+        "ranked": [
+          419
+        ],
+        "ties_at_k10": 0,
+        "n_probe": 40,
+        "symmetric": true
+      }
+    ],
+    "bank": "conv-26",
+    "n": 419,
+    "all_symmetric": true
+  },
+  "x98": {
+    "rows": [
+      {
+        "rung": "mixture(K0=0) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "mixture_avg(K0=0) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "rocchio(K0=0) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "rocchio(gamma=0) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "mixture(K0=0) beta-invariant",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "single-mode mixture(beta=1) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "single-mode mixture(beta=16) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "single-mode mixture(beta=256) == cosine",
+        "identical": 1977,
+        "total": 1977,
+        "exact": true
+      },
+      {
+        "rung": "mmr(lam=1) == cosine on the pool",
+        "identical": 663,
+        "total": 663,
+        "exact": true
+      },
+      {
+        "rung": "descend(T=1,beta=512,b=0,R=I) top-1 == cosine top-1",
+        "identical": 100,
+        "total": 100,
+        "exact": true
+      }
+    ],
+    "all_exact": true,
+    "energy_top10_agree": {
+      "agree": 0,
+      "total": 100
+    }
+  },
+  "x99": {
+    "mismatches": {
+      "full": 0,
+      "gold": 0,
+      "rr": 0,
+      "ndcg": 0
+    },
+    "n_rankings": 1326,
+    "inference": {
+      "rrf-cosine": {
+        "delta": 0.06460352300916623,
+        "p_mc": 0.002179978200217998,
+        "p_exact": 0.001953125
+      },
+      "mixture(null)-cosine": {
+        "delta": 0.0,
+        "p_mc": 1.0,
+        "p_exact": 1.0
+      }
+    },
+    "n_blocks": 10,
+    "p_floor": 0.001953125,
+    "all_metrics_agree": true
+  },
+  "_meta": {
+    "seconds": 131.5,
+    "n_conversations": 10,
+    "n_queries": 1977
+  }
+}

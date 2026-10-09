@@ -132,8 +132,9 @@ one that never failed.
 
 ## 1b. STATUS — families A–D are done (2026-10-09)
 
-Ran in Phase 7 of `docs/10_EXPERIMENT_LEDGER.md`. **Do not redo these**; pick from E–J, or
-from the sweep grids, or extend one of the open threads below.
+Ran in Phase 7 of `docs/10_EXPERIMENT_LEDGER.md`. **Do not redo these.** E, F and G are
+done too — see **1c** — so the live work is **H, I, J**, the sweep grids, or an open
+thread below.
 
 | ID | verdict | where |
 |---|---|---|
@@ -169,6 +170,124 @@ beats it by +0.124 `gold@10`. New machinery available to reuse:
 
 ---
 
+## 1c. STATUS — families E, F, G are done, and some of E and F were killed on paper (2026-10-09)
+
+Ran in Phase 8 of `docs/10_EXPERIMENT_LEDGER.md`:
+`experiments/x9x_controls.py`, `experiments/x8x_robustness.py`, `experiments/x90_cost.py`.
+
+**First, the triage.** Three arms were marked DEAD without being run, because families
+A–D had already made them unanswerable rather than merely unpromising. Each one was
+written as *"interesting if the gain …"*, and X31 found the gain is exactly zero: at the
+fold-selected configuration the expansion **is** cosine, in 10/10 folds, in every
+category. You cannot measure the robustness, growth, or index-survival of zero.
+
+| ID | why it is dead | what survived, and where it went |
+|---|---|---|
+| X84 query perturbation | "the gain is more robust than cosine's" — it *is* cosine, so its robustness is cosine's, identically | does **RRF's** +0.124 survive paraphrase? → **X29**, still open |
+| X85 bank contamination | "the gain grows" — no gain; and padding changes the task, not its size | bank scope → **X37** (open, P1); latency vs size → **X92**, ran |
+| X93 approximate NN | "does the gain survive HNSW/IVF" — nothing to survive; an index is a deployment choice, not a claim | benchmark it if someone ships it |
+| X90's *headline* | "accuracy per millisecond" as the impact number — at zero accuracy delta that ratio only falls | the measurement ran, sign reversed: the overhead that buys nothing |
+
+Three more arms are **not runnable as written**, which is different from dead, and the
+reason is in each case a property of the benchmark rather than of the architecture:
+
+- **X82's "no normalization"** — `SentenceEncoder` sets `normalize_embeddings=True` and is
+  frozen; un-normalized vectors would change every number in the project.
+- **X83's sliding-window and session-summary arms** — LoCoMo annotates evidence at *turn*
+  level. A window containing a gold turn is neither a hit nor a miss, so these need the
+  benchmark re-annotated, not just re-chunked.
+- **X87's leave-one-session-out** — a bank *is* a conversation and 95.4% of cat-1 gold sets
+  span sessions, so dropping a session removes bank items. That is a different task, not a
+  different split. Fold **count** was swept instead (2/4/5/10).
+
+**Second, the results.**
+
+| ID | verdict | where |
+|---|---|---|
+| **X38 shuffled gold** | ✅ **PASS — the P0 is cleared.** Random gold: 0.0179 vs closed-form chance 0.0172. Permuted gold: 0.0284, ~20× below the real 0.527. Family A is citable | `x9x_controls.json` |
+| X95 random modes | ✅ ran — real modes beat random by +0.27 to +0.42 at every forced config, 9/9 cells. **But** real modes never reach cosine (best −0.051) | `x9x_controls.json` |
+| X96 leakage audit | ✅ **PASS** — static (AST) and functional: all 7 methods bit-identical after the gold sets are destroyed; selection scores train folds only | `x9x_controls.json` |
+| X97 exclusion symmetry | ✅ **PASS** — every method scores all N, no masking, no NaN. 1 tie at the k=10 boundary (BM25) in 40 probes | `x9x_controls.json` |
+| X98 reduction ladder | ✅ **10/10 rungs exact** on 1,977 real queries — **and a correction, below** | `x9x_controls.json` |
+| X99 metric cross-check | ✅ **0 mismatches** in 1,326 rankings × 4 metrics — **and a correction, below** | `x9x_controls.json` |
+| X80 encoder swap | ❌ null is **not** encoder-specific: 10/10 null folds under mpnet, bge (the pre-declared primary) and MiniLM | `x8x_robustness.json` |
+| X81 dimension | ❌ null holds at d ∈ {64,128,256,384,768}. **X51's caveat is now closed**: separability 15/15 at every d, including d=64 against n=5,882 | `x8x_robustness.json` |
+| X82 normalization | ⚠️ the **one** regime that selects a non-null config — see the lead below | `x8x_robustness.json` |
+| X83 chunking | ⚠️ same pattern; `text_only` costs cosine 0.527 → 0.379, and cat 1 then selects non-null | `x8x_robustness.json` |
+| X86 seed sensitivity | ✅ retrieval path bit-deterministic; p over 20 seeds ∈ [0.0014, 0.0024] around the exact 0.00195 | `x8x_robustness.json` |
+| X87 fold granularity | ❌ null at **every** fold count (2, 4, 5, 10). No selection at all is −0.0987, p=0.002 **worse** | `x8x_robustness.json` |
+| X90–X92 cost | ✅ ran — mixture 15.7× cosine for an identical ranking; RRF 34.8× for its +0.124 | `x90_cost.json` |
+
+### Two corrections to things Phase 7 believed
+
+**1. `p = 0.002` is a floor, not a measurement.** The blocked permutation flips one sign
+per conversation, so with 10 conversations the null has exactly **2¹⁰ = 1024** points and
+the smallest attainable two-sided p is `2/1024 = 0.00195`. X99 now computes it by
+enumeration (`exact_blocked_permutation`) instead of sampling it. **Every "p = 0.002" in
+Phase 7 is this floor** — it means "as extreme as the blocking permits", not "p = 0.002
+worth of evidence". Report it as `p = 2/1024 (floor)`.
+
+**2. Proposition 1 is a top-1 statement, and the test that guards it is misnamed.**
+`tests/test_reduction_to_cosine_topk` tests `k=1`; its own docstring says so. X98
+measured both: `descend(T=1, β=512, b=0, R=I)` matches cosine's top-1 **100/100**, and
+matches cosine's **top-10 0/100**. At β→∞ the descent returns the nearest stored pattern,
+so ranking by the converged state ranks *that pattern's* neighbourhood, not the query's.
+**This is the mechanism behind family C's finding that T > 1 hurts** — it was a prediction
+of the proposition all along, not a surprise.
+
+### The one lead, stated with its own caveat
+
+Expansion gets selected over the null in exactly two places, and both are regimes where
+the representation was **first damaged**:
+
+| regime | cosine | mixture | Δ (95% CI) | exact p | null folds |
+|---|---|---|---|---|---|
+| whitened, all | 0.5160 | 0.5220 | +0.0060 [−0.0105, +0.0224] | 0.32 | **0/10** |
+| whitened, cat 1 | 0.2730 | 0.2753 | +0.0023 [−0.0297, +0.0367] | 0.86 | **0/10** |
+| text-only chunks, cat 1 | 0.1534 | 0.1627 | +0.0093 [−0.0290, +0.0454] | 0.50 | **0/10** |
+
+**Read it honestly.** Not one of these is significant, every interval covers zero, and in
+each case the damaged-plus-expansion score is *below* the undamaged baseline (0.522 <
+0.527; 0.163 < 0.329). The generalization worth testing is a conjecture, not a result:
+**mode expansion is selected only where cosine has been crippled, and it recovers a
+fraction of the damage rather than adding anything.** If you want to chase it, the
+pre-registration has to come first and the endpoint has to be an *absolute* win over the
+undamaged baseline — not a win over the cripple.
+
+### Cost, since the headline had to be rewritten
+
+Per query, one 419-turn bank, mpnet d=768, laptop CPU (hardware recorded in the JSON):
+
+| method | ms | × cosine | what it buys |
+|---|---|---|---|
+| cosine | 0.012 | 1.0× | the baseline |
+| energy descent T=1 | 0.045 | 3.7× | nothing (top-1 identical to cosine) |
+| rocchio K0=3 | 0.061 | 5.1× | worse than cosine when forced |
+| mixture_avg K0=3 | 0.091 | 7.7× | marginally *better* than the mixture (X70–X75) |
+| **mixture K0=3** | **0.187** | **15.7×** | **nothing — selection picks K0=0** |
+| energy descent T=10 | 0.304 | 25.5× | −0.203 at β=16 (X61) |
+| **RRF (true cost)** | **0.415** | **34.8×** | **+0.124 gold@10 — the only method that buys anything** |
+| MMR pool=50 | 1.897 | 159× | +0.0004, p=0.91 |
+| cross-encoder top-50 | 280 | ~23,500× | cost proxy only, no accuracy claim |
+
+BM25's per-query cost was **0.000 ms** on the first run — `locomo_qa` caches the score
+matrix, so the timer was measuring an array index. That is the 8×-vs-21× scar repeating
+itself in miniature; it is now timed against the index directly (0.361 ms/query, 3.8 ms
+one-off build). **If a cost number looks too good, check what is cached.**
+
+Memory: the expansion path stores **nothing** extra — its modes are bank vectors already
+held. Separately, the project stores float64 embeddings at 6,144 B/memory, which is 2×
+what float32 would need and 8× int8.
+
+### What E, F, G change about the conclusion
+
+Nothing, and that is the point: the Phase 7 negative now has its controls behind it. The
+null survives three encoders, five dimensions, four normalizations, two chunkings and four
+fold counts; the metric is not rewarding structure (X38); no method sees the labels (X96);
+every rung of the ladder reduces exactly (X98). **The negative is no longer provisional.**
+
+---
+
 ## 2. Priority
 
 Revised after families A–D came back null (see 1b). Rough cost on a laptop CPU; the
@@ -176,17 +295,20 @@ embedding cache makes everything after the first run much cheaper.
 
 | tier | IDs | why | cost each |
 |---|---|---|---|
-| **P0** | X38, X95, X99 | the controls that gate everything already run. X38 (shuffled gold) **must** come back at chance or family A is void — it was not reached | 5–20 min |
-| **P0** | X102 | HotpotQA / 2WikiMultihop: multi-hop by construction, large *m*, huge *n*. The one place the X32 effect could still exist | hours |
+| **P0** | X102 | HotpotQA / 2WikiMultihop: multi-hop by construction, large *m*, huge *n*. **The one place the X32 effect could still exist**, and now the only P0 — the controls are done | hours |
+| **P1** | X29-perturbation | the live half of the dead X84: is **RRF's** +0.124 robust to paraphrase, typos, truncation? RRF is the only thing here that works, so it is the only thing worth stress-testing | 20 min |
 | **P1** | X34–X37, X39–X41 | the family-A entries not reached: displacement on QA, answer coverage, adversarial specificity, bank scope, metadata, paraphrase modes | 10–40 min |
-| **P1** | X80, X90 | encoder swap and wall-clock — RRF's +0.124 needs to be shown robust and costed | 20–60 min |
-| **P2** | families E, sweep grids | robustness and volume; lower expected value now the knobs are mapped | 5–30 min |
-| **P3** | families H, I, J | other corpora, modalities, reader-in-the-loop | hours–days |
+| **P1** | "expansion on RRF" | mode expansion was only ever stacked on cosine. RRF's margin is larger than any effect this project has measured and nobody has tried expanding *its* top-k | 30 min |
+| **P2** | the X82/X83 lead | pre-register first (see 1c): the endpoint must be an absolute win over the **undamaged** baseline, not over the cripple | 30 min |
+| **P2** | sweep grids | volume; low expected value now the knobs are mapped | 5–30 min |
+| **P3** | families I, J, rest of H | modalities, reader-in-the-loop, other corpora | hours–days |
 
-**If you only run one thing: X38.** Family A's numbers are not safe to cite until the
-shuffled-gold control comes back at chance. **If you only run two: X38 then X102** — the
-interaction X32 was built to find could still be real on a benchmark whose evidence sets
-are genuinely near-orthogonal, which LoCoMo's (ε=0.52) are not.
+**If you only run one thing: X102.** The interaction X32 was built to find could still be
+real on a benchmark whose evidence sets are genuinely near-orthogonal, which LoCoMo's
+(ε=0.52) are not — and after E/F/G there is nowhere else on LoCoMo left to look.
+
+**Families A–G are closed. Do not reopen one without saying which result you are
+overturning.**
 
 ---
 
@@ -277,7 +399,7 @@ loader comment: dia_ids collide across conversations, 5,882 turns carry 1,033 di
 ids, and pooling without namespacing lets an unrelated turn satisfy a gold id).
 **Interesting if:** the gain grows with bank size. That is the scaling argument.
 
-### X38 — Shuffled-gold control
+### X38 — Shuffled-gold control — **RAN: PASS (Phase 8)**
 **Run:** replace each gold set with a random size-matched set; rerun everything.
 **Interesting if:** anything beats chance. Then a metric is broken. Run this *before*
 believing X31.
@@ -439,36 +561,58 @@ Greedy residual-based selection instead of logsumexp.
 Each of these is the same experiment with one thing changed. They are the cheapest way to
 find out whether a result is real.
 
-### X80 — Encoder swap
+> **TRIAGED 2026-10-09 against families A-D (Phase 8).** Most of this family was written
+> as *"does the gain survive X"*. Families A-D found **no gain**: at the fold-selected
+> configuration every expansion method **is** cosine, in 10/10 folds, in every category.
+> A robustness check on an effect of exactly zero can only confirm that zero is still
+> zero, so the gain-conditional arms are marked **DEAD** below rather than run. The arms
+> that do not presuppose a gain -- X80, X81, X82, X83, X86, X87 -- were run: see
+> `experiments/x8x_robustness.py` and `results/x8x_robustness.json`. Do not re-run a DEAD
+> arm hoping for a different answer; if you think one is live again, say which A-D result
+> you are overturning first.
+
+### X80 — Encoder swap — **RAN (Phase 8): the null is not encoder-specific**
 `all-MiniLM-L6-v2` (d=384), `bge-base-en-v1.5`, `e5-base-v2`, `gte-base`. One swap is the
 minimum; three is convincing. **Pre-register which one counts as primary** or this
 becomes a search for the encoder that agrees with you.
 
-### X81 — Dimension
+### X81 — Dimension — **RAN (Phase 8): null at every d; closes X51's caveat**
 Random projection / PCA of mpnet to d ∈ {64, 128, 256, 384, 768}. Note that the X51
 separability caveat is a function of `d` vs `n`.
 
-### X82 — Normalization
+### X82 — Normalization — **RAN (Phase 8): the one non-null selection — see 1c**
 L2 vs none vs whitening vs all-but-the-top. Whitening often erases exactly the anisotropy
 the mechanism exploits — a good falsification attempt.
 
-### X83 — Chunking
+### X83 — Chunking — **RAN (Phase 8), two arms; two not runnable as written**
 Per-turn (current) vs per-utterance vs sliding windows vs per-session summaries. The
 loader builds `"speaker: text"`; try text alone and speaker-prefixed variants.
 
-### X84 — Query perturbation
+### X84 — Query perturbation — **DEAD (gain-conditional)**
 Paraphrase, typos, truncation, keyword-only. **Interesting if:** the gain is more robust
 than cosine's — that is a practical selling point.
 
-### X85 — Bank contamination
+**Why it is dead.** The selling point was *"more robust than cosine's"*. X31 showed the
+method **is** cosine at its selected configuration, so its robustness is cosine's
+robustness identically, for every perturbation, with no measurement needed. The
+surviving question — does **RRF's** +0.124 survive paraphrase? — is a baseline question
+and belongs to **X29**, not here. If you want it, run it there and say so.
+
+### X85 — Bank contamination — **DEAD as framed (gain-conditional)**
 Add 10×–100× irrelevant filler turns from other conversations.
 **Interesting if:** the gain grows. Pairs with X37.
 
-### X86 — Seed sensitivity
+**Why it is dead.** *"The gain grows"* presupposes a gain. There is none (X31). Padding
+also changes the task rather than its size — a turn from another conversation is a
+distractor the annotation never considered — so a drop here would not be interpretable
+either. The two live pieces are elsewhere: **bank scope** is **X37** (still open, P1),
+and **latency vs bank size** was measured latency-only in **X92**.
+
+### X86 — Seed sensitivity — **RAN (Phase 8): retrieval path is bit-deterministic**
 Everything that touches a seed, ×20 seeds. `SPLIT_SEED = 12345` is fixed for the life of
 the project — changing it is a protocol deviation, so sweep *other* seeds.
 
-### X87 — Fold-count sensitivity
+### X87 — Fold-count sensitivity — **RAN (Phase 8): null at 2, 4, 5 and 10 folds**
 4-fold (current) vs 10-fold leave-one-conversation-out vs leave-one-session-out.
 **Interesting if:** conclusions move. With only 10 conversations they might.
 
@@ -479,20 +623,34 @@ the project — changing it is a protocol deviation, so sweep *other* seeds.
 The paper already has one scar here: a claimed 8× that was matmul-count reasoning never
 checked against a clock, and measured 21× when it finally was.
 
-### X90 — Wall-clock per query
-cosine vs expansion vs MMR vs cross-encoder vs the energy path. Measure it. Report
-hardware. **Headline to aim for:** accuracy per millisecond — if expansion costs ~2×
-cosine and matches a cross-encoder at ~100×, that is the quantifiable-impact number.
+> **TRIAGED 2026-10-09 (Phase 8).** The family survives; its **headline does not**. X90
+> was written to aim at *"accuracy per millisecond"* as the quantifiable-impact number.
+> With a zero accuracy delta (X31) that ratio can only fall as milliseconds are added,
+> so the measurement was made with the sign reversed: **this is the overhead that buys
+> nothing, quantified**, next to the overhead RRF charges for the +0.124 it does buy.
+> X90-X92 ran (`experiments/x90_cost.py`); **X93 is DEAD**.
 
-### X91 — Index size and memory
+### X90 — Wall-clock per query — **ran; the stated headline is dead**
+cosine vs expansion vs MMR vs cross-encoder vs the energy path. Measure it. Report
+hardware. ~~**Headline to aim for:** accuracy per millisecond — if expansion costs ~2×
+cosine and matches a cross-encoder at ~100×, that is the quantifiable-impact number.~~
+**That headline presupposed an accuracy gain and there is none.** The measurement stands
+as a cost audit; the cross-encoder figure is a forward-pass **cost proxy only** (the
+cached model is an NLI head, not a reranker) and carries no accuracy claim.
+
+### X91 — Index size and memory — **RAN (Phase 8)**
 Bytes per memory for each method.
 
-### X92 — Scaling curves
+### X92 — Scaling curves — **RAN (Phase 8), latency only**
 Latency and accuracy vs bank size, 500 → 50,000 turns (pad with filler).
 
-### X93 — Approximate NN
+### X93 — Approximate NN — **DEAD (gain-conditional, and not a claim)**
 Does the gain survive HNSW/IVF instead of exact search? Everything here currently
 assumes exact.
+
+**Why it is dead.** No gain to survive anything (X31), and an index choice is an
+engineering decision about a deployment, not a claim about the architecture. If someone
+ships this, benchmark the index then — it is not evidence either way.
 
 ---
 
@@ -500,23 +658,29 @@ assumes exact.
 
 Run these *before* believing anything in A or D.
 
-### X95 — Random modes
+> **ALL RAN 2026-10-09 (Phase 8)** -- `experiments/x9x_controls.py`,
+> `results/x9x_controls.json`. Nothing in this family was invalidated by A-D; it is the
+> family A-D most needed, because Phase 7 shipped its numbers *before* its controls.
+> **X38 is in here too**, even though it is numbered into family A, because it is the
+> control that gated family A, and family G's own charter is "run these first".
+
+### X95 — Random modes — **RAN (Phase 8): real modes win, but never reach cosine**
 Replace retrieved modes with random bank turns at matched `K`. **Must not** win.
 
-### X96 — Label-leakage audit
+### X96 — Label-leakage audit — **RAN (Phase 8): PASS, static and functional**
 Grep every driver for test-side fitting. X17-r exists because this class of bug is real
 here.
 
-### X97 — Exclusion symmetry
+### X97 — Exclusion symmetry — **RAN (Phase 8): PASS**
 `readout.py:rank` excludes before ranking for a reason: an asymmetric exclusion once
 produced an exact 0.000 that looked like a finding. Assert every method gets the identical
 exclusion set.
 
-### X98 — Reduction-ladder nulls
+### X98 — Reduction-ladder nulls — **RAN (Phase 8): 10/10 exact, plus a correction**
 Every rung R0–R6 must reproduce the rung below at its null setting. `tests/test_reduction.py`
 covers the bottom; extend to the expansion rungs added in X31.
 
-### X99 — Metric implementation cross-check
+### X99 — Metric implementation cross-check — **RAN (Phase 8): 0 mismatches, plus the p-floor**
 Two independent implementations of full-set recall, asserted equal on fixtures. The
 `\\`-in-a-table-cell bug silently split a table with a zero-error build; metrics deserve
 the same suspicion.

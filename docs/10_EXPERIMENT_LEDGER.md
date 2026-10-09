@@ -348,3 +348,191 @@ it does not claim anything about LoCoMo QA evidence retrieval. If any of this is
 it is a second paper, and its honest headline is that the reduction's corner is hard to
 improve on and a lexical hybrid beats the architecture on a task the architecture was
 designed for.
+
+---
+
+## Phase 8 — Families E, F, G: the controls that should have come first (2026-10-09)
+
+Phase 7 published a negative result and then listed its own controls as unrun. Family G's
+charter in the backlog is one sentence — *"run these before believing anything in A or
+D"* — and Phase 7 did the believing first. Phase 8 runs them, triages the two families
+that families A–D had already made unanswerable, and corrects two things Phase 7 believed
+about its own instruments.
+
+Drivers: `experiments/x9x_controls.py`, `experiments/x8x_robustness.py`,
+`experiments/x90_cost.py`. Results: `x9x_controls.json`, `x8x_robustness.json`,
+`x90_cost.json`.
+
+### The triage: four things killed on paper, not by measurement
+
+A result can make an experiment *unanswerable* rather than merely unpromising, and that
+distinction is worth being strict about. X84, X85 and X93 were each written as
+*"interesting if the gain …"*. X31 found the gain is exactly zero — at the fold-selected
+configuration the expansion **is** cosine, in 10/10 folds, in every category — so the
+robustness of the gain, the growth of the gain and the survival of the gain under an ANN
+index are all questions about a quantity that does not exist. X90's stated headline
+("accuracy per millisecond, the quantifiable-impact number") presupposed the same thing.
+
+| killed | reason | the live remainder, relocated |
+|---|---|---|
+| X84 query perturbation | its selling point was "more robust **than cosine's**"; the method *is* cosine | → X29: is **RRF's** +0.124 paraphrase-robust? |
+| X85 bank contamination | "the gain grows"; and padding changes the task, not its size | → X37 (scope), X92 (latency, ran) |
+| X93 approximate NN | nothing to survive; an index is a deployment choice | → benchmark on deployment |
+| X90's headline | accuracy per ms can only fall at zero accuracy delta | → ran with the sign reversed |
+
+Three further arms are **not runnable as written**, which is a different thing and worth
+recording as such: X82's un-normalized arm (the frozen encoder normalizes, and changing
+that invalidates every number in the project), X83's window and summary arms (LoCoMo
+annotates evidence at *turn* level, so a window containing a gold turn is neither hit nor
+miss), and X87's leave-one-session-out (a bank **is** a conversation, and 95.4% of cat-1
+gold sets span sessions, so dropping a session changes the task rather than the split —
+fold *count* was swept instead).
+
+### Family G — every control passes
+
+| ID | result |
+|---|---|
+| **X38 shuffled gold** (the P0) | **PASS.** Gold replaced by a random set of matched size: `gold@10` = 0.0179 against a closed-form chance of 0.0172. Gold sets *permuted between questions of the same conversation* — which keeps the real gold-set geometry and breaks only the question↔evidence link: 0.0284, i.e. ~1.6× chance and ~20× below the real 0.527. **Family A's numbers are citable.** |
+| X95 random modes | Real modes beat size-matched random bank turns in **9/9** forced configurations, by +0.27 to +0.42 (`K0=5, β=64`: 0.467 vs 0.042). So the modes carry real signal. **And real modes still never reach cosine** — best cell −0.051. The modes are informative; the readout cannot spend them. |
+| X96 label-leakage audit | **PASS**, two ways. Static (AST walk): no `s_*` scoring function touches a label-bearing attribute. Functional, which is the one that matters: destroy `gold`, `answers` and `cats`, re-score, and all **7** methods return bit-identical vectors. Selection verified to aggregate train indices only. |
+| X97 exclusion symmetry | **PASS.** Every method scores all *N* items — no masking, no `-inf` survivors, no NaN. The QA task has nothing to exclude (the query is not a bank item), so the real asymmetry risk is ties: 1 tie straddling the k=10 boundary in 40 probes, BM25 only. |
+| X98 reduction ladder | **10/10 rungs exact** on all 1,977 queries. |
+| X99 metric cross-check | **0 mismatches** across 1,326 (query, method) rankings × 4 metrics against independently written loop-based implementations. |
+
+### Correction 1 — `p = 0.002` was a floor all along
+
+The blocked permutation flips **one sign per conversation**. With ten conversations the
+null distribution therefore has exactly **2¹⁰ = 1024** points, and the all-flipped pattern
+always ties the observed statistic, so the smallest attainable two-sided p is
+
+    2 / 1024 = 0.00195
+
+`exact_blocked_permutation` now enumerates it instead of sampling it, and X86 confirms the
+Monte Carlo was already converged (20 seeds, p ∈ [0.0014, 0.0024] around the exact
+0.00195). **Every "p = 0.002" in Phase 7 is this floor.** It says "as extreme as the
+blocking permits", not "p = 0.002 worth of evidence", and from here it is written
+`p = 2/1024 (floor)`. Nothing in Phase 7's conclusions moves — the floor was reached by
+the RRF margin and by the harmful energy knobs, both of which were already large — but the
+*reported precision* was an illusion, and ten clusters cannot produce more.
+
+### Correction 2 — Proposition 1 is a top-1 statement, and its guard test is misnamed
+
+`tests/test_reduction.py::test_reduction_to_cosine_topk` tests `k = 1`. Its own docstring
+says "must reproduce top-1 cosine exactly"; the function name says `topk`. X98 measured
+both ends on real LoCoMo banks:
+
+- `descend(T=1, β=512, b=0, R=I)` top-1 == cosine top-1: **100/100**
+- the same state's top-10 == cosine top-10: **0/100**
+
+This is not a failure, it is the proposition read correctly. At β→∞ the descent **returns
+the nearest stored pattern**, so ranking by similarity to the converged state ranks *that
+pattern's* neighbourhood, not the query's. The reduction is exact at k=1 and silent above
+it — which is precisely **why `T > 1` hurt in family C** (−0.203 at β=16). Family C
+recorded that as an empirical finding; it was a prediction of Proposition 1 that nobody had
+read off the proposition. The test name invites the misreading and is left alone only
+because the paper's Appendix A.5 cites it; it is flagged here instead.
+
+### Family E — the null survives everything that could be varied
+
+| varied | result |
+|---|---|
+| **X80 encoder** | mpnet (incumbent), **bge-base-en-v1.5 (pre-declared primary in `PREREG_X32.md`, before any of this ran)**, MiniLM-L6-v2: **10/10 null folds under all three.** The null is not encoder-specific. bge is the better encoder in absolute terms (cosine 0.564 vs mpnet's 0.527). |
+| **X81 dimension** | PCA to d ∈ {64, 128, 256, 384, 768}: null at every d. Two cells selected one non-null fold out of ten and that fold made things **worse** (−0.008, −0.013). |
+| **X82 normalization** | L2, centered, whitened, all-but-the-top-3. See the lead below. |
+| **X83 chunking** | Dropping the speaker prefix costs cosine 0.527 → 0.379. |
+| **X86 seeds** | The retrieval path has no seed and is bit-deterministic across re-runs. Resampling seeds move p within [0.0014, 0.0024] and CI endpoints by ±0.003. |
+| **X87 folds** | Null at **2, 4, 5 and 10** folds alike. And with **no** selection at all (`K0=3, β=16` fixed) the mixture is **−0.0987 [−0.1251, −0.0730]**, p = floor. Selection is not hiding an effect; the non-null configurations are actively harmful. |
+
+**X81 also closes X51's open caveat.** X51 existed with a dimension warning: at d=768
+against n=588 per conversation, separability is automatic by Cover's theorem. Pooled gold
+sets are now separable **15/15 at every d including d=64**, where 5,882 pooled points
+vastly outnumber the dimensions. Separability is a property of the gold sets, not of the
+ambient dimension. The expressivity question is settled.
+
+### The one lead, and why it is only a lead
+
+Expansion is selected over the null in exactly two places, and both are regimes where the
+representation was **first damaged**:
+
+| regime | cosine | mixture | Δ (95% CI) | exact p | null folds |
+|---|---|---|---|---|---|
+| whitened, all categories | 0.5160 | 0.5220 | +0.0060 [−0.0105, +0.0224] | 0.32 | **0/10** |
+| whitened, cat 1 | 0.2730 | 0.2753 | +0.0023 [−0.0297, +0.0367] | 0.86 | **0/10** |
+| text-only chunks, cat 1 | 0.1534 | 0.1627 | +0.0093 [−0.0290, +0.0454] | 0.50 | **0/10** |
+
+Not one is significant, every interval covers zero, and in both regimes the
+damaged-plus-expansion score sits **below the undamaged baseline** (0.522 < 0.527,
+0.163 < 0.329). What it suggests, as a conjecture and not a result: **mode expansion is
+selected only where cosine has been crippled, and then it recovers a fraction of the
+damage rather than adding anything of its own.** Chasing it requires a pre-registration
+whose endpoint is an absolute win over the *undamaged* baseline — a win over the cripple
+is not a result, and writing it up as one would be the eighth protocol error.
+
+A side observation from the same table: whitening and all-but-the-top both *raise* RRF's
+cat-1 margin to nominal significance (+0.050 p=0.039; +0.055 p=0.045) from +0.032 p=0.17.
+Flattening the dominant directions makes the lexical channel matter more. Untested as a
+mechanism.
+
+### Family F — the cost of buying nothing
+
+Per query, 419-turn bank, mpnet d=768, laptop CPU (hardware in the JSON):
+
+| method | ms | × cosine | accuracy it buys |
+|---|---|---|---|
+| cosine | 0.012 | 1.0× | — |
+| energy descent T=1 | 0.045 | 3.7× | nothing (top-1 identical, X98) |
+| rocchio K0=3 | 0.061 | 5.1× | worse when forced non-trivial (X33) |
+| mixture_avg K0=3 | 0.091 | 7.7× | marginally **better** than the mixture (X70–X75) |
+| **mixture K0=3** | **0.187** | **15.7×** | **nothing — selection picks K0=0** |
+| energy descent T=10 | 0.304 | 25.5× | −0.203 at β=16 (X61) |
+| **RRF, true cost** | **0.415** | **34.8×** | **+0.124 `gold@10` — the only method that buys anything** |
+| MMR pool=50 | 1.897 | 159× | +0.0004, p=0.91 |
+| cross-encoder top-50 | 280 | ~23,500× | cost proxy only; the cached model is an NLI head, no accuracy claim |
+
+Memory (X91): the expansion path stores **nothing** extra — its modes are bank vectors it
+already holds, so its entire cost is time. Separately, the project stores float64
+embeddings at 6,144 B/memory: 2× float32 and 8× int8, for no measured benefit.
+
+**And the scar repeated itself in miniature.** The first X90 run reported BM25 at
+**0.000 ms/query, 0.01× cosine**. `locomo_qa.Bank.bm25()` computes the score matrix once
+and caches it, and the warm-up call paid for it — so the timer was measuring an array
+index. This is the same failure mode as the paper's claimed 8× that measured 21×: a cost
+number that was never a clock on the thing being claimed. Timed against the index
+directly, BM25 is 0.361 ms/query with a 3.8 ms one-off build, and RRF's honest cost is
+34.8× cosine rather than 4.5×. **If a cost number looks too good, check what is cached.**
+
+### A nuance Phase 7's headline hid
+
+RRF's +0.124 is an **all-category** number, and it is driven by single-hop. On cat 1
+(multi-hop) RRF's margin is +0.032 p=0.17 under mpnet, **−0.007 p=0.61 under bge**, and
++0.034 p=0.03 under MiniLM. So: *RRF beats the architecture overall and on single-hop
+decisively (+0.114, p = floor), and on multi-hop its advantage is not established.* Say it
+that way. Nobody has a method that works on multi-hop — which is the honest state of this
+task, and a better framing for a second paper than "RRF wins".
+
+### What Phase 8 establishes
+
+- ✅ **Phase 7's negative is no longer provisional.** It survives three encoders, five
+  dimensions, four normalizations, two chunkings and four fold counts, with every control
+  passing: the metric rewards nothing structural (X38), no method sees the labels (X96),
+  the candidate sets are symmetric (X97), the ladder reduces exactly (X98), and the metrics
+  agree with independent implementations (X99).
+- ✅ **Expressivity is settled.** X81 closes X51's dimension caveat at d=64.
+- ✅ **The modes are not noise** (X95: +0.27 to +0.42 over random) — and that makes the
+  failure sharper, not softer. The information is there and the readout cannot use it.
+- 📉 **Two instruments were over-read**: the p-value floor and the top-1 scope of
+  Proposition 1. Both corrections tighten the writing without moving a conclusion, and the
+  second one *explains* a family C finding that had been recorded as a surprise.
+- ⚠️ **One lead, pre-registration required**: expansion is selected only on damaged
+  representations and never recovers past the undamaged baseline.
+- 💸 **The architecture's path costs 15.7× cosine for an identical ranking.** The only
+  method on the board that buys accuracy charges 34.8× for it.
+
+**Nothing from Phase 8 belongs in the submitted paper either.** The two corrections are
+about this project's instruments, not about the paper's claims; Proposition 1 as *stated*
+in the paper is a top-1 claim and is exactly right. The one thing worth carrying into a
+future revision is the `p = 2/1024` floor: any ten-cluster blocked-permutation p-value in
+this project should be written as a floor, not as a measurement.
+
+**Families A–G are closed.** The only P0 left is X102 (HotpotQA / 2WikiMultihop) — after
+Phase 8 there is nowhere else on LoCoMo to look.

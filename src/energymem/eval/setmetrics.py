@@ -113,3 +113,32 @@ def paired_report(a, b, clusters, n_boot: int = 20_000, n_perm: int = 100_000, s
     mean, lo, hi = hierarchical_bootstrap(d, clusters, n=n_boot, seed=seed)
     return dict(a=float(a.mean()), b=float(b.mean()), delta=mean, lo=lo, hi=hi,
                 p=blocked_permutation(d, clusters, n=n_perm, seed=seed), n=int(a.size))
+
+
+def exact_blocked_permutation(diffs, blocks) -> float:
+    """EXACT two-sided p for the same null, by enumerating all sign patterns.
+
+    ``blocked_permutation`` draws one sign per block at random, so with ``B`` blocks the
+    null has exactly ``2**B`` points. LoCoMo has ten conversations -- 1024 patterns --
+    which is cheaper to enumerate than to sample, and the enumeration is the ground truth
+    the Monte Carlo version is approximating. Refuses above 22 blocks.
+
+    The floor is the honest one: with B blocks no result can be significant below
+    ``2 / 2**B`` two-sided, because the all-flipped pattern always ties the observed
+    statistic. At B=10 that is 0.00195 -- so a p of 0.002 on this corpus is the smallest
+    attainable value, not a measurement of how strong the effect is.
+    """
+    d = np.asarray(diffs, dtype=np.float64)
+    b = np.asarray(blocks)
+    if d.size == 0:
+        return float("nan")
+    uniq = np.unique(b)
+    B = len(uniq)
+    if B > 22:
+        raise ValueError(f"{B} blocks is 2**{B} patterns; use blocked_permutation instead")
+    # (B, n) one-hot block membership, so a sign vector becomes a matrix product.
+    M = np.stack([(b == u).astype(np.float64) * d for u in uniq])       # (B, n)
+    sums = M.sum(axis=1)                                               # per-block sums
+    signs = ((np.arange(2 ** B)[:, None] >> np.arange(B)) & 1) * 2.0 - 1.0   # (2**B, B)
+    stats = np.abs(signs @ sums) / d.size
+    return float((stats >= abs(d.mean()) - 1e-15).mean())

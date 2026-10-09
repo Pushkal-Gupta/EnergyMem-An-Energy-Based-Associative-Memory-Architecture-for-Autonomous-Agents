@@ -1,0 +1,156 @@
+{
+  "X90": {
+    "rows": {
+      "cosine": {
+        "ms": 0.011923897991251504,
+        "sd": 0.001866483011861605
+      },
+      "rrf (cosine+bm25, CACHED bm25)": {
+        "ms": 0.0535769489646072,
+        "sd": 0.007656813574330919
+      },
+      "rocchio K0=3": {
+        "ms": 0.061059102094708474,
+        "sd": 0.006150979863682941
+      },
+      "mixture K0=3 (selected: K0=0)": {
+        "ms": 0.18725935712739425,
+        "sd": 0.014476025529081345
+      },
+      "mixture_avg K0=3": {
+        "ms": 0.09121811226763459,
+        "sd": 0.0005584018621598112
+      },
+      "mmr lam=0.7 pool=50": {
+        "ms": 1.8972733877842762,
+        "sd": 0.19763938120568986
+      },
+      "energy descent T=1 beta=16": {
+        "ms": 0.044558255096341544,
+        "sd": null
+      },
+      "energy descent T=3 beta=16": {
+        "ms": 0.10332313267637652,
+        "sd": null
+      },
+      "energy descent T=10 beta=16": {
+        "ms": 0.30351487754271556,
+        "sd": null
+      },
+      "bm25 scoring (uncached, per query)": {
+        "ms": 0.36141496932440514,
+        "sd": null
+      },
+      "bm25 index build (one-off)": {
+        "ms": 3.7760830018669367,
+        "sd": null,
+        "one_off": true
+      },
+      "bm25 build amortized over 196 queries": {
+        "ms": 0.01926572960136192,
+        "sd": null
+      },
+      "rrf TRUE cost (cosine + uncached bm25 + 2 ranksorts)": {
+        "ms": 0.41499191828901233,
+        "sd": null
+      }
+    },
+    "cosine_ms": 0.011923897991251504,
+    "bank_n": 419,
+    "d": 768,
+    "n_queries": 98,
+    "hardware": {
+      "cpu": "Apple M5 Max",
+      "machine": "arm64",
+      "python": "3.13.2",
+      "numpy": "2.5.2",
+      "threads_env": {}
+    },
+    "cross_encoder_cost_proxy": {
+      "ms": 280.1163083000574,
+      "ratio": 23492.008108889993,
+      "model": "cross-encoder/nli-deberta-v3-base",
+      "caveat": "NLI head, not a reranker: cost proxy only, no accuracy claim"
+    }
+  },
+  "X91": {
+    "bytes_per_memory": {
+      "dense float64 (as stored in this project)": 6144,
+      "dense float32": 3072,
+      "dense float16": 1536,
+      "dense int8 (scalar-quantized)": 768,
+      "BM25 postings (pickled)": 512.0143198090692,
+      "raw turn text (utf-8)": 147.22673031026252
+    },
+    "d": 768,
+    "bank_n": 419
+  },
+  "X92": {
+    "rows": {
+      "500": {
+        "cosine": 0.01185204078234276,
+        "cosine/sd": 0.00046259708144123714,
+        "rrf": 0.06733332657877697,
+        "rrf/sd": 0.0019054845865678991,
+        "mixture K0=3": 0.18034269394737917,
+        "mixture K0=3/sd": 0.00724087192721731,
+        "mmr pool=50": 2.0525773673268435,
+        "mmr pool=50/sd": 0.208432583795101
+      },
+      "1000": {
+        "cosine": 0.03027126528037598,
+        "cosine/sd": 0.002664134677262142,
+        "rrf": 0.1647976327780159,
+        "rrf/sd": 0.004387693770311811,
+        "mixture K0=3": 0.5115510204483812,
+        "mixture K0=3/sd": 0.07937746032826143,
+        "mmr pool=50": 2.294771265320489,
+        "mmr pool=50/sd": 0.17962203576622793
+      },
+      "2000": {
+        "cosine": 0.1406037551291496,
+        "cosine/sd": 0.009927481282137317,
+        "rrf": 0.4574200815559194,
+        "rrf/sd": 0.031990750450697936,
+        "mixture K0=3": 0.9938231223899567,
+        "mixture K0=3/sd": 0.02391389644053478,
+        "mmr pool=50": 2.946467693878471,
+        "mmr pool=50/sd": 0.3469159324361798
+      },
+      "5000": {
+        "cosine": 0.4373639591848383,
+        "cosine/sd": 0.015321725572547297,
+        "rrf": 1.099559530729846,
+        "rrf/sd": 0.07734906102152503,
+        "mixture K0=3": 2.888214285752727,
+        "mixture K0=3/sd": 0.23566935208536505,
+        "mmr pool=50": 3.718817163180389,
+        "mmr pool=50/sd": 0.38392561311101314
+      },
+      "5882": {
+        "cosine": 0.4204906530949116,
+        "cosine/sd": 0.01849946429974995,
+        "rrf": 1.4008316327223782,
+        "rrf/sd": 0.057018276224663295,
+        "mixture K0=3": 3.319511040825425,
+        "mixture K0=3/sd": 0.17343963240533264,
+        "mmr pool=50": 4.229400510221425,
+        "mmr pool=50/sd": 0.40813582869501186
+      }
+    },
+    "note": "latency only; padding changes the task (see X85). Sub-0.1ms rows are at the call-overhead noise floor."
+  },
+  "_meta": {
+    "seconds": 25.9,
+    "hardware": {
+      "cpu": "Apple M5 Max",
+      "machine": "arm64",
+      "python": "3.13.2",
+      "numpy": "2.5.2",
+      "threads_env": {}
+    },
+    "dead_arms": {
+      "X93": "gain-conditional ('does the gain survive HNSW/IVF'); also an engineering choice, not a claim about the architecture"
+    }
+  }
+}
