@@ -33,9 +33,12 @@ experiments/cache/
 
 # encoder cache -- regenerable, large
 .cache/
+<<<<<<< Updated upstream
 
 # scratch notes, not part of the project
 .git-scratch/
 
 # editable-install metadata
 *.egg-info/
+=======
+>>>>>>> Stashed changes
