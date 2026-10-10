@@ -539,6 +539,7 @@ Phase 8 there is nowhere else on LoCoMo to look.
 
 ---
 
+<<<<<<< HEAD
 ## Phase 9 — Families H and I: other corpora, other modalities (2026-10-09)
 
 **Why.** After Phase 8 there was nowhere left to look on LoCoMo. The one live hypothesis was
@@ -602,3 +603,101 @@ anything new ran, cosine `gold@10` on LoCoMo reproduced Phase 7's 0.5269 exactly
   SciFact and LongMemEval.
 
 **Families H and I are closed.** Family J needs an API key and was not run.
+=======
+## Phase 8b — The paper, and a withdrawn win inside Phase 7 (2026-10-10)
+
+Phase 8 said two of this project's instruments had been over-read. Carrying those
+corrections into the paper turned up a third thing, in Phase 7's own family C.
+
+### X65-r — query-conditional β was scored against a handicapped baseline
+
+`experiments/x65r_adaptive_beta.py`, `results/x65r_adaptive_beta.json`.
+
+X65 asked whether setting β per query from the query's own score spread beats a fixed β.
+It reported `β ~ 1/std` at **+0.067 [+0.038,+0.097]** and `β ~ 1/margin` at **+0.034
+[+0.004,+0.066]** — family C's only positive cells — and its driver printed the column
+header as **"delta vs best fixed"** while hard-coding the reference to
+`score_all(b, 16.0, 1)`.
+
+β=16 is not the best fixed β. **X60, in the same driver and the same JSON**, has it:
+
+| fixed β | 1 | 2 | 4 | 8 | **16** | **32** | 64 | 128 | 256 | 512 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| gold@10 | 0.007 | 0.008 | 0.014 | 0.037 | **0.241** | **0.397** | 0.387 | 0.375 | 0.364 | 0.356 |
+
+The reference was handicapped by **+0.156**. Re-run against a fixed β selected on the nine
+training conversations of each fold (unanimously β=32, 10/10 folds):
+
+| rule | gold@10 | vs β=16 | vs fold-selected fixed β |
+|---|---|---|---|
+| β ~ 1/margin | 0.275 | +0.034 [+0.004,+0.066] | **−0.121 [−0.149,−0.098]** |
+| β ~ 1/std | 0.308 | +0.067 [+0.038,+0.097] | **−0.089 [−0.121,−0.061]** |
+| β ~ margin (sign-reversed control) | 0.007 | −0.234 [−0.288,−0.192] | −0.390 [−0.433,−0.348] |
+
+**The win does not exist.** Conditioning β per query recovers part of a handicap and still
+lands at 0.308 against the fold-selected fixed β's 0.397 and plain cosine's 0.527. The
+sign-reversed control collapsing to 0.007 confirms the rules are reading the signal they
+were built to read — they just cannot spend it.
+
+This is the **seventh protocol error in a third costume**: X31's false positive was a no-op
+beating a baseline denied its own null; X65's was a real method beating a baseline denied
+its own best hyperparameter. Both were caught by the same question — *what exactly is the
+other arm allowed to do?* — and in X65's case the refuting number was already sitting in the
+same JSON file, four keys away, for a day. **A driver that prints "vs best" must compute
+"best", not assume it.** Family C's verdict is unchanged and now has no exceptions: every
+energy knob is neutral or harmful.
+
+### The paper: three corrections, no new results
+
+The decision to keep Phase 7/8's LoCoMo-QA headline out of the paper stands. What went in
+is limited to statements the paper made **about itself** that were stale or wrong.
+
+**1. Proposition 1 over-claimed the top-$k$ case — and contradicted its own appendix.**
+`sections/method.tex` said: *"Reading the top-$k$ patterns by $\langle z_i,\xi^{(1)}\rangle$
+therefore returns exactly the dense top-$k$ cosine neighbourhood of $q$."* Appendix A
+already contains `Remark [Ranks 2..k do not agree, and this is a result, not a gap]`, which
+says the opposite and says it correctly. Nothing ever tested the main-text sentence:
+`test_reduction.py` checks k=1 (and `13_CLAIM_TRACE.md` row C1 correctly said "exact top-1
+equality" all along), while the `196/196` "top-5 set equality" is at `anchor=1.0`, which
+*is* cosine by construction — `exp_locomo_anchored.py` says so in its own comments. X98
+then measured it on real banks: top-1 **100/100**, top-10 **0/100**.
+
+The proposition now claims exactness at $k=1$, states that the dense top-$k$ is read off
+the **cue** (which is what the baseline implementation does), points at the remark, and the
+proof sketch no longer implies the appendix proves a $k>1$ case. The executable-claim
+paragraph now says *top-1* agreement — the quantity the proposition states.
+
+This one is worth dwelling on: the correct statement had been in the appendix since the
+draft was written, and the main text asserted its negation for the whole submission. Two
+parts of the same paper disagreed and nothing caught it, because the appendix was written
+by someone reasoning about the limit and the main text by someone summarising it. **An
+appendix that contradicts the main text is a failed review, not a typo.**
+
+**2. G2 and the controller are no longer "specified and unbuilt".** Limitations claimed
+both. X62 (every strength prior hurts, monotonically, −0.004 gentlest to −0.495 strongest),
+X63 (fitted routing hurts; `R=I` is the best routing found) and X65-r (above) now say
+otherwise. The paragraph reports them as measured failures and keeps the part of the gap
+that is still real: the lifecycle operations on G2 — decay, consolidation — remain
+unevaluated, and selection among *regimes* remains unbuilt.
+
+**3. `p` is quoted as an interval, not a number, for anything from the LoCoMo-QA task,**
+because ten conversation clusters floor the blocked permutation at $2/1024$. The paper's
+own inference is unaffected: it resamples 272 sessions and 1,949 images, not ten clusters.
+
+Build: 25 pages named / 24 anonymous, 0 overfull boxes, 0 undefined references, 0 undefined
+citations. Built with `tectonic`; the repository has no `pdflatex`, so
+`scripts/rebuild_paper.sh` cannot run as written on this machine.
+
+### What Phase 8b establishes
+
+- 📉 **Family C has no positive cells.** Its one exception was a baseline artefact.
+- 🧹 **The paper no longer contradicts itself about Proposition 1**, and the claim it makes
+  is the one the test suite actually verifies.
+- ✅ **The three stale self-descriptions are gone**, replaced by measurements rather than by
+  softer language.
+- ⚠️ **The lesson is about baselines, twice over.** Phase 7 produced a false positive from a
+  baseline denied its null, and Phase 7 contained a second from a baseline denied its best
+  hyperparameter. The protocol needs the rule stated plainly: **before reporting any delta,
+  write down what the other arm was allowed to do, and check that it was allowed to do its
+  best.**
+>>>>>>> eb3d8ea (Fix a Proposition 1 over-claim that contradicted its own appendix, and withdraw a Phase 7 win whose baseline was handicapped)

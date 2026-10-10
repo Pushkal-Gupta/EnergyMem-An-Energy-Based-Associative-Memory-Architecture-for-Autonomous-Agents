@@ -43,11 +43,22 @@ narrower than ``better retrieval'' even within the completion regime.
 consolidation because they are the established vocabulary of the formalism. We make no claim
 of correspondence with neural mechanism, and no result here depends on one.
 
-\paragraph{Untested axes.} G2 (strength-modulated basin depth) and the lifecycle operations
-built around it---decay, consolidation---are implemented and unevaluated. Query-conditional
-selection of the operating point, which \S\ref{sec:taxonomy} argues the taxonomy requires, is
-specified and unbuilt. We mention them to be complete about what the formalism contains, not
-as results.
+\paragraph{The remaining axes have now been tested, and none of them helps.} An earlier
+version of this section listed G2 and the controller as unevaluated. Both have since been
+measured, on a multi-target variant of the same \textsc{LoCoMo} corpus---retrieve the full
+set of annotated evidence turns for each of $1{,}977$ questions---with the conversation as
+the resampling cluster. Ten clusters floor a blocked-permutation $p$ at $2/2^{10} = 0.002$,
+so we give intervals and not $p$-values.
+
+\textbf{G2 (strength-modulated basin depth) hurts under every prior we tried}---recency,
+centrality, session size, turn length---and hurts monotonically in the bias strength. The
+gentlest setting is indistinguishable from no bias at all ($-0.004$ \ci{-0.035}{+0.030})
+and the strongest costs $-0.495$ \ci{-0.533}{-0.459} (\xid{X62}). \textbf{G3 with a
+\emph{fitted} routing operator} reproduces the \xid{X18} verdict by an independent route:
+diagonal routing costs $-0.029$ \ci{-0.046}{-0.013} at its mildest and dense routing
+$-0.471$ \ci{-0.512}{-0.424} at its strongest, so $R{=}I$---the corner---is the best
+routing we have been able to find (\xid{X63}). The lifecycle operations built on G2, decay
+and consolidation, are still implemented and unevaluated; that part of the gap stands.
 
 \paragraph{A single encoder per modality.} Proposition~\ref{prop:reduction} is
 encoder-independent, but the $\beta$ band is not, and we measured it on one text encoder and

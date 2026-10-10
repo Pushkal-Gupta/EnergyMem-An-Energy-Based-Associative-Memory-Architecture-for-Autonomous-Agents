@@ -146,7 +146,7 @@ thread below.
 | X32 interaction | ❌ **prediction not met** — no effect to decompose; I4 stays falsified | `x32_interaction.json` |
 | X33 Rocchio | ❌ worse than cosine when forced non-trivial | `x31_expansion.json` |
 | X50–X57 geometry | ✅ ran — all eight | `x5x_geometry.json` |
-| X60–X66 energy | ❌ **every knob neutral or harmful** (T, b, R, β, pursuit) | `x6x_energy.json` |
+| X60–X66 energy | ❌ **every knob neutral or harmful** (T, b, R, β, pursuit). X65's one positive cell was **withdrawn in Phase 8b** — it was scored against β=16 while X60 in the same JSON shows β=32 is better. Against a fold-selected fixed β it is −0.089 [−0.121,−0.061] | `x6x_energy.json`, `x65r_adaptive_beta.json` |
 | X70–X75 predictors | ❌ **null after multiplicity** (3/24 cells nominal, Bonferroni 0.002) | `x7x_predictor.json` |
 
 **Headline: the corner is hard to beat.** The headroom is real and is *not* an expressivity
@@ -548,7 +548,7 @@ only place iteration can pay. **Interesting if:** `T>1` ever beats `T=1` at matc
 ### X64 — Parallel multi-retrieve
 `retrieve_multi` vs `retrieve_multi_parallel` vs matching pursuit, on cat 1.
 
-### X65 — Per-query and per-cluster β
+### X65 — Per-query and per-cluster β — **RAN, then CORRECTED: see X65-r (Phase 8b)**
 `memory/query_beta.py`, `memory/multibeta.py`, `memory/beta_training.py`,
 `scripts/train_query_beta.py`, `scripts/train_cluster_beta.py` all exist and none has
 been pointed at the QA task.

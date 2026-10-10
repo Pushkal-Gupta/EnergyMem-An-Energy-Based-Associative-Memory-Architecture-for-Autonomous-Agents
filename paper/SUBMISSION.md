@@ -1,7 +1,10 @@
 # Submission status
 
-**TMLR template applied. Compiles clean: 25 pages named / 24 anonymous, 0 overfull boxes,
+**TMLR template applied. Compiles clean: 25 pages named / 25 anonymous, 0 overfull boxes,
 0 undefined references, 0 undefined citations, 0 TODOs.**
+
+> Built with `tectonic` on 2026-10-10 (this machine has no `pdflatex`, so
+> `scripts/rebuild_paper.sh` cannot run as written here).
 
 ```bash
 bash scripts/rebuild_paper.sh     # regenerates every number, then builds BOTH PDFs
@@ -44,4 +47,12 @@ line marked `[SUBMIT]` in `main.tex` before building.
 
 ## Known limitations, stated in the paper
 
-One public benchmark and one task shape; association does not compose and we do not know why; retrieval quality is not downstream task success; capacity crossover at N≈800 unresolved; the shortlist regression (R@5 0.605 vs cosine 0.759) means the positive is narrower than "better retrieval"; G2 and the controller are specified and unbuilt.
+One public benchmark and one task shape; association does not compose and we do not know why; retrieval quality is not downstream task success; capacity crossover at N≈800 unresolved; the shortlist regression (R@5 0.605 vs cosine 0.759) means the positive is narrower than "better retrieval"; the lifecycle operations built on G2 (decay, consolidation) are implemented and unevaluated; selection among *regimes* is unbuilt.
+
+**Updated 2026-10-10.** Three statements the paper made about itself were stale or wrong and have been corrected (`.tex` edited, all three PDFs rebuilt):
+
+1. **Proposition 1 over-claimed the top-*k* case** in the main text — "reading the top-$k$ by $\langle z_i,\xi^{(1)}\rangle$ therefore returns exactly the dense top-$k$ cosine neighbourhood of $q$" — contradicting Appendix A's own `Remark [Ranks 2..k do not agree, and this is a result, not a gap]`. No test ever covered the sentence (`test_reduction.py` checks k=1; the 196/196 "top-5 set equality" is at `anchor=1.0`, which *is* cosine by construction). Measured: top-1 **100/100**, top-10 **0/100** (X98). The proposition now claims exactness at k=1 only.
+2. **G2 and the controller are no longer "unbuilt"** — both were evaluated and both fail (X62, X63, X65-r). Limitations and the taxonomy section say so.
+3. **A win was withdrawn**: X65's query-conditional β was scored against β=16 while its own output called that "best fixed". Against a fold-selected fixed β it loses by −0.089 [−0.121,−0.061] (X65-r).
+
+Named build unchanged at 25 pages; the anonymous build goes **24 → 25** (the corrected Limitations and taxonomy paragraphs are longer than the text they replace, and the anonymous build has no Contributions section to absorb it). Verified by rebuilding `HEAD`'s own sources for comparison. 0 overfull boxes, 0 undefined references, 0 undefined citations in both.

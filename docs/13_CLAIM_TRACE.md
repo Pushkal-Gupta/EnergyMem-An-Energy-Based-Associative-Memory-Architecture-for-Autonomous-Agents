@@ -38,6 +38,22 @@ blocker.
 | **C6** Asymmetric exclusion → exact 0.000 | X18 | `experiments/run_E5.py` | `experiments/results/real/` | before/after fix | Tab. 7 |
 | **C6** Unmatched step size: −0.115 → −0.062 | X23b, X25 | `experiments/x23_mode_diagnostics.py` | `results/x23_mode_diagnostics.json` | α matched vs α=1, same probes | Tab. 7, §5.5 |
 | **I4 falsified** mixture − averaged −0.062 [−0.094,−0.034] | X25 | `experiments/x23_mode_diagnostics.py` | `results/x23_mode_diagnostics.json` | cluster bootstrap over threads | §5.5 |
+| **C1** Reduction is exact at *k*=1 and **ranks 2..k do not agree**: top-1 100/100, top-10 **0/100** | **X98** | `experiments/x9x_controls.py` | `results/x9x_controls.json` | exact set equality, `descend(T=1, β=512, b=0, R=I)` vs cosine, real LoCoMo banks | Prop. 1, §3.2, App. A Remark (`rem:shortlist`) |
+| **C4** G2 (strength bias `b`) hurts under every prior, monotonically: −0.004 [−0.035,+0.030] gentlest → −0.495 [−0.533,−0.459] strongest | **X62** | `experiments/x6x_energy.py` | `results/x6x_energy.json` | two-level cluster bootstrap over 10 conversations; 4 priors × 3 strengths | §8 Limitations |
+| **C4** G3 fitted routing hurts: diagonal −0.029 [−0.046,−0.013], dense −0.471 [−0.512,−0.424]; `R=I` is the best routing found | **X63** | `experiments/x6x_energy.py` | `results/x6x_energy.json` | as above; full vs diagonal `R`, η ∈ {1,10,100} | §8 Limitations |
+| **C4** Query-conditional β **loses** to a fold-selected fixed β: −0.121 [−0.149,−0.098] and −0.089 [−0.121,−0.061]; sign-reversed control −0.390 [−0.433,−0.348] | **X65-r** | `experiments/x65r_adaptive_beta.py` | `results/x65r_adaptive_beta.json` | leave-one-conversation-out selection of fixed β on train folds only (unanimous β=32) | §6, taxonomy |
+
+**⚠️ Correction to X65.** The X65 row that stood here before reported `β ~ 1/std` at
+**+0.067, p=0.004** as a win. Its driver printed the column as *"delta vs best fixed"* while
+hard-coding the reference to β=16, which X60 — in the same driver and the same JSON — shows
+is not the best fixed β (0.241 vs β=32's 0.397). Against a fixed β selected on training
+folds the effect is **−0.089 [−0.121,−0.061]**. The superseded row is removed rather than
+kept, because unlike Table 3 row (i) it was never published; X65-r supersedes it.
+
+**⚠️ `p` has a floor on the LoCoMo-QA task.** The blocked permutation flips one sign per
+conversation, so ten conversations give 2¹⁰ = 1024 null points and a smallest attainable
+two-sided p of `2/1024 = 0.00195`. Every `p = 0.002` from that task is this floor. Rows
+above therefore quote intervals, and the paper quotes intervals, not p.
 | **I4 falsified again** on LoCoMo: mixture 0.075 vs averaged 0.107 | X26c | `experiments/locomo_assoc.py` | `results/x26_locomo_assoc.json` | cluster bootstrap over sessions | §5.5 |
 | **Premise confirmed** 97% of cues multi-modal, mutual cosine 0.353 | X24 | `experiments/x23_mode_diagnostics.py` | `results/x23_mode_diagnostics.json` | descriptive | §5.5 |
 

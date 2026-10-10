@@ -31,8 +31,14 @@ maximal cosine similarity to the cue,
 \lim_{\beta\to\infty}\ \Pi\!\big[X\,\sm(\beta X^{\!\top} q)\big] \;=\; z_{i^\star},
 \qquad i^\star = \arg\max_i\, \langle z_i, q\rangle ,
 \]
-whenever the maximiser is unique. Reading the top-$k$ patterns by $\langle z_i,\xib^{(1)}\rangle$
-therefore returns exactly the dense top-$k$ cosine neighbourhood of $q$.
+whenever the maximiser is unique. The reduction is therefore \emph{exact at $k=1$}. For
+$k>1$ the dense top-$k$ neighbourhood is recovered by reading the ranking off the
+\emph{cue}, $\langle z_i,q\rangle$ --- the standard definition, and the one our dense
+baseline uses --- and \emph{not} off the converged state: ranks $2..k$ of
+$\langle z_i,\xib^{(1)}\rangle$ order the patterns by proximity to $z_{i^\star}$, not to
+$q$, because the state has forgotten the cue by construction. Remark~\ref{rem:shortlist}
+makes this precise, and \S\ref{sec:completion} shows it is the mechanism behind the
+shortlist regression rather than a technicality.
 \end{proposition}
 
 \begin{proof}[Proof sketch]
@@ -40,13 +46,15 @@ With $b=0$ the logits are $s_i = \langle z_i,q\rangle$. Let $\delta = s_{i^\star
 Then $\sm(\beta s)_{i^\star} = \big(1 + \sum_{i\neq i^\star} e^{-\beta(s_{i^\star}-s_i)}\big)^{-1}
 \geq (1 + (N-1)e^{-\beta\delta})^{-1} \to 1$, and every other coordinate is
 $O(e^{-\beta\delta})$. Hence $X\sm(\beta X^{\!\top}q) \to z_{i^\star}$, and normalisation fixes
-the point since $\|z_{i^\star}\|=1$. The full argument, including the $k>1$ case and the
-rate, is in Appendix~\ref{app:proof}.
+the point since $\|z_{i^\star}\|=1$. The full argument --- with the explicit
+$O\big((N{-}1)e^{-\beta\delta}\big)$ rate, the tied-maximiser case, and the analysis of
+what happens for $k>1$ --- is in Appendix~\ref{app:proof}.
 \end{proof}
 
 We treat Proposition~\ref{prop:reduction} as an executable claim rather than a remark. The
-test suite instantiates the configuration above and asserts agreement with an independent
-exact-cosine implementation on every query; it passes $1000/1000$ on synthetic vectors
+test suite instantiates the configuration above and asserts \emph{top-1} agreement with an
+independent exact-cosine implementation on every query --- the quantity the proposition
+states, no more; it passes $1000/1000$ on synthetic vectors
 ($d{=}64$) and $838/838$ on real sentence embeddings ($d{=}768$), to floating-point
 precision, and it gates continuous integration. If it ever fails, no downstream number in this paper is trustworthy
 (\xid{X1}).

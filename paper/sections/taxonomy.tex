@@ -52,10 +52,23 @@ The practical consequence is sharper than a taxonomy usually is. A deployed agen
 three regimes in one workload, so any system with a \emph{fixed} retrieval configuration must
 lose two of them. This is an argument for query-conditional inference---selecting the
 operating point per query rather than per system---which we state as the natural next
-architecture and explicitly do not evaluate here. We note that it is also the component most
-exposed to the selection error of \S\ref{sec:protocol}: ``choose the budget that maximises
-the score'' is test-set tuning with extra steps unless the selector is fitted and frozen on
-training data.
+architecture. We have since built and evaluated the narrowest version of it, conditioning
+$\beta$ alone, and \textbf{it does not work.} Setting $\beta$ per query from the inverse
+top-two margin or the inverse score dispersion beats a fixed $\beta{=}16$ by $+0.034$
+\ci{+0.004}{+0.066} and $+0.067$ \ci{+0.038}{+0.097}---and loses to the best fixed
+$\beta$, chosen on training folds only, by $-0.121$ \ci{-0.149}{-0.098} and $-0.089$
+\ci{-0.121}{-0.061} (\xid{X65-r}). The apparent gain was the reference point: $\beta{=}16$
+scores $0.241$ where the fold-selected $\beta{=}32$ scores $0.397$, so conditioning the
+knob recovers part of a handicap rather than adding anything. A sign-reversed control
+($\beta \propto$ margin) costs $-0.390$ \ci{-0.433}{-0.348}, so the rules do read the
+signal they were designed to read; they simply cannot spend it.
+
+That is a result about one knob, not about the taxonomy, which asks for selection among
+\emph{regimes}---and that remains unbuilt. But it is a pointed one, because this is the
+component we flagged as most exposed to the selection error of \S\ref{sec:protocol}:
+``choose the budget that maximises the score'' is test-set tuning with extra steps unless
+the selector is fitted and frozen on training data. What went wrong first was not the
+selector but the \emph{baseline} it was scored against.
 
 \subsection{What the taxonomy predicts that we have not yet run}
 
