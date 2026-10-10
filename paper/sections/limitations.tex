@@ -15,29 +15,57 @@ we have not isolated the error accumulated per step, and the small residual Reca
 on \textsc{LoCoMo} is unexplained. A rollout-depth sweep with per-step error attribution is
 the experiment this calls for.
 
-\paragraph{The retrieval task is not the downstream task.} Every number here is retrieval
-quality. Whether a $+0.043$ Recall@1 improvement on next-turn association changes what an
-agent actually does---answer quality, task success---is untested, and the mapping from
-retrieval metrics to agent behaviour is weak enough that we make no claim about it.
+\paragraph{The retrieval task is not the downstream task, and the gap is now measured.}
+Every number here is retrieval quality. We have since built the cheapest honest proxy for
+the downstream question --- normalised substring coverage of the gold answer inside the
+concatenated top-$k$ turns, on \textsc{LoCoMo}'s own annotated answers, deterministic and
+API-free --- and \textbf{a large retrieval gain does not survive into it} (\xid{X35}). A
+reciprocal-rank-fusion baseline that beats dense cosine by $+0.124$ on evidence
+$\mathrm{recall}@10$ carries that into $+0.007$ \ci{-0.013}{+0.027} of answer coverage at
+$k{=}10$: indistinguishable from zero. Coverage is a weak proxy and we call it coverage
+rather than accuracy for that reason, but it moves in the direction that should be easiest
+to move, and it did not. Whether \emph{any} of these retrieval differences change what an
+agent does remains untested, and this result makes us less optimistic rather than more.
+
+\paragraph{Our pseudo-relevance-feedback baseline never helps, anywhere, and we cannot yet
+say why.} Rocchio feedback is the prior art a reader names first, and in our hands it is
+selected straight to its null ($\gamma{=}0$) on every corpus and loses whenever it is forced
+to do something. We therefore ran it on \textsc{SciFact}, a standard ad-hoc retrieval
+benchmark where feedback methods are well calibrated: $0$ of $16$ swept cells beat cosine
+there either (\xid{X104}). Two readings remain open --- that a strong dense baseline leaves
+classical PRF nothing to add, which the literature on dense feedback would support, or that
+our PRF is simply weak. Until that is settled, we do not claim ``the prior art does not help
+either'', and any comparison in this paper against Rocchio should be read with that
+reservation.
 
 \paragraph{Scale.} Banks run from $400$ to $5{,}882$ patterns with encoders of $512$ and
 $768$ dimensions. The image advantage is explicitly capacity-dependent---cosine overtakes
 descent past $N\approx 800$ at fixed $\beta$---so nothing here licenses a claim at the
 $10^6$-memory scale a long-lived agent would reach. Whether the crossover is a $\beta$-scaling
-artefact is unresolved and we flag it as the most important unanswered question about the
-completion result.
+artefact is unresolved. It was the most important unanswered question about the completion
+result until \xid{X113} removed the result; we retain it because the capacity behaviour of
+descent is of independent interest.
 
 \paragraph{The latency cost is real, and larger than the matmul count suggests.} Descent
 at $T{=}8$ issues $16$ matmuls against cosine's $1$, but measured wall-clock is
-$21\times$ ($0.0502$\,ms vs.\ $0.0024$\,ms per query), for a pooled $+0.014$ Recall@1 in the
-one regime where it wins. Multi-$\beta$ variants cost a further $1.6$--$2.9\times$ for an
-effect indistinguishable from zero. We do not think this trade is attractive in deployment
-and say so.
+$21\times$ ($0.0502$\,ms vs.\ $0.0024$\,ms per query), for a pooled $+0.014$ same-class
+accuracy that a $k$-NN class vote exceeds at a fraction of the cost (\S\ref{sec:occlusion}).
+Multi-$\beta$ variants cost a further $1.6$--$2.9\times$ for an effect indistinguishable
+from zero. We do not think this trade is attractive in deployment and say so.
 
 \paragraph{The shortlist regression.} Descent improves rank 1 and degrades ranks 2--5
 ($0.605$ vs.\ $0.759$ Recall@5). For an agent that pastes five memories into context, which
-is the standard usage, this is plausibly a net loss. Our positive result is therefore
-narrower than ``better retrieval'' even within the completion regime.
+is the standard usage, this is plausibly a net loss.
+
+\paragraph{The image study was not a completion study, and we did not notice for most of
+this project.} Its metric was same-class accuracy and its cues were drawn from a split
+disjoint from the bank, so the premise it was offered as confirming was never satisfied by
+it (\S\ref{sec:occlusion}, \xid{X113}). We report this as a limitation of our own process,
+not only of the result: the experiment had a pre-committed split, a declared grid and a
+paired bootstrap, and none of that machinery can detect a baseline that was never allowed
+to do its best, or a metric whose name does not match the operation it scores. Readers
+weighing the rest of this paper should know that the defect was found by re-reading our
+scoring code, which is the one audit we had not systematised.
 
 \paragraph{Biological framing is analogy.} We use the words basin, attractor and
 consolidation because they are the established vocabulary of the formalism. We make no claim

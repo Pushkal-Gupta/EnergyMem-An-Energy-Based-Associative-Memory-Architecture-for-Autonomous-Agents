@@ -1,0 +1,144 @@
+{
+  "id": "X113",
+  "prereg": "experiment-backlog/PREREG_X113.md",
+  "utc": "2026-10-10T15:59:33.829538+00:00",
+  "X113a": {
+    "metric": "same-class top-1 accuracy (the published metric)",
+    "bank_n": 400,
+    "n_classes": 10,
+    "n_test_instances": 5847,
+    "selected_beta": 40,
+    "selected_k": 20,
+    "selected_tau": 16.0,
+    "tune_delta_descent": 0.015742642026009612,
+    "tune_delta_knn": 0.045345653661875485,
+    "cosine": 0.5529331280998803,
+    "descent": 0.5664443304258594,
+    "knn": 0.6020181289550197,
+    "contrasts": {
+      "descent_minus_cosine": {
+        "delta": 0.013511202325979134,
+        "lo": 0.0061570035915854285,
+        "hi": 0.02103642893791688
+      },
+      "knn_minus_cosine": {
+        "delta": 0.04908500085513939,
+        "lo": 0.04002052334530529,
+        "hi": 0.05866256199760561
+      },
+      "descent_minus_knn": {
+        "delta": -0.035573798529160254,
+        "lo": -0.043099025141098,
+        "hi": -0.028219599794766546
+      }
+    },
+    "per_level": {
+      "30": {
+        "cosine": 0.7301180092355054,
+        "descent": 0.7331965110312981,
+        "knn": 0.7614161108260646,
+        "descent_minus_knn": -0.028219599794766546,
+        "lo": -0.04002052334530529,
+        "hi": -0.01693175987685993
+      },
+      "50": {
+        "cosine": 0.5423293996921498,
+        "descent": 0.5592611595690098,
+        "knn": 0.5997947665469472,
+        "descent_minus_knn": -0.040533606977937404,
+        "lo": -0.05438686505900462,
+        "hi": -0.02719343252950231
+      },
+      "70": {
+        "cosine": 0.3863519753719856,
+        "descent": 0.4068753206772704,
+        "knn": 0.4448435094920472,
+        "descent_minus_knn": -0.03796818881477681,
+        "lo": -0.05233453052847614,
+        "hi": -0.023601847101077475
+      }
+    },
+    "equivalence_check": "200/200"
+  },
+  "X113b": {
+    "metric": "same-image recall@1 (primary) and same-class accuracy on identical cues",
+    "premise": "cue IS a degraded instance of a stored pattern",
+    "identity_control": 1.0,
+    "bank_n": 400,
+    "n_test_cues": 600,
+    "selected_beta": 80,
+    "tune_delta": -0.0033333333333332993,
+    "same_image": {
+      "cosine": 0.6233333333333333,
+      "descent": 0.62,
+      "delta": -0.0033333333333333335,
+      "lo": -0.008333333333333333,
+      "hi": 0.0
+    },
+    "same_class": {
+      "cosine": 0.7383333333333333,
+      "descent": 0.7366666666666667,
+      "delta": -0.0016666666666666668,
+      "lo": -0.008333333333333333,
+      "hi": 0.005
+    },
+    "per_level": {
+      "30": {
+        "img_cosine": 0.855,
+        "img_descent": 0.855,
+        "img_delta": 0.0,
+        "img_lo": 0.0,
+        "img_hi": 0.0,
+        "cls_cosine": 0.915,
+        "cls_descent": 0.915,
+        "cls_delta": 0.0,
+        "cls_lo": 0.0,
+        "cls_hi": 0.0
+      },
+      "50": {
+        "img_cosine": 0.635,
+        "img_descent": 0.63,
+        "img_delta": -0.005,
+        "img_lo": -0.015,
+        "img_hi": 0.0,
+        "cls_cosine": 0.755,
+        "cls_descent": 0.76,
+        "cls_delta": 0.005,
+        "cls_lo": -0.01,
+        "cls_hi": 0.02
+      },
+      "70": {
+        "img_cosine": 0.38,
+        "img_descent": 0.375,
+        "img_delta": -0.005,
+        "img_lo": -0.015,
+        "img_hi": 0.0,
+        "cls_cosine": 0.545,
+        "cls_descent": 0.535,
+        "cls_delta": -0.01,
+        "cls_lo": -0.025,
+        "cls_hi": 0.0
+      }
+    }
+  },
+  "X113c": {
+    "PUBLISHED setting (val cues, unstored sources)": {
+      "beta": 40.0,
+      "n_eff_median": 12.71058361472876,
+      "n_eff_mean": 15.92781982994381,
+      "n_eff_p90": 32.165637020066065,
+      "same_class_mass_mean": 0.4824683098436882
+    },
+    "X113b setting (bank cues, stored sources)": {
+      "beta": 80.0,
+      "n_eff_median": 1.1527821469820079,
+      "n_eff_mean": 2.1973986506562206,
+      "n_eff_p90": 4.98774819991214,
+      "same_class_mass_mean": 0.7205860907625325
+    }
+  },
+  "verdict": {
+    "descent_beats_knn": false,
+    "descent_completes": false
+  }
+}

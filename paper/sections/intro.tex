@@ -43,14 +43,25 @@ repulsive parallel descent, vote-count readout, multi-scale and per-memory $\bet
 mechanism that helps does not touch the landscape at all; it is a model of \emph{what follows
 what}, fitted on the agent's own transitions.
 
-Between modalities the sign of the effect flips, and it flips for a reason we can state in
-one sentence and verify in both directions. Energy descent computes a weighted average of
-stored patterns and moves the retrieval state onto their span. That pays off exactly when the
-query is a degraded copy of something already stored, because moving toward the memory
-manifold restores lost signal; it costs accuracy when the query is not, because averaging
-smears the discriminative content of the cue. Image occlusion satisfies the premise and
-descent wins by more as damage increases. Question$\to$evidence retrieval violates it and
-descent loses monotonically. Both halves are measured, not argued.
+We began with a sign that appeared to flip between modalities, and a mechanism that
+explained the flip. Energy descent computes a weighted average of stored patterns and moves
+the retrieval state onto their span. That should pay off when the query is a degraded copy
+of something already stored, because moving toward the memory manifold restores lost signal,
+and should cost accuracy when the query is not, because averaging smears the discriminative
+content of the cue. Question$\to$evidence retrieval violates the premise and descent loses
+monotonically, as predicted. Image occlusion appeared to satisfy it, and descent won by more
+as damage increased.
+
+That positive half did not survive the three tests we nominated against it. Masking spans of
+stored \emph{text} satisfies the premise and yields no $\beta$ that beats cosine in $45$
+swept cells. A cue that is a degraded copy of \emph{two} stored images loses $-0.245$. And
+the image result itself, re-examined, is not completion at all: its metric is ten-way
+same-class accuracy, the cue's source image is never stored, and a soft $k$-NN class vote
+beats descent at every occlusion level, while the premise's own best case --- occluded
+copies of images that \emph{are} stored, scored by identity --- is a null
+(\S\ref{sec:occlusion}). The premise now predicts every loss we measure and retains no
+confirming instance. \S\ref{sec:taxonomy} withdraws the sufficiency half and the image
+evidence rather than defending either.
 
 \paragraph{Contributions.}
 \begin{itemize}\itemsep2pt
@@ -68,13 +79,16 @@ descent loses monotonically. Both halves are measured, not argued.
     cosine against itself on nearly every query and will correctly report no difference for
     the wrong reason. The band is a property of the encoder, not a constant.
     (\xid{X3}, \xid{X11}, \S\ref{sec:band})
-  \item[\textbf{C3}] \textbf{A regime taxonomy with a falsifiable premise.} Completion,
-    composition and semantic match require mutually exclusive operating points, and which
-    one a query belongs to is predictable from whether the cue is a degraded instance of a
-    stored pattern. Evidence in both directions with dose-response: $+0.014$ pooled
-    \ci{+0.006}{+0.021} on held-out image completion rising to $+0.021$ at 70\% occlusion,
-    against a monotone $-0.084$ across an interpolation sweep on $1{,}977$ \textsc{LoCoMo}
-    questions. (\S\ref{sec:taxonomy})
+  \item[\textbf{C3}] \textbf{A regime taxonomy, and the withdrawal of its one positive
+    instance.} Completion, composition and semantic match require mutually exclusive
+    operating points, and the premise that separates them predicts a monotone $-0.084$
+    across an interpolation sweep on $1{,}977$ \textsc{LoCoMo} questions. We then ran the
+    three discriminating tests we had nominated against ourselves, and all three came back
+    negative --- including a matched-baseline audit of our own flagship image result, which
+    a soft $k$-NN class vote beats by $-0.036$ \ci{-0.043}{-0.028}. The premise is reported
+    as \emph{necessary and not sufficient}, and the image result is withdrawn as evidence
+    for an associative mechanism. (\S\ref{sec:taxonomy}, \S\ref{sec:occlusion},
+    \xid{X113})
   \item[\textbf{C4}] \textbf{Eight diagnosed negative results.} Each is reported with the
     mechanism that produces it rather than as a bare null, including two that overturn claims
     we had previously made ourselves. (\S\ref{sec:negatives})
@@ -86,16 +100,18 @@ descent loses monotonically. Both halves are measured, not argued.
     $272$ sessions against a pooled $5{,}882$-turn bank. At \emph{two} hops the same
     experiment returns $-0.002$ \ci{-0.008}{+0.004}: association does not compose, and we
     withdraw a $+0.185$ two-hop figure of our own. (\S\ref{sec:composition}, \xid{X26})
-  \item[\textbf{C6}] \textbf{The measured price of six protocol shortcuts.} For each of six
+  \item[\textbf{C6}] \textbf{The measured price of seven protocol shortcuts.} For each of seven
     errors we made, the magnitude of the false result it produced in our own data. Two were
-    false \emph{negatives}, which proved far harder to find than the false positives.
-    (\S\ref{sec:protocol})
+    false \emph{negatives}, which proved far harder to find than the false positives. The
+    seventh is the one we would most want read: an \emph{unmatched baseline} that every
+    other safeguard in this paper was blind to, because split hygiene and pre-registration
+    check how two arms are compared and not which two arms. (\S\ref{sec:protocol})
 \end{itemize}
 
 \paragraph{What this paper is not.} It is not a system paper, and it does not claim a better
 agent memory. The thesis we began with---that energy-based retrieval improves agent
 recall---is refuted here by our own measurements, at adequate power, with the mechanism
 identified. We think the resulting object is more useful to the field than the system would
-have been: a reduction that makes the comparison exact, a taxonomy that predicts the sign of
-the effect before the experiment is run, and a quantified account of how easy it is to
-publish the opposite conclusion.
+have been: a reduction that makes the comparison exact, a taxonomy that says where descent
+loses and that kept none of the positive instance we had claimed for it, and a quantified
+account of how easy it is to publish the opposite conclusion.

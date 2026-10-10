@@ -1,7 +1,13 @@
 # Submission status
 
-**TMLR template applied. Compiles clean: 25 pages named / 25 anonymous, 0 overfull boxes,
+**TMLR template applied. Compiles clean: 30 pages named / 29 anonymous, 0 overfull boxes,
 0 undefined references, 0 undefined citations, 0 TODOs.**
+
+> ⚠️ **Phase 10 changed what the paper claims.** X113 withdrew the image result as evidence
+> for an associative mechanism, so Claim 1 now has no confirming instance and the paper's
+> empirical verdict is uniformly negative for the energy machinery. The surviving positive
+> is the nonparametric predictor, which is not associative retrieval. Do not submit a PDF
+> built before 2026-10-10 Phase 10.
 
 > Built with `tectonic` on 2026-10-10 (this machine has no `pdflatex`, so
 > `scripts/rebuild_paper.sh` cannot run as written here).
@@ -56,3 +62,73 @@ One public benchmark and one task shape; association does not compose and we do 
 3. **A win was withdrawn**: X65's query-conditional β was scored against β=16 while its own output called that "best fixed". Against a fold-selected fixed β it loses by −0.089 [−0.121,−0.061] (X65-r).
 
 Named build unchanged at 25 pages; the anonymous build goes **24 → 25** (the corrected Limitations and taxonomy paragraphs are longer than the text they replace, and the anonymous build has no Contributions section to absorb it). Verified by rebuilding `HEAD`'s own sources for comparison. 0 overfull boxes, 0 undefined references, 0 undefined citations in both.
+
+
+## Updated 2026-10-10 (second pass) — the central claim is narrowed
+
+`taxonomy.tex` had nominated a text-occlusion study as *"the experiment most likely to
+falsify our own central claim"* and committed in advance to the reading if it failed. It was
+pre-registered (`experiment-backlog/PREREG_X110.md`), run, and **it failed**: 0 of 45
+(β, level) cells beat cosine on recall@1, 0 of 45 on recall@5. A second new cell — a cue
+that is a degraded copy of *two* stored images — loses −0.245. So the completion premise is
+now reported as **necessary, not sufficient**: it predicts every loss we measure and does not
+predict the one win, which is single-target image completion.
+
+Changed: `abstract.tex`, `intro.tex` (C3 + closing), `taxonomy.tex` (claim narrowed,
+§"not yet run" → §`sec:occlusion` with the result, regimes-table row footnoted),
+`conclusion.tex`, `limitations.tex` (X35: the retrieval gain does not reach an answer-coverage
+proxy, +0.007 [−0.013,+0.027]; and a caveat that our PRF never helps anywhere, including on
+SciFact), `results.tex` (I4 is confirmed 20/21 cells in a clean setting **and** irrelevant,
+0/21 beat the cue alone).
+
+**Deliberately still out of the paper:** the LoCoMo-QA evidence-retrieval task and RRF
+beating the architecture on four corpora. That remains a second paper, as Phases 7–8
+decided. Page count 25 → 27 named, 25 → 26 anonymous.
+
+
+---
+
+## Phase 10 update — the image result is withdrawn as evidence (X113)
+
+Found by reading our own scoring code, not by running an experiment:
+`scripts/confirm_holdout.py:120` scores a hit when the retrieved memory shares the query's
+**class** (ten classes), and the bank is drawn from `train` while the cues come from `val`,
+so **a cue's source image is never stored**. The flagship "image pattern completion" result
+was therefore ten-way classification on cues that did not satisfy the premise it was
+offered as confirming.
+
+Pre-registered in `experiment-backlog/PREREG_X113.md` before the driver existed. Both
+pre-committed endpoints came back negative — the fourth row of that document's outcome
+table, written in advance as "a real possibility and the reason this is pre-registered":
+
+| endpoint | result |
+|---|---|
+| X113a descent − soft k-NN class vote (published metric) | **−0.036 [−0.043,−0.028]**, negative at all three occlusion levels |
+| X113b descent − cosine, same-**image** recall@1, cue = occluded **stored** image | **−0.003 [−0.008,+0.000]**, identity control 1.0000, β selected = 80 (top of grid) |
+
+Descent's published +0.014 reproduces exactly. At β=40 its first step blends 12.7 patterns
+of 400 with 48% of the mass same-class, i.e. an implicit class vote — and the pre-declared
+grid selected k=20 for the explicit one.
+
+Changed: `abstract.tex` (image claim rewritten; the premise now has no confirming
+instance), `intro.tex` (premise paragraph, C3, C6, closing), `taxonomy.tex` (claimbox, the
+"satisfied and descent wins" paragraph, regimes-table Completion row → **plain cosine**, new
+X113 subsection in §`sec:occlusion`), `results.tex` (§completion retitled "descent beats
+cosine, and loses to a plain classifier"; both tables; multibeta caption),
+`setup.tex` (the two load-bearing properties of the image design, previously unstated),
+`method.tex` (band figure caption; the interior optimum re-read as blend width),
+`limitations.tex` (the defect as a process limitation), `protocol_errors.tex` (**seventh
+error: unmatched baseline**; six → seven propagated through abstract, intro C6,
+conclusion), `appendix.tex` (budget-table rows).
+
+Generated tables: `tab_images.tex` gains the vote column, `tab_completion.tex` is new, both
+from `experiments/results/x113_class_vote.json` via `scripts/make_tables.py`. The
+generator's own `_validate` guard rejected the first version of the new table; `\cmidrule`
+is now in its structural exemptions.
+
+**Still deliberately out:** the LoCoMo-QA evidence-retrieval task and RRF beating the
+architecture on four corpora. Page count 27 → 30 named, 26 → 29 anonymous.
+
+**One housekeeping item left, and it is the user's call:** `paper/main-article.tex.bak` is
+still tracked. It is a backup, not a source; `git rm --cached paper/main-article.tex.bak`
+removes it from the index without deleting the file.

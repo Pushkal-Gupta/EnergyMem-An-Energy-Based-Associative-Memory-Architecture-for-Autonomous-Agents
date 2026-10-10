@@ -113,25 +113,30 @@ descent returns the exact memory cosine would have (Figure~\ref{fig:band},
 
 \begin{figure}[t]\centering
 \includegraphics[width=0.84\textwidth]{figures/beta_band.pdf}
-\caption{The $\beta$ leverage band, on held-out image completion. \textbf{Left axis:}
-Recall@1 against the cosine baseline (dashed). \textbf{Right axis:} the fraction of queries
-on which descent returns the \emph{same memory} as cosine. Below the band the state
-collapses to the corpus centroid and accuracy falls to chance ($0.100 = 1/10$); above it
-descent makes cosine's decision on $99.4\%$ of queries. The usable interval is the narrow
-region where the method is neither collapsed nor dissolved.}
+\caption{The $\beta$ leverage band, on the held-out image task. \textbf{Left axis:}
+same-class top-1 accuracy against the cosine baseline (dashed); the metric is ten-way
+classification, which is why the collapse floor is $0.100 = 1/10$ (\S\ref{sec:occlusion}).
+\textbf{Right axis:} the fraction of queries on which descent returns the \emph{same memory}
+as cosine. Below the band the state collapses to the corpus centroid; above it descent makes
+cosine's decision on $99.4\%$ of queries. The interval in between is where $\beta$ has any
+influence at all --- which is not the same as where it is useful: \S\ref{sec:occlusion}
+shows the interior optimum is beaten by a classifier.}
 \label{fig:band}
 \end{figure}
 
 The curve has two failures and one working region. Below $\beta \approx 24$ the softmax is
 flat enough that the first step averages a large fraction of the bank and the state lands at
-its centroid: Recall@1 is $0.100$ at $\beta{=}12$, which is exactly chance for a ten-class
+its centroid: same-class accuracy is $0.100$ at $\beta{=}12$, which is exactly chance for a ten-class
 bank, and decision agreement with cosine is $1\%$. Above the band, descent converges on
 cosine's own answer --- agreement rises through $86\%$ at $\beta{=}64$ and $96\%$ at
 $\beta{=}128$ to $\mathbf{99.4\%}$ at $\beta{=}512$, where accuracy is $0.4986$ against
 cosine's $0.5000$. Between them is a genuine interior optimum: $\beta{=}48$ reaches $0.514$,
 $+0.014$ over cosine, while still disagreeing with it on $27\%$ of queries. The band is
-narrow --- roughly $[32, 64]$ on this encoder, with useful leverage over perhaps a factor of
-two in $\beta$.
+narrow --- roughly $[32, 64]$ on this encoder, with leverage over perhaps a factor of two in
+$\beta$. We now read that interior optimum as the width at which the blend acts as a class
+vote rather than as an attractor: at $\beta{=}40$ the first step has an effective support of
+$12.7$ patterns out of $400$ (\xid{X113}). The band is where $\beta$ matters; it is not
+where the method wins.
 
 Three implications. (i) The apparent \emph{plateau} in accuracy above $\beta \approx 64$,
 which a coarse sweep reads as a robust operating region, is the method dissolving into the

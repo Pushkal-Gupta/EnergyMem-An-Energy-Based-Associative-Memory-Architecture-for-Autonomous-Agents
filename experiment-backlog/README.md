@@ -46,6 +46,25 @@ Known environment traps, both already cost a day:
   Export `SSL_CERT_FILE` from `certifi`, or pre-fetch weights with `curl`.
 - **`torchvision` is not installed by `make setup`.** The two image experiments need it.
 
+### Fetching the family-H corpora (added Phase 9)
+
+`.gitignore` has `data/*`, so none of this is in the repo and none of it is redistributed.
+Both drivers read plain columnar files — no `datasets` loader, no `trust_remote_code`:
+
+```bash
+pip install pyarrow            # not installed by `make setup`
+export SSL_CERT_FILE=$(python -c "import certifi;print(certifi.where())")
+mkdir -p data/external/hotpotqa data/external/beir_scifact
+# HotpotQA distractor validation (27 MB) -> data/external/hotpotqa/validation.parquet
+#   huggingface.co/datasets/hotpotqa/hotpot_qa  distractor/validation-00000-of-00001.parquet
+# SciFact (4.5 MB) -> corpus.parquet, queries.parquet, qrels_test.tsv
+#   huggingface.co/datasets/BeIR/scifact        corpus/, queries/
+#   huggingface.co/datasets/BeIR/scifact-qrels  test.tsv
+```
+
+`experiments/hotpot.py` subsamples 1,200 questions deterministically by hash of the question
+id, so the subset does not depend on row order and is reproducible without pinning a seed.
+
 ### How to report
 
 Write one JSON per run to `experiments/results/<id>_<slug>.json`, including:
@@ -288,6 +307,7 @@ every rung of the ladder reduces exactly (X98). **The negative is no longer prov
 
 ---
 
+<<<<<<< HEAD
 ## 1d. STATUS — families H and I are done (2026-10-10)
 
 Ran in Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`, against `PREREG_HI.md`, which was
@@ -324,6 +344,44 @@ text, so its "memory" framing needs rewriting.
   comparison question before retrieval? That would make expansion deployable.
 - **C3 rewrite.** Report k-NN vote next to energy descent wherever the image result
   appears.
+=======
+## 1d. STATUS — families H and I are done, the family-A remainder is done, J is blocked (2026-10-10)
+
+Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`. **The backlog is closed except where noted.**
+
+| ID | verdict | where |
+|---|---|---|
+| **X110 text occlusion** | 📉 **the paper's own nominated falsifier FIRED.** 0/45 (β, level) cells beat cosine on R@1; 0/45 on R@5. No text β band exists | `x110_text_occlusion.json`, `x110b_beta_band_text.json` |
+| **X111 image multi-target** | 📉 descent −0.245 on a two-target cue. **I4 confirmed 20/21 cells (+0.178) and irrelevant: 0/21 beat the cue alone** | `x111_image_multitarget.json` |
+| **X102 HotpotQA** (the last P0) | ❌ ε = 0.456 (vs LoCoMo 0.527) — lower, not low enough. X32's interaction **still absent**. RRF +0.083 | `x102_hotpot.json` |
+| **X104 SciFact** | ⚠️ **a caveat against us**: our PRF beats cosine in 0/16 cells on its home turf. Also the program's most favourable cell: mixture +0.0105, p=0.12, n=150 | `x104_beir.json` |
+| **X35 answer coverage** | 📉 RRF's +0.124 retrieval win → **+0.007 [−0.013,+0.027]** coverage@10 | `x3x_family_a.json` |
+| X34, X37, X39, X40, X42–X48 | ❌ all null or harmful; X40: cosine beats everything on cross-session cat 1 | `x3x_family_a.json` |
+| **X41 paraphrase modes** | ⚠️ paraphrases are a **better mode source than memory** (+0.0135 vs −0.0563 on cat 1). Points away from association | `x3x_family_a.json` |
+| X36 | 🧹 **artifact, self-caught** — raw margins are not comparable across methods; z-scored the effect reverses | `x3x_family_a.json` |
+| X67–X69 joint grid | ❌ **0/30 cells**. No combination of β, T, K beats the corner | `x67_joint_and_x105.json` |
+| X105 transfer | — both corpora select K₀=0; nothing to transfer | `x67_joint_and_x105.json` |
+| **X120–X123 (family J)** | 🚫 **BLOCKED — no `ANTHROPIC_API_KEY`.** X35 is the API-free proxy and its answer is discouraging | — |
+| X100, X101, X103 | ⏸️ **not run, deprioritised** — four corpora already agree. Say "not run", never "does not replicate" | — |
+| X112 cross-modal | ⏸️ out of scope by the matched-encoder rule: needs CLIP, comparable to nothing else here | — |
+
+**Two self-caught artifacts this phase**, neither of which reached a conclusion: X102d
+printed a logsumexp-vs-averaging gap without the cosine column (both arms were *below* the
+null; it now prints `BOTH BELOW THE NULL`), and X36 showed a dramatic confidence effect that
+was entirely the score scale. **If a comparison has two arms, print the null as a third.**
+
+**What the whole backlog came to.** Four corpora, two modalities, 100+ measured cells: the
+`(T=1, β→∞, b=0, R=I)` corner is not beaten by any single knob, any combination of knobs,
+any mode source, any readout, any prior, any encoder, any dimension, any normalisation or
+any fold count. The two things that do beat it are both outside the architecture — a
+lexical–dense hybrid (RRF, four corpora) and, more weakly, restating the query (X41). The
+one place the architecture wins is single-target image completion, and X110/X111 now bound
+that to single-target images specifically.
+
+**If you want to reopen something**, the two live threads are X104's non-significant +0.0105
+(powered replication, pre-registered, SciFact-shaped tasks) and X41's paraphrase modes
+(which is a query-expansion paper, not a memory-architecture one). Everything else is closed.
+>>>>>>> 2480810 (Withdraw the image result as evidence for an associative mechanism: the published comparison was a 1-NN classifier against a soft-k-NN one)
 
 ---
 
@@ -335,9 +393,13 @@ text, so its "memory" framing needs rewriting.
 Revised after families A–D came back null (see 1b). Rough cost on a laptop CPU; the
 embedding cache makes everything after the first run much cheaper.
 
+> **ALL TIERS BELOW ARE DISCHARGED OR SUPERSEDED (2026-10-10).** X102 ran and came back
+> negative; see **1d**. The table is kept for the record of what was prioritised and why.
+> The live list is the two threads at the end of **1d**.
+
 | tier | IDs | why | cost each |
 |---|---|---|---|
-| **P0** | X102 | HotpotQA / 2WikiMultihop: multi-hop by construction, large *m*, huge *n*. **The one place the X32 effect could still exist**, and now the only P0 — the controls are done | hours |
+| ~~**P0**~~ | ~~X102~~ | **RAN, negative.** ε = 0.456 was not low enough and the interaction is still absent | hours |
 | **P1** | X29-perturbation | the live half of the dead X84: is **RRF's** +0.124 robust to paraphrase, typos, truncation? RRF is the only thing here that works, so it is the only thing worth stress-testing | 20 min |
 | **P1** | X34–X37, X39–X41 | the family-A entries not reached: displacement on QA, answer coverage, adversarial specificity, bank scope, metadata, paraphrase modes | 10–40 min |
 | **P1** | "expansion on RRF" | mode expansion was only ever stacked on cosine. RRF's margin is larger than any effect this project has measured and nobody has tried expanding *its* top-k | 30 min |
@@ -413,14 +475,14 @@ Sweep `K₀`, the Rocchio α/β/γ weights.
 **Why it matters:** this is the prior art a reviewer will name, and it is *exactly* the
 mode-averaging baseline. X31 vs X33 is the whole architectural argument in one row.
 
-### X34 — Displacement step on the QA task
+### X34 — Displacement step on the QA task — **RAN (Phase 9): 0/10 cells**
 **Run:** add the X26 world-model offset to X31's modes. Sweep α on the training folds.
 `mean_step_norm()` reports the step size; the raw displacement has ‖Δ‖≈1.157 against a
 unit cue, so α≈0.34 is where the kernel average implicitly sits. Check α=0 separately.
 **Interesting if:** α>0 beats α=0 on cat 1. That is the predictor earning its keep on
 third-party labels.
 
-### X35 — Answer-string coverage (downstream proxy)
+### X35 — Answer-string coverage (downstream proxy) — **RAN (Phase 9): the gain does NOT survive**
 **Run:** normalized substring match of the gold `answer` inside the concatenated top-k
 retrieved turns.
 **Metric:** coverage@{1,5,10,20}. **Report as coverage, not QA accuracy** — it is a
@@ -428,14 +490,14 @@ deterministic, API-free proxy, and calling it accuracy overclaims.
 **Interesting if:** retrieval gains survive into coverage. If they don't, the retrieval
 gain may not matter downstream, which is worth knowing before anyone writes it up.
 
-### X36 — Adversarial specificity (cat 5)
+### X36 — Adversarial specificity (cat 5) — **RAN (Phase 9): first result was a scale artifact**
 **Run:** cat 5 questions are adversarial/unanswerable. Measure whether expansion makes
 methods *more* confidently wrong: score distribution, top-1 margin, abstention rate
 under a threshold.
 **Interesting if:** the method's gain on cat 1 comes with a specificity cost on cat 5.
 A reviewer will ask. Better to find it ourselves.
 
-### X37 — Bank scope
+### X37 — Bank scope — **RAN (Phase 9): pooling hurts both**
 **Run:** per-conversation bank (588) vs pooled bank (5,882, namespaced ids — see the
 loader comment: dia_ids collide across conversations, 5,882 turns carry 1,033 distinct
 ids, and pooling without namespacing lets an unrelated turn satisfy a gold id).
@@ -446,27 +508,27 @@ ids, and pooling without namespacing lets an unrelated turn satisfy a gold id).
 **Interesting if:** anything beats chance. Then a metric is broken. Run this *before*
 believing X31.
 
-### X39 — Temporal and speaker metadata
+### X39 — Temporal and speaker metadata — **RAN (Phase 9): 0/8**
 **Run:** the loader keeps `session`, `speaker`, `timestamp`, `local_id`. Add recency
 priors, same-speaker priors, session-adjacency priors as a `b` strength bias
 (`EnergyMemory.set_strength_bias`).
 **Interesting if:** cat 2 (temporal, n=321) improves. Nothing in the project has tried
 to exploit time yet.
 
-### X40 — Cross-session structure
+### X40 — Cross-session structure — **RAN (Phase 9): cosine wins there**
 **Run:** split cat 1 by whether gold spans 1 vs >1 session (269 vs 13 — the 13 will be
 underpowered, say so).
 **Interesting if:** the gain concentrates in cross-session questions, which is the
 regime the architecture was designed for.
 
-### X41 — Question rewriting as a mode source
+### X41 — Question rewriting as a mode source — **RAN (Phase 9): the best mode source found**
 **Run:** instead of expanding from retrieved turns, expand from *paraphrases* of the
 question (back-translation, or template rewrites — no LLM needed for templates).
 **Interesting if:** paraphrase modes match retrieval modes. Then the gain is query
 diversity, not memory association, and the story changes. This is X29's MMR concern in a
 second form, and it is the strongest alternative explanation available.
 
-### X42–X48 — Per-category deep dives
+### X42–X48 — Per-category deep dives — **RAN (Phase 9), consolidated into one grid**
 One ID per category × {baseline grid, expansion, set metrics}. Small, parallelizable,
 good first tasks. X42 cat 1 · X43 cat 2 · X44 cat 3 · X45 cat 4 · X46 cat 5 ·
 X47 all-pooled · X48 the 4 questions with ≥10 gold turns (anecdotal, but they are where
@@ -557,7 +619,7 @@ been pointed at the QA task.
 Instrument `_descend`: energy per step, step norms, basin identity. Diagnostic, but it
 is how you find out whether descent is doing anything at all.
 
-### X67–X69 — β × T × K joint sweeps
+### X67–X69 — β × T × K joint sweeps — **RAN (Phase 9): 0/30 cells**
 The full corner-to-interior grid. See the sweep appendix.
 
 ---
@@ -733,12 +795,12 @@ the same suspicion.
 
 The single biggest open item in `paper/SUBMISSION.md`. One public corpus is one corpus.
 
-### X100 — LongMemEval
-### X101 — MSC (Multi-Session Chat)
-### X102 — HotpotQA / 2WikiMultihopQA — purpose-built multi-hop, big *m*, huge n
-### X103 — QuALITY / NarrativeQA — long-document, different hop structure
-### X104 — BEIR subset — standard IR, where PRF baselines are well calibrated
-### X105 — Cross-corpus transfer: tune on LoCoMo, evaluate elsewhere, no retuning
+### X100 — LongMemEval — **not run, deprioritised (Phase 9)**
+### X101 — MSC (Multi-Session Chat) — **not run, deprioritised (Phase 9)**
+### X102 — HotpotQA / 2WikiMultihopQA — **RAN (Phase 9): interaction still absent** — purpose-built multi-hop, big *m*, huge n
+### X103 — QuALITY / NarrativeQA — **not run, deprioritised (Phase 9)** — long-document, different hop structure
+### X104 — BEIR subset — **RAN (Phase 9): a caveat against our own PRF** — standard IR, where PRF baselines are well calibrated
+### X105 — Cross-corpus transfer — **RAN (Phase 9): nothing to transfer**: tune on LoCoMo, evaluate elsewhere, no retuning
 
 For each: the headroom certificate (X27), the baseline grid (X29), the interaction (X32).
 **X102 is the sharpest test of the interaction** — it is multi-hop by construction, so if
@@ -751,22 +813,45 @@ the X32 effect is real it must appear there, and if it doesn't, the effect was L
 `data/imagenette2-160` is present; `scripts/test_imagenet_hopfield.py`,
 `exp_multibeta_scales.py`, `confirm_holdout.py` already run on it. Needs `torchvision`.
 
-### X110 — Text-occlusion falsification
+### X110 — Text-occlusion falsification — **RAN (Phase 9): THE FALSIFIER FIRED**
 The open item from `paper/SUBMISSION.md`. Occlusion works on images; does masking spans
 of text behave the same way? **Interesting if:** it doesn't — the image result may not
 be about memory at all.
 
-### X111 — Image multi-target retrieval — the cat-1 analogue, with multiple gold images
-### X112 — Cross-modal — text query, image bank
+### X111 — Image multi-target retrieval — **RAN (Phase 9): I4 true and useless** — the cat-1 analogue, with multiple gold images
+### X112 — Cross-modal — **out of scope: matched-encoder rule (Phase 9)** — text query, image bank
 
 ---
+
+### X113 — Is the image win pattern completion, or class smoothing? — **RAN (Phase 10): BOTH ENDPOINTS NEGATIVE**
+
+Not from the backlog. Added in Phase 10 after reading `scripts/confirm_holdout.py:120` and
+finding that the paper's flagship positive result scores **same-class** accuracy over ten
+classes, on cues whose **source image is not in the bank**. Pre-registered in
+`PREREG_X113.md` before the driver existed; driver `experiments/x113_class_vote.py`.
+
+- **X113a** matched classifier baseline. Soft k-NN class vote (k, τ selected on the same
+  tune half as β, grids pre-declared) scores **0.602** vs descent **0.566** vs cosine
+  **0.553**. **descent − vote = −0.0356 [−0.0431,−0.0282]**, negative at every occlusion
+  level. Descent's published +0.0135 reproduces exactly and is ~1/4 of what the plain
+  classifier gets. k=1 reproduces cosine exactly (internal null); vectorised descent
+  matches `EnergyMemory.retrieve` 200/200.
+- **X113b** the premise's own best case. Occlude the **bank** images, score **same-image**
+  recall@1. Identity control **1.0000**. **−0.0033 [−0.0083,+0.0000]**, β selected = 80
+  (top of grid = the corner). Same-class on identical cues also null (−0.0017).
+- **X113c** mechanism. At β=40 the first step blends **12.7 patterns (median) of 400** with
+  **48% of mass same-class** — an implicit class vote of the same order as the k=20 the
+  grid selected.
+
+**Consequence:** Claim 1 keeps **no** confirming instance, and the seventh protocol error
+(an unmatched baseline, invisible to every other safeguard) goes into §7 of the paper.
 
 ## Family J — Reader in the loop
 
 Needs an API key; everything above does not. Keep these last so the core results stay
 API-free and cheap to reproduce.
 
-### X120 — LLM reader QA accuracy
+### X120 — LLM reader QA accuracy — **BLOCKED: no API key (Phase 9)**
 Feed top-k into a reader, score answers against gold. The honest version of X35. Use the
 latest Claude models; fix the model id and prompt in the driver and record both in the
 JSON, or the number is not reproducible.

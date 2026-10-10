@@ -4,38 +4,59 @@ All numbers below are paired against the dense baseline of
 Proposition~\ref{prop:reduction} on identical queries, with cluster-bootstrap intervals.
 Ledger identifiers index \texttt{docs/10\_EXPERIMENT\_LEDGER.md}.
 
-\subsection{Completion: energy descent beats cosine, by more as the cue degrades}
+\subsection{Completion: descent beats cosine, and loses to a plain classifier}
 \label{sec:completion}
 
 \begin{table}[t]\centering\small
-\caption{Image occlusion recovery, Recall@1. $\beta$ selected on a disjoint tune half; one
-pre-committed paired test on the held-out half. $n{=}5{,}847$ query instances from
-$1{,}949$ distinct images; bootstrap resamples images. The tune-half estimate was $+0.016$
-against a held-out $+0.014$, indicating no selection bias.}
+\caption{The image study with its matched baseline. The metric is \textbf{same-class top-1
+accuracy} over ten classes, not identification, and the cue's source image is \emph{not} in
+the bank --- see \S\ref{sec:occlusion}. $\beta$, $k$ and $\tau$ all selected on the same
+disjoint tune half; one pre-committed paired test on the held-out half. $n{=}5{,}847$ query
+instances from $1{,}949$ distinct images; bootstrap resamples images. $^{*}$CI excludes zero.}
 \label{tab:images}
 \input{generated/tab_images}
 \end{table}
 
-Table~\ref{tab:images} is the paper's one clean positive for the energy mechanism itself.
-The effect is small in absolute terms and grows with corruption severity exactly as
-Claim~\ref{claim:premise} predicts, with no effect where there is nothing to reconstruct. It
-costs $21\times$ cosine's wall-clock latency ($0.0502$\,ms vs.\ $0.0024$\,ms per query).
+\begin{table}[t]\centering\small
+\caption{Completion as the premise defines it (\xid{X113b}): cues are occluded copies of
+images that \emph{are} in the bank, scored by \textbf{same-image} recall@1. Identity control
+at $0\%$ occlusion: cosine recall@1 $=1.0000$. $\beta$ selected on a disjoint half of the
+bank images and used once; selection chose $\beta{=}80$, the top of the grid. Same-class
+accuracy on the identical cues is shown for comparison with Table~\ref{tab:images}.}
+\label{tab:completion}
+\input{generated/tab_completion}
+\end{table}
 
-Two qualifications belong next to it rather than in a limitations section. First, the
+Table~\ref{tab:images} was for most of this project the paper's one clean positive for the
+energy mechanism itself, and the first three columns are unchanged from that version:
+descent beats cosine by $+0.014$ pooled, growing with corruption severity, on a
+pre-committed held-out split. The fourth column is why we no longer report it that way. A
+soft $k$-NN class vote --- selected on the same tune half, from a grid declared in advance
+--- scores $0.602$ where descent scores $0.566$, and beats descent at every occlusion
+level. \S\ref{sec:occlusion} gives the mechanism: on a \emph{class} metric, descent at
+$\beta{=}40$ is an implicit class vote over $\approx 13$ neighbours, and an explicit vote
+over $k{=}20$ does the same job better. Table~\ref{tab:completion} then asks the question
+the metric name implied all along --- can descent retrieve the \emph{particular} stored
+image a cue was degraded from --- and the answer is $-0.003$ \ci{-0.008}{+0.000}.
+
+The latency comparison is unchanged and now lands differently: descent costs $21\times$
+cosine's wall-clock latency ($0.0502$\,ms vs.\ $0.0024$\,ms per query) to be beaten by a
+classifier that costs one extra argpartition.
+
+Two further qualifications, which predate \xid{X113} and survive it. First, the apparent
 advantage is \emph{capacity-dependent}: growing the bank from $100$ to $4{,}000$ patterns at
-fixed $\beta{=}32$, cosine overtakes descent past $N\approx 800$. Whether this is a
-$\beta$-scaling artefact or a genuine capacity limit is unresolved, and it bears directly on
-any claim about agent-scale memory. Second, descent wins at rank 1 and \emph{loses badly on
-the shortlist}: Recall@5 is $0.605$ against cosine's $0.759$ and MRR $0.589$ against $0.643$
-(Table~\ref{tab:multibeta}). Converging to a single attractor means ranks 2--5 measure
-proximity to that attractor rather than to the query. A better top-1 and a worse
-shortlist is a different product decision from a uniformly better retriever, and reporting
-one without the other would misrepresent the method.
+fixed $\beta{=}32$, cosine overtakes descent past $N\approx 800$. Second, descent's rank-1
+gain over cosine comes with a \emph{shortlist regression}: recall@5 is $0.605$ against cosine's $0.759$
+and MRR $0.589$ against $0.643$, all class-level (Table~\ref{tab:multibeta}). Converging to a single
+attractor means ranks 2--5 measure proximity to that attractor rather than to the query,
+which is Remark~\ref{rem:shortlist} and is now confirmed in three independent settings.
 
-\paragraph{An earlier verdict of ours, withdrawn.} A previous version of this study used $80$
-distinct images with unpaired intervals roughly $5\times$ the effect size and $\beta$ tuned
-on the test images. Its conclusions were underpowered and are withdrawn; Table~\ref{tab:images}
-supersedes them.
+\paragraph{Two earlier verdicts of ours, withdrawn.} A previous version of this study used
+$80$ distinct images with unpaired intervals roughly $5\times$ the effect size and $\beta$
+tuned on the test images; those conclusions were underpowered and Table~\ref{tab:images}
+supersedes them. The version that replaced it --- the one with the honest split, which we
+described as a clean positive for the energy mechanism --- is withdrawn in turn by its own
+fourth column. The number stands; the interpretation does not.
 
 \subsection{Semantic match: every increment of descent costs accuracy}
 \label{sec:semantic}
@@ -181,12 +202,15 @@ Predictor coupled into the energy & never exceeds external & Interpolating the r
 \end{table}
 
 \begin{table}[t]\centering\small
-\caption{Multi-$\beta$ scales on image completion, with compute, ordered by Recall@1.
+\caption{Multi-$\beta$ scales on the image task, with compute, ordered by top-1 accuracy.
+As in Table~\ref{tab:images} the metric is \textbf{same-class} over ten classes --- which is
+why the collapsed control sits at exactly $1/10$ --- so every row here inherits the matched
+baseline of \S\ref{sec:occlusion} and none of them is compared against the $k$-NN vote.
 Bootstrap resamples images. Controls were pre-registered to collapse and did. Note the
 R@5/MRR columns: descent's shortlist is substantially worse than cosine's at every setting,
 which is the shortlist regression of \S\ref{sec:completion} and Remark~\ref{rem:shortlist}.
 Single $\beta$ beats cosine by $+0.0130$ \ci{+0.0074}{+0.0186}; no mixture beats single
-$\beta$.}
+$\beta$, and the vote of Table~\ref{tab:images} beats all of them.}
 \label{tab:multibeta}
 \input{generated/tab_multibeta}
 \end{table}
@@ -227,6 +251,27 @@ through cancellation among near-orthogonal transitions, and that shrinkage keeps
 control of where the prediction lands. Preserving the modes removes the shrinkage. On this
 data, averaging is not a failure to be fixed---it is what makes the predictor work.
 
+\paragraph{A later measurement sharpens this, and the invariant turns out to be about the
+wrong comparison.} The step-size account above predicts that where there is no displacement
+to shrink, the result should flip. We tested that in the modality where descent appeared to
+win, with a
+cue that is a degraded copy of two stored patterns at once (the spliced images of
+\S\ref{sec:occlusion}) and hypotheses that are the cue plus stored vectors rather than
+displacements, so no step size is in play. It flips, decisively: logsumexp beats averaging
+in $20$ of $21$ $(K_0,\beta)$ cells with intervals excluding zero, by $+0.178$
+\ci{+0.152}{+0.205} at the cell selected on a disjoint half (\xid{X111}). The gap widens
+with $\beta$ because the averaged combiner collapses onto its heaviest mode and throws the
+cue away, while logsumexp degrades gracefully towards the cue.
+
+So I4's \emph{stated} comparison --- keep the modes rather than average them --- is right,
+and in the clean setting it is right by a wide margin. It is also irrelevant: in the same
+$21$ cells, \textbf{neither combiner ever beats using the cue alone} ($0/21$). The
+invariant was never the binding constraint. Phrased as ``never average modes'' it is
+confirmed; phrased as a reason to build a multi-mode readout it is not, because the
+comparison that decides whether to build one is against the single-query baseline, and that
+comparison has never once come out in favour.
+
 We report this at length because it is the clearest instance in the paper of a correct
-premise licensing a wrong design, and because the first version of the experiment was
-confounded by our own implementation in exactly the way \S\ref{sec:protocol} describes.
+premise licensing a wrong design, because the first version of the experiment was
+confounded by our own implementation in exactly the way \S\ref{sec:protocol} describes, and
+because the invariant then turned out to be true in a form that changes nothing.

@@ -1,25 +1,45 @@
 \label{sec:taxonomy}
 
-The results in \S\ref{sec:results} flip sign between modalities. We claim this is not a
-modality effect but a \emph{query-type} effect, and that one sentence predicts the sign in
-advance.
+The results in \S\ref{sec:results} appeared to flip sign between modalities. We proposed
+that this is not a modality effect but a \emph{query-type} effect, and that one sentence
+predicts the sign in advance. We then ran the discriminating experiments we had nominated
+for it (\S\ref{sec:occlusion}) and \textbf{none of them supported the query-type reading}.
+The third of them went further and removed the positive side of the comparison altogether.
+What survives is weaker and stated as such below: the premise predicts \emph{losses}
+reliably and \emph{wins} not at all, because after \xid{X113} there is no win left for it
+to predict.
 
 \begin{claimbox}[The completion premise]
 \label{claim:premise}
-Associative descent improves retrieval when, and only when, the cue is a degraded instance
-of a stored pattern. The descent step computes a convex combination of stored patterns and
-moves the state onto their span. Where the cue is a corrupted copy of a memory, that motion
-restores signal the corruption removed. Where it is not, the same motion destroys the cue's
-discriminative content with nothing to recover.
+Associative descent improves retrieval \emph{only if} the cue is a degraded instance of
+\textbf{exactly one} stored pattern. The descent step computes a convex combination of
+stored patterns and moves the state onto their span, converging on a single one of them.
+Where the cue is not a corrupted copy of a memory, that motion destroys the cue's
+discriminative content with nothing to recover. Where it is a corrupted copy of
+\emph{several}, the motion commits to one and discards the rest.
+
+\textbf{The converse does not hold, and we no longer have an instance of it.} We
+originally stated this claim as ``when, and only when''. The ``when'' half is withdrawn:
+\S\ref{sec:occlusion} satisfies the premise on text, on two image targets, and on
+single-target images scored by identity, and descent wins in none of the three. The premise
+is necessary, not sufficient --- and as a sufficient condition it is not merely unproven
+but \emph{contradicted on its own best case}.
 \end{claimbox}
 
-Claim~\ref{claim:premise} is falsifiable in two directions and we test both.
+Claim~\ref{claim:premise} is falsifiable in three directions and we test all three.
 
-\emph{Satisfied, and descent wins, more as the premise is satisfied harder.} An occluded
-image \emph{is} a degraded copy of a stored image. Descent's advantage is null at light
-corruption, where little has been removed ($+0.003$, \ci{-0.008}{+0.014}, n.s.\ at 30\%),
-and grows monotonically with severity to $+0.021$ \ci{+0.007}{+0.034} at 70\%. A
-dose-response relationship in the predicted direction, on a pre-committed held-out split.
+\emph{Satisfied, and descent still does not win.} We previously placed our image study
+here, as the confirming case: descent's advantage over cosine was null at light corruption
+($+0.003$, \ci{-0.008}{+0.014}, n.s.\ at 30\%) and grew monotonically to $+0.021$
+\ci{+0.007}{+0.034} at 70\%, a dose-response in the predicted direction on a pre-committed
+held-out split. Those numbers reproduce exactly and they do not mean what we took them to
+mean. The study's cues are occluded images from a disjoint split, so the cue's source image
+is \emph{not in the bank}, and its metric is ten-way same-class accuracy; neither fact
+appeared in our earlier description of it. The premise was therefore never satisfied by the
+experiment we offered as satisfying it, and the quantity being measured was classification,
+not completion. \S\ref{sec:occlusion} reports what happens when both defects are repaired:
+against a matched classifier the effect reverses, and on cues that really are degraded
+copies of stored patterns it is a null.
 
 \emph{Violated, and descent loses, more as descent is applied harder.} A \textsc{LoCoMo}
 question is not a corrupted conversational turn. Interpolating from pure cosine to pure
@@ -35,13 +55,19 @@ exclusive operating points (Table~\ref{tab:regimes}).
 
 \begin{table}[t]\centering\small
 \caption{The three regimes, the operating point each requires, and the evidence. No single
-fixed configuration serves more than one.}
+fixed configuration serves more than one.
+\textsuperscript{$\dagger$}\textbf{This row no longer has a confirming measurement.} The
+premise satisfied on \emph{text} yields no winning $\beta$ in $45$ cells; satisfied by
+\emph{two} image targets at once it loses $-0.245$; and satisfied by single occluded images
+scored by identity it gives $-0.003$ \ci{-0.008}{+0.000} (\S\ref{sec:occlusion},
+\xid{X113}). The row is retained because the \emph{regime} is a real one --- a cue can be a
+degraded copy of a stored pattern --- but what wins in it, in our hands, is the corner.}
 \label{tab:regimes}
 \begin{tabular}{@{}llll@{}}
 \toprule
 \textbf{Regime} & \textbf{The cue is} & \textbf{What wins} & \textbf{Operating point} \\
 \midrule
-Completion & a degraded copy of a stored pattern & multi-step descent & $T>1$, $\beta$ in band, $H{=}0$ \\
+Completion\textsuperscript{$\dagger$} & a degraded copy of \emph{one} stored pattern & plain cosine & $T{=}1$, $\beta\to\infty$ \\
 Composition & $h$ steps upstream of the answer & predictor rollout & $H\geq 1$ \\
 Semantic match & a question about stored evidence & plain cosine & $T{=}1$, $\beta\to\infty$ \\
 \bottomrule
@@ -70,11 +96,112 @@ component we flagged as most exposed to the selection error of \S\ref{sec:protoc
 the selector is fitted and frozen on training data. What went wrong first was not the
 selector but the \emph{baseline} it was scored against.
 
-\subsection{What the taxonomy predicts that we have not yet run}
+\subsection{The discriminating test, now run}
+\label{sec:occlusion}
 
-The cheapest discriminating test is a text occlusion study: hold the \textsc{LoCoMo} corpus
-and encoder fixed and swap the queries from questions to \emph{masked turns}. Only the query
-type changes. Claim~\ref{claim:premise} predicts that descent regains its advantage; if it
-does not, the premise is wrong and the modality explanation is right. We flag this as the
-experiment most likely to falsify our own central claim, and its absence as a limitation
-rather than as future work.
+An earlier version of this section nominated a text occlusion study as the cheapest
+discriminating test, predicted that descent would regain its advantage, and committed in
+advance to the alternative reading: ``if it does not, the premise is wrong and the modality
+explanation is right.'' We flagged it as the experiment most likely to falsify our own
+central claim. It has now been run, pre-registered, and \textbf{it falsified the
+prediction} (\xid{X110}).
+
+\paragraph{Design.} \textsc{LoCoMo} corpus and encoder held fixed; only the query type
+changes. The cue is a stored turn with a contiguous span of its words removed --- a span,
+because the image study blacks out a square \emph{patch} --- at the same three severities
+the image study used. The gold item is that turn, so the premise holds by construction and
+the task is single-target. $\beta$ was selected on a disjoint half of the conversations and
+used once. $5{,}547$ eligible turns; the identity control at zero masking returns
+$\mathrm{recall}@1 = 1.000$, and cosine has ample headroom ($0.934 \to 0.721 \to 0.365$
+across the three levels).
+
+\paragraph{Result.} Descent never wins. At the selected $\beta$ the held-out
+$\Delta\,\mathrm{recall}@1$ is $-0.0007$ \ci{-0.0013}{+0.0000} at 70\% masking, with no
+dose-response. Widening the search to fifteen $\beta$ values from $1$ to $1024$ crossed with
+the three severities gives \textbf{$0$ of $45$ cells with a positive
+$\Delta\,\mathrm{recall}@1$, and $0$ of $45$ for $\mathrm{recall}@5$}. The harm falls
+monotonically in $\beta$ and asymptotes at zero --- which is Corollary~\ref{cor:degeneracy}
+rather than a band: the best available configuration is the one that reduces to cosine. On
+images a $\beta$ existed where descent beat \emph{cosine} --- though not, as the next
+subsection shows, where it beat a classifier --- while on text there is no such $\beta$ at
+all.
+
+\paragraph{And the shortlist cost does not vanish.} Even at $\beta = 1024$, where rank 1 is
+cosine's by the reduction, $\Delta\,\mathrm{recall}@5$ stays at $-0.029$, $-0.111$ and
+$-0.144$ across the three severities. That is Remark~\ref{rem:shortlist} measured at the
+limit on $5{,}547$ text probes: ranks $2..k$ read off the converged state order by proximity
+to $z_{i^\star}$ forever, so the regression is structural and not a tuning artefact.
+
+\paragraph{The third direction: more than one target.} The premise says ``a degraded
+instance of a stored pattern''. If the cue is a degraded instance of \emph{two}, the descent
+must still converge on one. We built that cue in the modality where descent appeared to win
+--- splice
+the left half of one stored image onto the right half of another, always across classes, so
+the gold set is both source images --- and descent loses heavily: $\Delta\,\mathrm{gold}@5 =
+-0.245$ \ci{-0.275}{-0.215} against cosine on held-out cues, with $\beta$ again selected on
+a disjoint half (\xid{X111}). Single-target is not a detail of the premise; it is the
+premise.
+
+\subsubsection*{The fourth direction: auditing the win itself (\xid{X113})}
+
+Both tests above are of the form ``satisfy the premise somewhere new''. The remaining
+direction is to ask whether the one place we claimed it \emph{was} satisfied really was. It
+was not, in two independent ways, and we found this by reading our own scoring code rather
+than by running anything.
+
+\paragraph{What the image study actually measured.} Its bank is $400$ images drawn from the
+\texttt{train} split and its cues are occluded images from the \texttt{val} split, so
+\textbf{the cue's source image is never in the bank}: the cue is a degraded instance of an
+\emph{unstored} pattern that shares a class label with $40$ stored ones. And a retrieval is
+scored correct when the returned memory shares the query's class, over ten classes ---
+\textbf{the metric is classification accuracy, not identification}. Chance is $0.100$, which
+is the number we had already reported as the collapse floor without remarking that it is
+also the chance rate. Neither fact was stated in our earlier description of the experiment,
+and together they mean the study never tested the premise it was offered as satisfying.
+
+\paragraph{The mechanism this leaves.} At the selected $\beta{=}40$ the first descent step
+has an effective support of $12.7$ patterns (median; mean $15.9$, $p_{90}$ $32.2$) out of
+$400$, with $48\%$ of the blend mass on the cue's own class. On a class metric, averaging
+over a same-class neighbourhood of that size is a \emph{soft $k$-nearest-neighbour class
+vote}, which is a standard classifier containing no energy, no iteration and no attractor.
+Cosine top-$1$ is a $1$-NN classifier and gets no such ensemble, so our published comparison
+was between a hard classifier and a soft one.
+
+\paragraph{The matched baseline reverses the result.} We added the explicit vote: score each
+class by $\sum_{i \in \mathcal{N}_k(q),\, c_i = c} \sm(\tau\langle z_i,q\rangle)$ and
+predict the argmax, with $k$ and $\tau$ selected on the same tune half that chose $\beta$,
+from grids declared in advance ($k \in \{1,3,5,10,20,40\}$, $\tau \in \{4,\dots,64\}$;
+$k{=}1$ reproduces cosine exactly, an internal null that passes at every $\tau$). Selection
+chose $k{=}20$ --- the same order as the $12.7$ patterns descent blends implicitly. On the
+held-out half (Table~\ref{tab:images}) the vote scores $0.602$ against descent's $0.566$ and
+cosine's $0.553$: descent is \textbf{worse than the matched baseline at every occlusion
+level}, pooled $-0.036$ \ci{-0.043}{-0.028}. Descent's $+0.014$ over cosine is real and is
+roughly a quarter of what the plain classifier gets for free.
+
+\paragraph{And the premise's own best case is a null.} Finally we built the experiment our
+prose had always described: occlude the \emph{bank} images themselves, so the cue is
+genuinely a degraded copy of a stored pattern, and score \textbf{same-image} recall@1.
+The identity control passes exactly (cosine recall@1 $=1.0000$ at $0\%$ occlusion). On the
+held-out half (Table~\ref{tab:completion}) descent gives $-0.003$ \ci{-0.008}{+0.000}
+against cosine, and $\beta$ selection on the tune half chose $80$, the top of the grid ---
+Corollary~\ref{cor:degeneracy} again, selection walking toward the corner. Same-class
+accuracy on the identical cues is also null ($-0.002$). Where the premise is satisfied
+exactly, in the modality where we thought descent won, and with the metric that matches the
+word ``completion'', there is nothing there.
+
+\paragraph{What we conclude.} The query-type reading is not supported, and we withdraw it
+rather than defend it. The completion premise still predicts every \emph{loss} we have
+measured --- text question$\to$evidence, text masked turns, two-target image splices, and
+now single-target image identification --- and it no longer has a \emph{win} to predict.
+The taxonomy's three regimes stand as a description of where descent loses, which is what
+the evidence supports. The claim that one sentence predicts the sign in advance does not,
+and neither does the claim that there exists a regime in which departing from the corner
+pays: across four corpora, two modalities and every knob in
+Equation~\eqref{eq:update}, we have not found one.
+
+We state plainly what this costs the paper. \xid{X113} removes the only positive result we
+had for the energy machinery itself, and it is a result we had published a pre-registered,
+split-clean, bootstrapped confirmation of. What it does not touch is
+\S\ref{sec:composition}: the nonparametric predictor does not read an answer off the
+landscape and its one-hop advantage is unaffected by anything here. The paper's single
+surviving positive is the mechanism that is not associative retrieval.

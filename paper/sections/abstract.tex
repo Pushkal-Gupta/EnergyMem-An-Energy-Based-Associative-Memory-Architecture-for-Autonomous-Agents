@@ -13,15 +13,32 @@ sharp one: \emph{which departures from that corner pay for themselves, and where
 We answer it across two modalities with a single frozen encoder, thread-disjoint
 hyperparameter selection, and cluster-bootstrap intervals throughout: $5{,}847$ held-out
 image queries, $1{,}977$ \textsc{LoCoMo} questions, $146$ multi-target text questions, and
-$10{,}638$ temporal-association probes across two corpora. The answer is regime-dependent and mostly negative.
-Iterative descent beats cosine on image pattern completion ($+0.014$ pooled Recall@1,
-95\% CI $[+0.006,+0.021]$), and the advantage \emph{grows monotonically with corruption
-severity}, from a null $+0.003$ at 30\% occlusion to $+0.021$ at 70\%. It loses
-monotonically on conversational question$\to$evidence retrieval: every increment of
-descent costs accuracy, from $0.336$ to $0.252$ Coverage@5 across an interpolation sweep
-whose endpoint provably reproduces cosine. One mechanism explains both signs. Associative
-completion requires the cue to be a degraded instance of a stored pattern; image occlusion
-satisfies that premise and question answering violates it.
+$10{,}638$ temporal-association probes across two corpora. The answer is negative for
+every mechanism that changes only \emph{how an answer is read off} a fixed landscape, and
+the clearest evidence for that is the collapse of our own strongest positive result.
+Iterative descent beat cosine by $+0.014$ pooled \ci{+0.006}{+0.021} on occluded images,
+rising to $+0.021$ at 70\% occlusion. That number reproduces exactly and means much less
+than we claimed: the metric is ten-way same-class accuracy, the cue's source image is
+never in the bank, and at the selected $\beta$ the first descent step averages $12.7$
+patterns out of $400$ with half the blend mass on the cue's own class --- an implicit
+class vote. Scored against the matched baseline that makes explicit, a soft
+$k$-nearest-neighbour class vote with no energy, no iteration and no attractor, descent is
+\emph{worse} at every occlusion level ($-0.036$ pooled, \ci{-0.043}{-0.028}). Building the
+experiment our premise actually describes --- occluded copies of images that \emph{are}
+stored, scored by identity rather than class --- leaves descent at $-0.003$
+\ci{-0.008}{+0.000} against cosine. Descent loses monotonically on conversational
+question$\to$evidence retrieval as well: every increment costs accuracy, from $0.336$ to
+$0.252$ Coverage@5 across an interpolation sweep whose endpoint provably reproduces cosine.
+
+One premise explains every loss. Associative completion requires the cue to be a degraded
+instance of a stored pattern, and question answering violates it. We nominated the
+discriminating tests against ourselves and ran all three: masked spans of stored
+\emph{text} satisfy the premise and give no $\beta$ that beats cosine in $45$ swept cells;
+a cue that is a degraded copy of \emph{two} stored images at once loses $-0.245$; and
+occluded copies of single stored images, the premise's best case, are the null above.
+The premise therefore predicts every loss we measure and retains \emph{no} confirming
+instance --- we report it as necessary and not sufficient, and withdraw the image result
+as evidence for an associative mechanism.
 
 We further show that $\beta$---the only dial with leverage---is influential only inside a
 narrow, encoder-specific band (${\approx}[32,64]$ on the vision backbone we measure it on), above which
@@ -41,13 +58,13 @@ vote-count readout, multi-scale $\beta$, per-memory $\beta$, retrieval-margin ca
 and coupling the predictor into the energy functional all fail, each with a diagnosed
 mechanism rather than a bare null.
 
-Finally, we report the measured magnitude of six protocol errors we committed and
+Finally, we report the measured magnitude of seven protocol errors we committed and
 corrected. Each would have yielded a publishable but false result: a non-dimensionless
 hyperparameter ($0.016$ vs.\ $0.277$ after normalisation), a pseudo-replicated bootstrap
 ($p{=}0.0005$ vs.\ $p{=}0.076$), test-set hyperparameter selection ($+0.042$ vs.\
 $+0.004$), asymmetric candidate exclusion (an exact $0.000$ that read as a finding), an
 unmatched step size ($-0.115$ vs.\ $-0.062$), and a significant result whose script was
 never committed and does not reproduce ($+0.049$, $p{=}0.032$ vs.\ $+0.024$, $p{=}0.24$).
-Two of the six were false \emph{negatives}, which proved materially harder to find. We release all code, the regime taxonomy, and
+Two of the seven were false \emph{negatives}, which proved materially harder to find. We release all code, the regime taxonomy, and
 an append-only experiment ledger in which every entry above appears with its date, its
 question, and the entries it overturned.

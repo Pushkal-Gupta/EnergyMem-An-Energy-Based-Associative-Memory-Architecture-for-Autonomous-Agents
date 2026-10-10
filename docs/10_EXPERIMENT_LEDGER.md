@@ -700,4 +700,281 @@ citations. Built with `tectonic`; the repository has no `pdflatex`, so
   hyperparameter. The protocol needs the rule stated plainly: **before reporting any delta,
   write down what the other arm was allowed to do, and check that it was allowed to do its
   best.**
+<<<<<<< HEAD
 >>>>>>> eb3d8ea (Fix a Proposition 1 over-claim that contradicted its own appendix, and withdraw a Phase 7 win whose baseline was handicapped)
+=======
+
+---
+
+## Phase 9 — Families H, I and the family-A remainder: the paper's own falsifier fires (2026-10-10)
+
+Drivers: `x110_text_occlusion.py`, `x111_image_multitarget.py`, `x102_hotpot.py`,
+`x104_beir.py`, `x3x_family_a.py`, `x67_joint_and_x105.py`, `hotpot.py`.
+Pre-registration: `experiment-backlog/PREREG_X110.md`, written before the X110 driver.
+
+### X110 — the experiment the paper nominated against itself, and it fired
+
+`taxonomy.tex` named this test, predicted the outcome, and committed in advance to the
+alternative reading: *"if it does not, the premise is wrong and the modality explanation is
+right. We flag this as the experiment most likely to falsify our own central claim."*
+
+Hold the LoCoMo corpus and encoder fixed; swap the queries from questions to **masked
+turns**. The cue is a stored turn with a contiguous span removed — a span, because the image
+study blacks out a square *patch* — so the completion premise holds by construction.
+5,547 eligible turns. Identity control at zero masking: cosine `recall@1` = **1.0000**.
+Cosine has ample headroom: 0.934 → 0.721 → 0.365 across the three image-study severities.
+
+**Descent never wins.** Held-out at the tune-selected β: Δ`recall@1` = −0.0007
+[−0.0013,+0.0000] at 70% masking, no dose-response, pre-registered primary endpoint **not
+met**. Widening to fifteen β from 1 to 1024 × three severities (X110b):
+
+**0 of 45 cells positive on `recall@1`. 0 of 45 on `recall@5`.**
+
+The harm falls monotonically in β and asymptotes at zero — Corollary 1, not a band. The best
+available text configuration is the one that reduces to cosine. On images a β existed where
+descent won; on text no such β exists.
+
+**And the shortlist cost is structural.** Even at β=1024, where rank 1 is cosine's by the
+reduction, Δ`recall@5` stays at −0.029 / −0.111 / −0.144. That is `rem:shortlist` measured
+at the limit on 5,547 text probes — the third independent confirmation after X98 and the
+X67 grid.
+
+### X111 — the premise needs "exactly one", and I4 is true and useless
+
+Splice the left half of one stored image onto the right half of another, always cross-class:
+the cue is a degraded copy of **two** stored patterns and the gold set is both. Premise
+satisfied twice over, in the modality where descent wins, with gold-pair ε = 0.473.
+
+- **Descent loses: Δgold@5 = −0.245 [−0.275,−0.215]**, β selected on a disjoint half. It
+  must converge on one basin, and there are two answers.
+- **I4's own comparison is confirmed, decisively**: logsumexp beats averaging in **20/21**
+  (K₀,β) cells, +0.178 [+0.152,+0.205] at the tune-selected cell. The gap widens with β
+  because the averaged combiner collapses onto its heaviest mode and discards the cue while
+  logsumexp degrades gracefully toward it.
+- **And it does not matter: 0/21 cells where either combiner beats the cue alone.**
+
+This reconciles the earlier falsifications. X25 compared at matched step size (X23b), which
+removed exactly the degradation that makes averaging collapse — so "I4 falsified" was
+measuring the step size, and "I4 confirmed" here measures the combiner. Both are right.
+Neither is the binding constraint. **The invariant was about the wrong comparison:** the one
+that decides whether to build a multi-mode readout is against the single query, and it has
+never once come out in favour.
+
+### X102 — HotpotQA, and the geometric excuse
+
+The last P0. LoCoMo's gold turns have ε = 0.527 — mutually *similar* — which was the most
+charitable remaining explanation for X32's missing interaction. HotpotQA's supporting
+sentences come from different Wikipedia articles. 1,196 questions, 41.5 sentences per bank,
+|gold| = 2.41, questions independent so the bootstrap is **not floored by ten clusters**.
+
+| | |
+|---|---|
+| ε, all / bridge / comparison | **0.456 / 0.467 / 0.413** vs LoCoMo's 0.527 |
+| dilution bound binds | **0/1196 = 0.0%** (LoCoMo: 0.0%) |
+| X32's interaction (bridge − comparison) | **+0.0000, prediction not met**; K₀=0 selected for both |
+| RRF vs cosine | **+0.0826 [+0.0625,+0.1028]**, p<0.0001 |
+
+ε is lower, and **not nearly low enough to matter** — the excuse is weakened, not
+eliminated, and the title prefix we add to each sentence may inflate it. The interaction is
+absent on the corpus built to favour it. **X102d needed a correction mid-run:** forced to
+K₀=4, logsumexp beats averaging (+0.0223 [+0.0097,+0.0352]) — but both sit *below cosine*
+(0.632 and 0.609 vs 0.640). The first run did not print the cosine column; it now does, and
+prints `BOTH BELOW THE NULL`. A gap between two combiners is not evidence for either unless
+one of them beats doing nothing.
+
+### X104 — SciFact: a caveat against ourselves
+
+Rocchio/PRF is the prior art a reviewer names first, and in our hands it has never helped.
+Two explanations with very different consequences: PRF genuinely does not help on these
+tasks, or **our PRF is weak**, in which case every comparison against it flatters the
+architecture. SciFact is PRF's home turf. Result: **0 of 16 swept cells beat cosine**, and
+free selection picks γ=0.
+
+We cannot settle it, so the paper now says so and withdraws the "prior art does not help
+either" line. (Our cosine ndcg@10 = 0.703 on SciFact is in the published range for this
+encoder, so the baseline is not broken.) Also the most favourable cell for the architecture
+anywhere in the program: selection picked K₀=5 and the mixture scored **+0.0105
+[−0.0029,+0.0245], p=0.12** — not significant, n=150, and worth a powered replication rather
+than a claim.
+
+### The family-A remainder
+
+| ID | result |
+|---|---|
+| **X35 answer coverage** | **The retrieval win does not survive downstream.** RRF's +0.124 evidence `recall@10` becomes **+0.007 [−0.013,+0.027]** answer coverage@10. The mixture is significantly *worse*: −0.037 [−0.051,−0.026]. |
+| X34 displacement modes | 0/10 cells beat the query alone; harm monotone in α (−0.075 at α=1). |
+| X36 cat-5 specificity | **Artifact, self-caught.** The first run showed the mixture hugely more confident (margin 0.75 vs 0.048, abstention 0.000 vs 0.186) — but a logsumexp score is not a cosine, so raw margins and absolute thresholds are not comparable across methods. Z-scored within query, the effect reverses and the cat5−cat4 contrast is near-identical (+0.048 vs +0.036). **No specificity cost; the appearance was the score scale.** |
+| X37 bank scope | Pooling 10× costs both (cosine −0.052, mixture −0.044). The scaling argument is not supported. |
+| X39 metadata priors | 0/8. Same-speaker and session-adjacency join X62's four: no strength prior helps, including on cat 2 (temporal), the category they were for. |
+| X40 cross-session | On cat 1 cross-session (n=268) **cosine 0.333 beats RRF 0.311 and the mixture 0.271** — RRF's win does not extend to the regime the architecture was designed for. |
+| **X41 paraphrase modes** | **The strongest alternative explanation gains support.** Expanding from question *paraphrases* is far better than from retrieved turns (−0.004 vs −0.099 pooled; **+0.0135 [−0.0058,+0.0339] vs −0.0563 on cat 1**). The best mode source found is not memory at all — it is the query restated. Not significant, but it points away from association. |
+| X42–X48 | Per-category: the mixture equals cosine in every category (null selected 10/10) except open-domain, where it is worse. RRF wins every category. |
+| X67–X69 joint grid | **0/30 cells.** No *combination* of β, T and K beats the corner either. gold@1 → +0.0000 at β=512,T=1 (the reduction); gold@10 never reaches 0 (`rem:shortlist` again). |
+| X105 transfer | Both corpora select K₀=0, so there is nothing to transfer. |
+
+### Not run, and why
+
+- **X120–X123 (family J, reader in the loop): BLOCKED.** No `ANTHROPIC_API_KEY` in this
+  environment. X35 is the API-free proxy for X120/X122 and its answer is discouraging.
+- **X100 LongMemEval, X101 MSC, X103 QuALITY/NarrativeQA: deprioritised**, not failed. Four
+  corpora (LoCoMo, HotpotQA, SciFact, imagenette) now agree; a fifth text corpus has low
+  marginal value against its cost. Say "not run", never "does not replicate".
+- **X112 cross-modal: out of scope by the matched-encoder rule.** It needs a joint
+  embedding space (CLIP), which cannot be compared against anything else in the project.
+
+### What Phase 9 establishes, and what went into the paper
+
+- 📉 **The paper's central claim is narrowed, by its own nominated test.** The completion
+  premise is **necessary, not sufficient**: it predicts every loss measured — text
+  question→evidence, text masked turns, two-target image splices — and does not predict the
+  one win, which remains single-target image completion.
+- ✅ **I4 is true in a form that changes nothing**, and the earlier falsification and this
+  confirmation are both correct because they compare different things.
+- 📉 **The retrieval gain does not reach a downstream proxy** (X35).
+- ⚠️ **One caveat against ourselves**: our PRF never helps anywhere, including on its home
+  turf, so we stop claiming prior art does not help.
+- 🧹 **Two artifacts self-caught before they became claims**: X102d's missing cosine column
+  and X36's score-scale confound. Neither reached a conclusion.
+
+Paper edits (scope: narrow claims the paper makes, not add a new results section):
+`taxonomy.tex` (claim narrowed, §"not yet run" replaced by §`sec:occlusion` with the
+result, regimes-table row footnoted), `abstract.tex`, `intro.tex` (C3 and the closing
+summary), `conclusion.tex`, `limitations.tex` (X35 and the PRF caveat), `results.tex` (the
+I4 refinement). **The LoCoMo-QA retrieval task and RRF beating the architecture on four
+corpora are still deliberately out** — that is a second paper, and Phases 7–8 said so.
+Build: 27 pages named (was 25), 0 overfull boxes, 0 undefined references.
+
+---
+
+## Phase 10 — X113: the win was an unmatched baseline
+
+**Date:** 2026-10-10. **Pre-registration:** `experiment-backlog/PREREG_X113.md`, committed
+before `experiments/x113_class_vote.py` existed. **Driver:** that file.
+**Result JSON:** `experiments/results/x113_class_vote.json`.
+
+### How this started
+
+Not from an experiment. From reading `scripts/confirm_holdout.py` line 120, the hit
+criterion of the paper's flagship positive result:
+
+```python
+out.append(float(id_to_class[retr.retrieve(q, 1).ids[0]] == test_cls[j]))
+```
+
+Two facts follow, neither of which was in the paper:
+
+1. **The metric is same-CLASS, not same-image.** Ten classes, so the "image pattern
+   completion" study is ten-way classification through a retrieval interface. Chance is
+   0.100 — the number we had already been reporting as the collapse floor without noticing
+   it is also the chance rate.
+2. **The cue's source image is never in the bank.** Bank = 400 images from `train`,
+   cues = occluded images from `val`. The cue is a degraded instance of an **unstored**
+   pattern that shares a label with 40 stored ones.
+
+So the experiment offered as the confirming case for Claim 1 never satisfied Claim 1.
+
+### X113a — the matched classifier baseline
+
+Same cache, bank, cues, split (rng 42) and metric as the published run. Added arm: soft
+k-NN class vote, `k` and `tau` selected on the same tune half that chose `beta`, grids
+pre-declared. Internal null: k=1 reproduces cosine exactly at every tau — it does.
+Equivalence check: the vectorised descent path matches `EnergyMemory.retrieve` on 200/200
+held-out queries at beta=40, so this is the published operator, not a lookalike.
+
+| arm | pooled | 30% | 50% | 70% |
+|---|---|---|---|---|
+| cosine (1-NN) | 0.5529 | 0.7301 | 0.5423 | 0.3864 |
+| descent beta=40 | 0.5664 | 0.7332 | 0.5593 | 0.4069 |
+| **k-NN vote k=20, tau=16** | **0.6020** | **0.7614** | **0.5998** | **0.4448** |
+
+- descent − cosine **+0.0135 [+0.0062,+0.0210]** — reproduces the published +0.014 exactly.
+- k-NN vote − cosine **+0.0491 [+0.0400,+0.0587]**.
+- **descent − vote −0.0356 [−0.0431,−0.0282]**, and negative at every single level.
+
+Selection chose k=20 on the tune half. Tune-half deltas: descent +0.0157, vote +0.0453.
+
+### X113c — the mechanism, and why k=20 is not a coincidence
+
+At the published operating point beta=40, the first descent step has an effective support
+of **12.7 patterns (median; mean 15.9, p90 32.2) out of 400**, with **48% of the blend mass
+on the cue's own class**. On a class metric that *is* a soft class vote over a
+same-class neighbourhood of the same order as the k the vote grid selected. Descent was
+doing the vote implicitly and worse.
+
+(For contrast, at the beta=80 that X113b selects the support is 1.2 patterns — the corner.)
+
+### X113b — the premise's own best case
+
+Built the experiment the prose always described: occlude the **bank** images, so the cue
+really is a degraded copy of a stored pattern, and score **same-image recall@1**.
+
+- Bank-path reproduction check against the published cache: max |delta| = **0.00e+00**.
+- **Identity control: cosine same-image recall@1 = 1.0000** at 0% occlusion.
+- beta selected on a disjoint half of the bank images: **80, the top of the grid** —
+  Corollary 1, selection walking toward the corner.
+
+| metric | cosine | descent | delta |
+|---|---|---|---|
+| same-image recall@1 | 0.6233 | 0.6200 | **−0.0033 [−0.0083,+0.0000]** |
+| same-class accuracy, identical cues | 0.7383 | 0.7367 | −0.0017 [−0.0083,+0.0050] |
+
+Per level the same-image delta is +0.0000 / −0.0050 / −0.0050. At 30% it is *exactly* zero:
+degenerate, i.e. cosine.
+
+### Verdict against the pre-registered outcome table
+
+The pre-registration's **fourth row** fired — the row written as "a real possibility and the
+reason this is pre-registered":
+
+> ≤ 0 and ≤ 0 → The one surviving positive regime does not survive. Claim 1 keeps no
+> confirming instance, and the paper's thesis becomes uniformly negative.
+
+### THE SEVENTH PROTOCOL ERROR: AN UNMATCHED BASELINE
+
+This is the one that matters most, because **every safeguard we had was already in place**.
+The image result had a disjoint tune/test split, a pre-committed single comparison, a
+declared grid, a paired bootstrap resampling images, and a withdrawn underpowered
+predecessor. None of that detects:
+
+- a **baseline weaker than the method for a reason unrelated to the mechanism** (1-NN vs
+  soft-k-NN), or
+- a **metric whose name does not match the operation it scores** ("Recall@1" for ten-way
+  class accuracy).
+
+Reported +0.014 [+0.006,+0.021]; corrected −0.036 [−0.043,−0.028]. The rule stated in
+Phase 9 — *before reporting any delta, write down what the other arm was allowed to do, and
+check it was allowed to do its best; if a comparison has two arms, print the null as a
+third* — was written for X102d and X65, and would have caught this one too. It is now the
+first thing in the protocol, not the last.
+
+A second rule the episode adds: **read the scoring function before believing the metric
+name.** This defect was found by re-reading our own code, which is the one audit we had
+never systematised.
+
+### What Phase 10 establishes, and what went into the paper
+
+- 📉 **The paper's only positive result for the energy machinery is withdrawn.** Claim 1
+  keeps **no** confirming instance: the premise satisfied on text (0/45 cells), on two
+  image targets (−0.245), and on single stored images scored by identity (−0.003) all fail.
+- 📉 **Across four corpora, two modalities and every knob in the update equation, no
+  departure from the (T=1, beta→inf, b=0, R=I) corner beats it.** That is now the finding.
+- ✅ **The one surviving positive is untouched**: the nonparametric predictor
+  (§composition) does not read an answer off the landscape. The paper's single positive is
+  the mechanism that is not associative retrieval.
+- 🧹 **The generated-table policy did its job and was extended**: `tab_images.tex` now
+  carries the vote column, `tab_completion.tex` is new, both generated from
+  `x113_class_vote.json`. The `_validate` guard in `make_tables.py` rejected my first
+  attempt (a bare `\cmidrule` row) — `\cmidrule` was added to its structural exemptions.
+
+Paper edits: `abstract.tex` (image claim rewritten, premise now has no confirming
+instance), `intro.tex` (premise paragraph, C3, C6, closing), `taxonomy.tex` (claimbox,
+"satisfied and descent wins" paragraph replaced, regimes-table Completion row now **plain
+cosine**, new `sec:occlusion` subsection carrying X113), `results.tex` (§completion
+retitled and rewritten, both tables, multibeta caption), `setup.tex` (the two load-bearing
+properties of the image design, previously missing), `method.tex` (band figure caption and
+the interior-optimum reading), `limitations.tex` (new paragraph on the defect as a process
+limitation), `protocol_errors.tex` (**seventh error added**, counts propagated),
+`appendix.tex` (budget table rows, the no-X-identifier gap).
+Build: **30 pages named / 29 anonymous** (was 27/26), 0 overfull boxes, 0 undefined
+references or citations.
+>>>>>>> 2480810 (Withdraw the image result as evidence for an associative mechanism: the published comparison was a 1-NN classifier against a soft-k-NN one)

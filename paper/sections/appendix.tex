@@ -81,8 +81,10 @@ retrieved \emph{set} only when $q$ is close enough to $z_{i^\star}$ that the two
 neighbourhoods coincide.
 
 This is not a technical caveat; it is the mechanism behind the empirical shortlist
-regression in \S\ref{sec:completion}. Descent improves Recall@1 while degrading Recall@5
-($0.605$ vs.\ cosine's $0.759$) precisely because the converged state has forgotten the cue.
+regression in \S\ref{sec:completion}. Descent improves top-1 while degrading recall@5
+($0.605$ vs.\ cosine's $0.759$; both class-level, as everywhere in the image study ---
+\texttt{exp\_multibeta\_scales.py} computes them that way and labels them so) precisely
+because the converged state has forgotten the cue.
 Our implementation of the dense baseline therefore reads the top-$k$ from $q$ directly, which
 is both the standard definition and the configuration that \texttt{tests/test\_reduction.py}
 verifies; a baseline reading ranks $2..k$ off the converged state would be a weaker baseline
@@ -118,9 +120,9 @@ retrieval by Proposition~\ref{prop:reduction}.
 \paragraph{Scope of the empirical claim.} Corollary~\ref{cor:degeneracy} is exact only in
 the limit. The empirical statement in \S\ref{sec:band} --- that a comparison run at high
 $\beta$ compares cosine against cosine --- is therefore an \emph{approximation claim}, and we
-state its evidential basis precisely rather than leaning on the theorem. On held-out image
-completion at $\beta{=}512$, descent returns \emph{the same memory as cosine on
-$99.4\%$ of queries} (Recall@1 $0.4986$ against the cosine baseline's
+state its evidential basis precisely rather than leaning on the theorem. On the held-out
+image task at $\beta{=}512$, descent returns \emph{the same memory as cosine on
+$99.4\%$ of queries} (same-class accuracy $0.4986$ against the cosine baseline's
 $0.5000$). Decision agreement is the right statistic and accuracy is not: two
 retrievers can score identically while disagreeing about what they return, and the
 corollary is a claim about the choice. The theorem explains \emph{why} the gap closes and gives the rate
@@ -160,8 +162,10 @@ makes.}
 \toprule
 \textbf{Experiment} & \textbf{Parameter grid} & \textbf{Budget} & \textbf{Selected on} & \textbf{Reported on} \\
 \midrule
-Image completion & $\beta \in \{12,\dots,512\}$, 14 values & 14 & tune half (images) & held-out half \\
+Image, same-class & $\beta \in \{12,\dots,512\}$, 14 values & 14 & tune half (images) & held-out half \\
  & cosine: none & --- & --- & held-out half \\
+ & $k$-NN vote: $k\times\tau$, $6\times 5$ & 30 & tune half (images) & held-out half \\
+Image, same-image (\xid{X113b}) & $\beta \in \{24,\dots,80\}$, 10 values & 10 & tune half (bank images) & held-out half \\
 Multi-$\beta$ & scale sets, 6 conditions & 6 & tune half & held-out half \\
 \textsc{LoCoMo} anchored & $\texttt{anchor}\times \mathrm{pp}_0$, 8 conditions & 8 & --- & all 1,977 questions \\
  & BM25: $k_1,b$ grid & 9 & dev questions & test questions \\
@@ -176,8 +180,8 @@ Association (\textsc{LoCoMo}) & $k_P,\tau$ as above & 9 & val sessions, per fold
 \end{table}
 
 The $\beta$ grid in row~1 is swept densely through the transition region and coarsely
-outside it, and \texttt{sweep\_beta\_transition.py} records, for every value, both Recall@1
-and the top-1 decision agreement with cosine plotted in Figure~\ref{fig:band}
+outside it, and \texttt{sweep\_beta\_transition.py} records, for every value, both
+same-class accuracy and the top-1 decision agreement with cosine plotted in Figure~\ref{fig:band}
 (\texttt{experiments/results/beta\_band.json}).
 
 \paragraph{Cost.} Measured wall-clock on the hardware of Appendix~\ref{app:repro}, per
@@ -186,7 +190,8 @@ $\beta$ at $T{=}8$ $0.0502$\,ms (16 matmuls), integrated multi-$\beta$
 mixture $0.0810$\,ms (16 matmuls), and the $m$-way ensemble
 $0.1434$\,ms (48 matmuls). The ratio that matters for deployment is the
 first against the second: a $21\times$ wall-clock
-cost for $+0.013$ Recall@1, in the one regime where descent wins. The mixture variants add a
+cost for $+0.013$ same-class accuracy over cosine --- a margin the $k$-NN class vote of
+\S\ref{sec:occlusion} exceeds for one extra argpartition. The mixture variants add a
 further $1.6$--$2.9\times$
 for an effect indistinguishable from zero (Table~\ref{tab:multibeta}).
 
@@ -263,11 +268,13 @@ multi-answer readout (X7--X9), real embeddings (X10--X15), the world-model turn
 (X16--X19), the mode-averaging gate (X23--X25b), and external validity (X26--X26c).
 
 \paragraph{One gap, stated rather than papered over.} Three studies predate the ledger
-convention and carry no \xid{X} identifier: image completion, the anchored \textsc{LoCoMo}
-sweep, and multi-scale $\beta$. They are cited in this paper by script name instead. We
-have deliberately not back-numbered them, because inserting entries into an append-only
-record retrospectively is precisely the manipulation the record exists to prevent. The
-ledger preamble says the same.
+convention and carry no \xid{X} identifier: the image same-class study, the anchored
+\textsc{LoCoMo} sweep, and multi-scale $\beta$. They are cited in this paper by script name
+instead. We have deliberately not back-numbered them, because inserting entries into an
+append-only record retrospectively is precisely the manipulation the record exists to
+prevent. The ledger preamble says the same. The audit that reinterpreted the first of the
+three \emph{does} carry an identifier (\xid{X113}) and a pre-registration committed before
+its driver existed, which is why the two can be read against each other.
 
 % SUBMISSION: attach docs/10_EXPERIMENT_LEDGER.md verbatim as supplementary material.
 % Do not reformat or abridge it -- a tidied ledger is not evidence of anything.

@@ -1,6 +1,6 @@
 \label{sec:protocol}
 
-This section reports six errors we made, and for each one the magnitude of the false result
+This section reports seven errors we made, and for each one the magnitude of the false result
 it produced in our own data. We include it because the errors are not exotic---each is a
 default that a reasonable person reaches for---and because their cost here is large enough
 to flip conclusions. The point is not confession. It is that for this class of experiment,
@@ -8,7 +8,7 @@ the protocol is not a hygiene matter around the result; it \emph{is} the result,
 put numbers on that.
 
 \begin{table}[t]\centering\small
-\caption{Six protocol errors and what each was worth. ``Reported'' is the number the error
+\caption{Seven protocol errors and what each was worth. ``Reported'' is the number the error
 produced; ``corrected'' is the number after the fix. Every one would have been publishable.}
 \label{tab:errors}
 \begin{tabular}{@{}p{0.26\textwidth}p{0.16\textwidth}p{0.15\textwidth}p{0.33\textwidth}@{}}
@@ -20,6 +20,7 @@ Pseudo-replicated bootstrap & $p{=}0.0005$ & $p{=}0.076$ & \textbf{False positiv
 Test-set hyperparameter selection & $+0.042$ & $+0.004$ ($p{=}0.43$) & \textbf{False positive.} $\beta$ was swept on the questions it was then scored on. Two corrections---more questions, then a storyline-disjoint split---took the effect to zero in stages ($+0.042 \to +0.027 \to +0.004$). \\
 Asymmetric candidate exclusion & $0.000$ exactly & --- & \textbf{False negative, disguised as a finding.} The cue was excluded from the candidate set for the baseline but not for the method under test. An exact zero alongside an unchanged Recall@5 looked like a structural result. \\
 Unmatched step size & $-0.115$ & $-0.062$ & \textbf{Inflated effect.} Comparing predictor variants at $\alpha{=}1$ against an average that implicitly applies $\alpha{\approx}0.34$ confounds the comparison with step size. Roughly half the apparent effect was the confound. \\
+Unmatched baseline & $+0.014$ \ci{+0.006}{+0.021} & $-0.036$ \ci{-0.043}{-0.028} & \textbf{False positive, and the only one no protocol check caught.} The image comparison was a 1-nearest-neighbour classifier against a soft-$k$-nearest-neighbour one, scored on a ten-way \emph{class} metric. Split hygiene, pre-registration and cluster bootstraps were all in place and all irrelevant: the baseline was weaker than the method for a reason unrelated to the mechanism under test (\xid{X113}). \\
 Uncommitted script & $+0.049$ ($p{=}0.032$) & $+0.024$ ($p{=}0.24$) & \textbf{Unresolvable.} A significant result at $n{=}37$ whose driver was never committed. Re-running the same split recovers the cosine baseline exactly but yields $n{=}123$ probes and no significant effect. With the original code gone the discrepancy cannot be diagnosed --- only reported. \\
 \bottomrule
 \end{tabular}
@@ -27,7 +28,7 @@ Uncommitted script & $+0.049$ ($p{=}0.032$) & $+0.024$ ($p{=}0.24$) & \textbf{Un
 
 Three observations we think generalise beyond this paper.
 
-\paragraph{The errors are not symmetric in how they feel.} Two of the six produced false
+\paragraph{The errors are not symmetric in how they feel.} Two of the seven produced false
 \emph{negatives}, and those were by far the harder to find, because a null result invites no
 scrutiny. The dimensionless-hyperparameter bug reported a working mechanism as $0.016$ when
 its true value was $0.277$; it was found only because the number was suspiciously round. A
@@ -41,14 +42,25 @@ read, reviewed and believed. We now treat ``has this been written twice, indepen
 distinct and stronger property than ``has this been reviewed'', and we report which of our
 claims have it: one does.
 
-\paragraph{An uncommitted script is not a result.} The sixth error is different in kind from
-the other five: it cannot be corrected, only recorded. Both drivers that were lost have now
+\paragraph{An uncommitted script is not a result.} The uncommitted-script error is different
+in kind from the others: it cannot be corrected, only recorded. Both drivers that were lost have now
 been rewritten, and rewriting them is what revealed that one of the two results did not
 reproduce. We state the rule the episode produces, because it is cheap and we did not follow
 it: a number does not enter the record until the code that produced it is committed.
 
+\paragraph{A protocol cannot check that the baseline was allowed to do its best.} The
+seventh error is the one we would most want a reader to take away, because every safeguard
+we had was already in place when we made it. Our image result had a disjoint tuning split,
+a pre-committed comparison, a paired bootstrap and a published grid, and it was still an
+artifact --- because all of those check \emph{how} two arms are compared and none of them
+check \emph{which} two arms. The method was a soft classifier and the baseline was a hard
+one; the metric was class identity, which is not what ``pattern completion'' means. The
+rule we now follow is stated in our ledger and is not a statistical one: before reporting a
+delta, write down what the other arm was allowed to do, and check it was allowed to do its
+best. Where a comparison has two arms, print a third.
+
 \paragraph{The reduction is what made the audit possible.} Because the baseline is a
-configuration of the same code (Proposition~\ref{prop:reduction}), four of the six errors
+configuration of the same code (Proposition~\ref{prop:reduction}), four of the seven errors
 above were detectable as a \emph{violation of a known equivalence}---the method failing to
 reproduce cosine where it provably must. An architecture in which every component has a null
 setting that reduces to the component below it converts a class of silent bugs into failing

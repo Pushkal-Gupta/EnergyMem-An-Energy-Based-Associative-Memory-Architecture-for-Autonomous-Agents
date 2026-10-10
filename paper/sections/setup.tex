@@ -11,9 +11,17 @@ result in this paper can be attributed to representation quality.
 
 \paragraph{Corpora.}
 \begin{itemize}\itemsep2pt
-\item \textbf{Images (completion regime).} $400$ Imagenette images as the memory bank;
-  queries are occluded held-out images at $30/50/70\%$ occlusion. Evaluation uses $5{,}847$
-  query instances drawn from $1{,}949$ distinct images, the full validation split.
+\item \textbf{Images (completion regime).} $400$ Imagenette images ($40$ per class, ten
+  classes) from the \texttt{train} split as the memory bank; queries are occluded images
+  from the \texttt{val} split at $30/50/70\%$ occlusion. Evaluation uses $5{,}847$ query
+  instances drawn from $1{,}949$ distinct images, the full validation split. \textbf{Two
+  properties of this design are load-bearing and were missing from earlier versions of this
+  paper.} The splits are disjoint, so a cue's own source image is \emph{not} in the bank;
+  and the metric is \textbf{same-class} top-1 accuracy --- a retrieval is correct when the
+  returned memory shares the query's class --- so the task is ten-way classification through
+  a retrieval interface, with chance at $0.100$. \S\ref{sec:occlusion} reports what follows
+  from both facts, and \xid{X113b} supplies the same-image variant in which the cue is an
+  occluded copy of a pattern that \emph{is} stored.
 \item \textbf{\textsc{LoCoMo} (semantic-match regime).} $1{,}977$ real questions over
   $5{,}882$ conversational turns \citep{maharana2024locomo}. Metric: Coverage@5 over gold
   evidence turns.
