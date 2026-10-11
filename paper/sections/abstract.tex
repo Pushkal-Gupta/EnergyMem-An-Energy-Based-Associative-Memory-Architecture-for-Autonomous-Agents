@@ -3,17 +3,20 @@ Associative-memory theory offers an alternative---recall as convergence to an at
 an energy landscape---but it has never been evaluated as the \emph{persistent memory
 layer} of an agent under matched conditions. We first show why the two literatures have
 not met: at the standard operating point they are the same operator. Proposition~1
-establishes that dense top-$k$ retrieval is exactly the $(T{=}1,\ \beta\!\to\!\infty,\
-b{=}0,\ R{=}I)$ corner of the modern Hopfield update, verified numerically on
+establishes that dense retrieval is exactly the $(T{=}1,\ \beta\!\to\!\infty,\
+b{=}0,\ R{=}I)$ corner of the modern Hopfield update --- exactly at $k{=}1$, and for
+$k>1$ only when the shortlist is read off the cue rather than off the converged state,
+which is a distinction we measure rather than assume. It is verified numerically on
 $1000/1000$ queries on synthetic vectors and $838/838$ on real sentence embeddings. The industry baseline is
 therefore a configuration of our own code rather than a separate system, which removes
 implementation advantage by construction and converts an unanswerable question into a
 sharp one: \emph{which departures from that corner pay for themselves, and where?}
 
-We answer it across two modalities with a single frozen encoder, thread-disjoint
-hyperparameter selection, and cluster-bootstrap intervals throughout: $5{,}847$ held-out
-image queries, $1{,}977$ \textsc{LoCoMo} questions, $146$ multi-target text questions, and
-$10{,}638$ temporal-association probes across two corpora. The answer is negative for
+We answer it across three modalities and twelve corpora with matched encoders,
+group-disjoint hyperparameter selection, and cluster-bootstrap intervals throughout:
+$5{,}847$ held-out image queries, $1{,}977$ \textsc{LoCoMo} and $479$
+\textsc{LongMemEval} questions, $5{,}435$ questions over five retrieval corpora, and
+$63{,}763$ temporal-association probes across three corpora. The answer is negative for
 every mechanism that changes only \emph{how an answer is read off} a fixed landscape, and
 the clearest evidence for that is the collapse of our own strongest positive result.
 Iterative descent beat cosine by $+0.014$ pooled \ci{+0.006}{+0.021} on occluded images,
@@ -47,16 +50,33 @@ memory on $99.4\%$ of queries. A comparison run above that band compares cosine 
 argue is a live hazard for this literature rather than a detail of ours. Of eight
 mechanisms tested beyond the reduction corner, exactly one survives: a nonparametric
 predictor over the agent's own observed transitions beats cosine on one-hop temporal
-association, reproduced in three independent implementations on two corpora. On
+association, reproduced in four measurements over three corpora. On
 \textsc{LoCoMo}, against a pooled bank of $5{,}882$ turns and over $5{,}233$ probes in $272$
 sessions, it raises Recall@1 from $0.064$ to $0.107$ ($+0.043$, $[+0.036,+0.050]$,
-$p<10^{-4}$; $+67\%$ relative) and Recall@5 from $0.174$ to $0.251$. The same experiment
-kills the multi-hop extension: at two hops the effect is $-0.002$ $[-0.008,+0.004]$,
-$p{=}0.77$, and we withdraw a previously recorded $+0.185$ two-hop result of our own as an
-artifact. Multi-step descent, residual peeling, repulsive parallel descent,
+$p<10^{-4}$; $+67\%$ relative) and Recall@5 from $0.174$ to $0.251$; the same driver, run
+unmodified on \textsc{MSC}'s $30{,}320$-turn bank, gives $+0.016$ $[+0.014,+0.018]$ over
+$27{,}815$ probes. The multi-hop extension does not survive: at two hops the effect is
+$-0.002$ $[-0.008,+0.004]$ on \textsc{LoCoMo} and $+0.005$ $[+0.003,+0.006]$ on
+\textsc{MSC}, a factor of $18$ below the $+0.185$ two-hop result of our own that we
+withdraw. Multi-step descent, residual peeling, repulsive parallel descent,
 vote-count readout, multi-scale $\beta$, per-memory $\beta$, retrieval-margin calibration,
 and coupling the predictor into the energy functional all fail, each with a diagnosed
 mechanism rather than a bare null.
+
+One departure from the corner does pay, and we found it by running the six corpora that
+\textsc{LoCoMo} alone could not speak for. Folding $K_0$ retrieved memories back into the
+cue and retrieving again beats dense retrieval by $+0.023$ $[+0.010,+0.037]$ on
+\textsc{HotpotQA} bridge questions and $+0.171$ $[+0.118,+0.219]$ on \textsc{2Wiki}
+inference questions, survives a disjoint sample, a second encoder and two bank sizes, and
+beats a random-mode control by $+0.13$ to $+0.39$ in $18$ of $18$ cells --- so the gain is in
+\emph{which} memories enter the cue, not in expanding it. On comparison questions in the
+same corpora, where both documents are reachable from the question directly, selection
+declines to expand in $10$ of $10$ folds. What predicts the gain is hop type, not target
+count: our own pre-registered hypothesis that more targets should help more comes out
+\emph{reversed} on four corpora and we withdraw it. The result is sharply bounded --- it is
+query expansion rather than attractor dynamics, it gives up its entire gain when its
+configuration is transferred across corpora, and on both conversational-memory corpora it is
+null, where a lexical hybrid gains $+0.156$ $[+0.125,+0.189]$.
 
 Finally, we report the measured magnitude of seven protocol errors we committed and
 corrected. Each would have yielded a publishable but false result: a non-dimensionless

@@ -39,9 +39,12 @@ is no implementation advantage to argue about and no encoder mismatch to suspect
 \paragraph{What we found.} Mostly that the departures do not pay, and---more usefully---why.
 Of the mechanisms available beyond the corner, every one that changes only \emph{how an
 answer is read off the landscape} fails on agent text: multi-step descent, residual peeling,
-repulsive parallel descent, vote-count readout, multi-scale and per-memory $\beta$. The one
-mechanism that helps does not touch the landscape at all; it is a model of \emph{what follows
-what}, fitted on the agent's own transitions.
+repulsive parallel descent, vote-count readout, multi-scale and per-memory $\beta$. The two
+that help do not change the readout. One is a model of \emph{what follows what}, fitted on
+the agent's own transitions. The other changes the \emph{cue}: fold a few retrieved
+memories back into the query and retrieve again, which pays on exactly those questions whose
+second piece of evidence is reachable from the first rather than from the question, and pays
+nothing anywhere else. Neither is attractor dynamics, which is the finding.
 
 We began with a sign that appeared to flip between modalities, and a mechanism that
 explained the flip. Energy descent computes a weighted average of stored patterns and moves
@@ -63,12 +66,24 @@ copies of images that \emph{are} stored, scored by identity --- is a null
 confirming instance. \S\ref{sec:taxonomy} withdraws the sufficiency half and the image
 evidence rather than defending either.
 
+Six further corpora then settled a question we could not answer from \textsc{LoCoMo} alone,
+and they settled it against us in the useful direction. \emph{Completing a cue} from the
+memory bank does not work in any regime we have found. \emph{Expanding a query} with
+retrieved memories does, by $+0.023$ to $+0.171$, on exactly those multi-hop questions whose
+second document is reachable from the first rather than from the question, and by nothing at
+all on the two conversational-memory corpora this paper is about
+(\S\ref{sec:corpora}).
+
 \paragraph{Contributions.}
 \begin{itemize}\itemsep2pt
-  \item[\textbf{C1}] \textbf{The reduction.} Dense top-$k$ retrieval is exactly the
+  \item[\textbf{C1}] \textbf{The reduction.} Dense retrieval is exactly the
     $(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update
     (Proposition~\ref{prop:reduction}), verified at $1000/1000$ queries on synthetic vectors
-    and $838/838$ on real sentence embeddings, both asserted in continuous integration. Every baseline in this paper is
+    and $838/838$ on real sentence embeddings, both asserted in continuous integration. The
+    equality is exact at $k{=}1$; at $k>1$ the shortlist must be read off the \emph{cue},
+    because ranks $2..k$ of the converged state order patterns by proximity to the winner
+    instead (Remark~\ref{rem:shortlist}) --- which is not a caveat but the mechanism behind
+    the shortlist regression we report. Every baseline in this paper is
     a configuration of the method under test. (\xid{X1})
   \item[\textbf{C2}] \textbf{The $\beta$ leverage band, and a hazard it implies.} $\beta$ has
     influence only within a narrow band, bounded below by collapse of the state to the corpus
@@ -92,26 +107,46 @@ evidence rather than defending either.
   \item[\textbf{C4}] \textbf{Eight diagnosed negative results.} Each is reported with the
     mechanism that produces it rather than as a bare null, including two that overturn claims
     we had previously made ourselves. (\S\ref{sec:negatives})
-  \item[\textbf{C5}] \textbf{One externally validated positive, and a sharp limit on it.}
-    A nonparametric predictor over the agent's own observed transitions beats cosine on
-    one-hop temporal association, in three independent implementations on two corpora. On
-    the public \textsc{LoCoMo} benchmark it raises Recall@1 from $0.064$ to $0.107$
+  \item[\textbf{C5}] \textbf{One externally validated positive, on two public corpora, and a
+    sharp limit on it.} A nonparametric predictor over the agent's own observed transitions
+    beats cosine on one-hop temporal association, in four measurements over three corpora.
+    On \textsc{LoCoMo} it raises Recall@1 from $0.064$ to $0.107$
     ($+0.043$, \ci{+0.036}{+0.050}, $p<10^{-4}$, $+67\%$ relative) over $5{,}233$ probes in
-    $272$ sessions against a pooled $5{,}882$-turn bank. At \emph{two} hops the same
-    experiment returns $-0.002$ \ci{-0.008}{+0.004}: association does not compose, and we
-    withdraw a $+0.185$ two-hop figure of our own. (\S\ref{sec:composition}, \xid{X26})
+    $272$ sessions against a pooled $5{,}882$-turn bank; the same driver, unmodified, gives
+    $+0.016$ \ci{+0.014}{+0.018} on \textsc{MSC} over $27{,}815$ probes against a
+    $30{,}320$-turn bank. At \emph{two} hops \textsc{LoCoMo} returns $-0.002$
+    \ci{-0.008}{+0.004} and \textsc{MSC} $+0.005$ \ci{+0.003}{+0.006}, a factor of $18$
+    below the $+0.185$ two-hop figure of our own that we withdraw: association helps one
+    step ahead and at best marginally thereafter. (\S\ref{sec:composition}, \xid{X26},
+    \xid{X201})
   \item[\textbf{C6}] \textbf{The measured price of seven protocol shortcuts.} For each of seven
     errors we made, the magnitude of the false result it produced in our own data. Two were
     false \emph{negatives}, which proved far harder to find than the false positives. The
     seventh is the one we would most want read: an \emph{unmatched baseline} that every
     other safeguard in this paper was blind to, because split hygiene and pre-registration
     check how two arms are compared and not which two arms. (\S\ref{sec:protocol})
+  \item[\textbf{C7}] \textbf{One departure from the corner that \emph{does} pay, and the
+    question shape that predicts it.} Folding $K_0$ retrieved memories back into the cue and
+    retrieving again beats dense retrieval by $+0.023$ \ci{+0.010}{+0.037} on
+    \textsc{HotpotQA} bridge questions and $+0.171$ \ci{+0.118}{+0.219} on \textsc{2Wiki}
+    inference questions, surviving a disjoint sample, a second encoder and two bank sizes,
+    with random modes losing by $+0.13$ to $+0.39$. On comparison questions in the same
+    corpora selection declines to expand in $10$ of $10$ folds. The predictor is hop type,
+    not target count---our own pre-registered cardinality hypothesis comes out
+    \emph{reversed} on four corpora (Table~\ref{tab:cardinality}) and we withdraw it. This
+    is the one claim in the paper that contradicts the thesis we started with, it is query
+    expansion rather than attractor dynamics, and it does not transfer across corpora.
+    (\S\ref{sec:corpora}, \xid{X202}--\xid{X204})
 \end{itemize}
 
 \paragraph{What this paper is not.} It is not a system paper, and it does not claim a better
 agent memory. The thesis we began with---that energy-based retrieval improves agent
 recall---is refuted here by our own measurements, at adequate power, with the mechanism
-identified. We think the resulting object is more useful to the field than the system would
-have been: a reduction that makes the comparison exact, a taxonomy that says where descent
-loses and that kept none of the positive instance we had claimed for it, and a quantified
-account of how easy it is to publish the opposite conclusion.
+identified. The one departure that does beat the corner (C7) is query expansion on a
+question shape we cannot yet detect without labels, it needs per-corpus tuning, and it is
+null on conversational memory, so it is a finding rather than a recommendation. We think the
+resulting object is more useful to the field than the system would have been: a reduction
+that makes the comparison exact, a taxonomy that says where descent loses and that kept none
+of the positive instance we had claimed for it, one sharply bounded positive that we did not
+expect and did not want, and a quantified account of how easy it is to publish the opposite
+conclusion.

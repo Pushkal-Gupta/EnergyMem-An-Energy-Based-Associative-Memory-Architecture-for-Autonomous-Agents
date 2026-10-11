@@ -189,15 +189,42 @@ accuracy on the identical cues is also null ($-0.002$). Where the premise is sat
 exactly, in the modality where we thought descent won, and with the metric that matches the
 word ``completion'', there is nothing there.
 
+\paragraph{An earlier run had already measured this, and we state exactly how much that
+adds (\xid{X210}).} Two days before the audit above, a pre-registered run in the six-corpus
+programme of \S\ref{sec:corpora} added a $k$-NN class-vote control to the image arm for its
+own reasons and reported descent $-0.0313$ \ci{-0.0397}{-0.0227} against the vote. We are
+deliberate about what that corroborates. \textbf{It is not an independent replication of the
+image result}: \xid{X210} and \xid{X113a} evaluate the same $5{,}847$ cues over the same
+$1{,}949$ source images against the same bank, and their descent-minus-cosine figures agree
+to sixteen decimal places because they are the same measurement. What differs is only the
+vote's grid and the half that selected it, which is why the contrast against the vote moves
+from $-0.0313$ at $k{=}10$ to $-0.0356$ at $k{=}20$. Two runs of one experiment are one
+experiment.
+
+What \xid{X210} does add is a modality \xid{X113} never ran. The same three-way comparison on
+\textsc{Yahoo Answers} with spans of the stored text deleted gives descent $+0.003$
+\ci{-0.000}{+0.006} over cosine --- not significant, $p{=}0.09$ --- while the $k$-NN vote
+gains $+0.104$ \ci{+0.088}{+0.120}; with \texttt{[MASK]} substituted for deletion the
+numbers are $+0.002$ and $+0.111$. So on text the energy path does nothing measurable, and
+the class smoothing it partially recovers on images is available in full, and far more
+cheaply, from a plain neighbourhood vote. That is a second modality agreeing with the
+reversal, and it is the part of \xid{X210} we weight.
+
 \paragraph{What we conclude.} The query-type reading is not supported, and we withdraw it
 rather than defend it. The completion premise still predicts every \emph{loss} we have
 measured --- text question$\to$evidence, text masked turns, two-target image splices, and
 now single-target image identification --- and it no longer has a \emph{win} to predict.
 The taxonomy's three regimes stand as a description of where descent loses, which is what
-the evidence supports. The claim that one sentence predicts the sign in advance does not,
-and neither does the claim that there exists a regime in which departing from the corner
-pays: across four corpora, two modalities and every knob in
-Equation~\eqref{eq:update}, we have not found one.
+the evidence supports, and the claim that one sentence predicts the sign in advance does
+not.
+
+What does not follow is that nothing outside the corner ever pays. \S\ref{sec:corpora}
+reports one mechanism that does, on a question shape we can name before running it, and
+the distinction between the two findings is the useful part: \emph{completing a cue} from
+the memory bank does not work anywhere we have looked, and \emph{expanding a query} with
+retrieved memories works where the next piece of evidence is reachable only from the
+retrieved evidence. Both are departures from $(T{=}1,\beta\to\infty,b{=}0,R{=}I)$. Only the
+second one pays, and it is not the one that motivated this paper.
 
 We state plainly what this costs the paper. \xid{X113} removes the only positive result we
 had for the energy machinery itself, and it is a result we had published a pre-registered,

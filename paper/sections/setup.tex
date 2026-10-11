@@ -38,7 +38,41 @@ result in this paper can be attributed to representation quality.
   one hop and $135$ at two. This corpus is ours, it is generated rather than collected, and
   on its own it would not support a claim; every composition result measured on it is
   reported beside the \textsc{LoCoMo} measurement of the same quantity.
+\item \textbf{\textsc{MSC} (composition regime).} $30{,}320$ pooled turns over $2{,}505$
+  sessions and $501$ dialogues \citep{xu2022msc}, run through the \emph{unmodified}
+  \textsc{LoCoMo} association driver so that the only thing that changes is the corpus. This
+  is the second public corpus for \S\ref{sec:composition} and the largest bank in the paper
+  (\xid{X201}).
+\item \textbf{Five retrieval corpora (composition regime, question$\to$evidence).}
+  \textsc{HotpotQA} \citep{yang2018hotpotqa} and \textsc{2WikiMultihopQA}
+  \citep{ho2020twowiki}, both of which label the \emph{shape} of each question;
+  \textsc{QASPER} \citep{dasigi2021qasper}, whose banks are single papers of
+  ${\approx}47$ paragraphs; and \textsc{SciFact} and \textsc{NFCorpus} from \textsc{BEIR}
+  \citep{thakur2021beir}. $2{,}000$ questions each for the two multi-hop corpora over banks
+  of ${\approx}995$ and ${\approx}800$ paragraphs, $812$ for \textsc{QASPER}, $300$ and
+  $323$ for the two \textsc{BEIR} tasks. Metric: gold@10, the fraction of a question's gold
+  evidence recovered in the top ten. These corpora exist to answer one pre-registered
+  question --- whether \textsc{LoCoMo}'s null for query expansion is a property of the
+  method or of \textsc{LoCoMo} --- and \S\ref{sec:corpora} reports that it is the latter
+  (\xid{X202}--\xid{X204}).
+\item \textbf{\textsc{LongMemEval-S} (semantic-match regime).} $479$ chat-assistant memory
+  questions, each with its own ${\approx}493$-turn haystack \citep{wu2025longmemeval}, with
+  the question-type strata the benchmark ships. The second conversational-memory corpus, and
+  the one that decides whether \textsc{LoCoMo}'s pattern is \textsc{LoCoMo}'s alone
+  (\xid{X200}).
+\item \textbf{Two further modalities (composition regime).} $2{,}000$ $2{\times}2$ image
+  mosaics assembled from $m\in\{1,\dots,4\}$ bank images, where $m$ is set by construction
+  rather than inferred (\xid{X211}); and \textsc{Flickr8k} under CLIP ViT-B/32
+  \citep{radford2021clip}, giving a text$\to$image arm at $m{=}1$ and an image$\to$text arm
+  at $m{=}5$ (\xid{X212}). Both exist to test one hypothesis of ours about target
+  cardinality, and Table~\ref{tab:cardinality} reports what they did to it.
 \end{itemize}
+
+\paragraph{A second encoder, and a note on what that buys.} The five retrieval corpora above
+were re-run under \texttt{bge-base-en-v1.5} \citep{xiao2024bge} as a robustness check. We
+report it as a check and not as a second experiment: the matched-encoder rule holds
+\emph{within} every comparison, so a second encoder tells us whether a conclusion is an
+artefact of \texttt{mpnet}, and \S\ref{sec:corpora} reports one conclusion that is.
 
 \paragraph{Baselines.} Dense top-$k$ (Proposition~\ref{prop:reduction}), BM25
 \citep{robertson2009bm25}, hybrid reciprocal-rank fusion \citep{cormack2009rrf}, and---in the

@@ -307,8 +307,39 @@ every rung of the ladder reduces exactly (X98). **The negative is no longer prov
 
 ---
 
-<<<<<<< HEAD
-## 1d. STATUS — families H and I are done (2026-10-10)
+> ⚠️ **ID COLLISION, RESOLVED 2026-10-11 — read this before citing either section.**
+> Sections 1d and 1e are two *different* experiment programmes that ran concurrently, both
+> appended a "Phase 9" to the ledger, and both claimed the IDs X100–X112. Both are
+> committed and both have result files on disk. **1d has been renumbered to the X200
+> series; 1e keeps X1xx**, because the paper already cites 1e's numbering and renumbering
+> the cited side would have been the larger change.
+>
+> | | commit | IDs | result files |
+> |---|---|---|---|
+> | **1d** | `4262715` | **X200–X212** (was X100–X112) | `x10x_*.json`, `x101_msc.json`, `x102_checks.json`, `x110_occlusion.json`, `x111_mosaic.json`, `x112_crossmodal.json` |
+> | **1e** | `a140680` | X102, X104, X110, X111, X113 | `x110_text_occlusion.json`, `x110b_beta_band_text.json`, `x111_image_multitarget.json`, `x102_hotpot.json`, `x104_beir.json`, `x3x_family_a.json`, `x67_joint_and_x105.json` |
+>
+> **Driver filenames were deliberately NOT renamed.** `x101_msc.py` still produces X201 and
+> `x11x_modalities.py` still produces X210–X212. Renaming them would break the provenance
+> chain from every committed JSON back to the commit that produced it, which is worth more
+> than cosmetic agreement between a filename and an ID. The mapping is: `x10x_corpora.py`
+> → X200, X202–X205; `x101_msc.py` → X201; `x102_checks.py` → X202c;
+> `x11x_modalities.py` → X210–X212.
+>
+> Under the old numbering the same label meant different things in each section: X110 was
+> image+text class occlusion in 1d and LoCoMo span occlusion in 1e; X111 was image mosaics
+> in 1d and image multi-target in 1e; X102 was HotpotQA+2Wiki expansion in 1d and a
+> HotpotQA ε check in 1e. **1e's rows marking X100/X101/X103 "not run" and X112 "out of
+> scope" were wrong** — those are 1d's runs and their JSONs were in the tree the whole
+> time. Those rows are struck through in 1e below rather than deleted.
+>
+> How this happened, and the rule it produces: a rebase resolved the two appended Phase 9
+> sections in favour of one, so a committed documentation file described seven completed
+> corpora as "not run" while their results sat beside it. **Before writing "not run" about
+> an experiment, list `experiments/results/` and check.** A phase that is missing from the
+> prose is not missing from the repository.
+
+## 1d. STATUS — families H and I are done (2026-10-10, committed in `4262715`)
 
 Ran in Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`, against `PREREG_HI.md`, which was
 **committed alone before any corpus was opened**. Drivers: `x10x_corpora.py` (shared
@@ -317,16 +348,16 @@ Family G was already closed (1c). Family J needs an API key and was not run.
 
 | ID | verdict | where |
 |---|---|---|
-| X100 LongMemEval | ❌ expansion null (−0.007); **RRF +0.156**, +0.255 on temporal | `x10x_longmemeval.json` |
-| **X101 MSC** | ✅ **one-hop association replicates**: +0.016 R@1 [+0.014, +0.018], +33% rel., 30k-turn bank | `x101_msc.json` |
-| **X102 HotpotQA / 2Wiki** | ✅ **first non-null expansion**: bridge +0.023; 2Wiki inference +0.171 and beats RRF by +0.094. ❌ cardinality interaction **reversed** (m=4 < m=2) | `x10x_hotpot.json`, `x10x_2wiki.json` |
-| X102-checks (exploratory) | ✅ gain survives a disjoint sample, bge, ½× and 2× banks, and random modes. ❌ the I4 (mixture > averaging) part does **not** survive bge | `x102_checks.json` |
-| X103 QASPER (for QuALITY/NarrativeQA, which have no evidence labels) | ❌ expansion hurts on multi-evidence (−0.027); RRF best | `x10x_qasper.json` |
-| X104 BEIR | ⚠️ SciFact: RRF wins. NFCorpus (m≈41): mixture +0.017, ties RRF | `x10x_scifact.json`, `x10x_nfcorpus.json` |
-| X105 transfer | ❌ LoCoMo selects the null, so transfer gives up every in-corpus gain | in each `x10x_*.json` |
-| **X110 occlusion** | ❌ **C3 is class smoothing**: image energy +0.0135 reproduces, but **k-NN vote beats it by +0.031**; on text energy is null and k-NN +0.10 | `x110_occlusion.json` |
-| X111 image mosaics | ❌ mixture null at every m; **MMR +0.07** (diversity, not association) | `x111_mosaic.json` |
-| X112 cross-modal | ❌ interaction reversed: on i→t (m=5) averaging beats the mixture | `x112_crossmodal.json` |
+| X200 LongMemEval | ❌ expansion null (−0.007); **RRF +0.156**, +0.255 on temporal | `x10x_longmemeval.json` |
+| **X201 MSC** | ✅ **one-hop association replicates**: +0.016 R@1 [+0.014, +0.018], +33% rel., 30k-turn bank | `x101_msc.json` |
+| **X202 HotpotQA / 2Wiki** | ✅ **first non-null expansion**: bridge +0.023; 2Wiki inference +0.171 and beats RRF by +0.093. ❌ cardinality interaction **reversed** (m=4 < m=2) | `x10x_hotpot.json`, `x10x_2wiki.json` |
+| X202c (exploratory) | ✅ gain survives a disjoint sample, bge, ½× and 2× banks, and random modes. ❌ the I4 (mixture > averaging) part does **not** survive bge | `x102_checks.json` |
+| X203 QASPER (for QuALITY/NarrativeQA, which have no evidence labels) | ❌ expansion hurts on multi-evidence (−0.027); RRF best | `x10x_qasper.json` |
+| X204 BEIR | ⚠️ SciFact: RRF wins. NFCorpus (m≈41): mixture +0.017, ties RRF | `x10x_scifact.json`, `x10x_nfcorpus.json` |
+| X205 transfer | ❌ LoCoMo selects the null, so transfer gives up every in-corpus gain | in each `x10x_*.json` |
+| **X210 occlusion** | ❌ **C3 is class smoothing**: image energy +0.0135 reproduces, but **k-NN vote beats it by +0.031**; on text energy is null and k-NN +0.10 | `x110_occlusion.json` |
+| X211 image mosaics | ❌ mixture null at every m; **MMR +0.07** (diversity, not association) | `x111_mosaic.json` |
+| X212 cross-modal | ❌ interaction reversed: on i→t (m=5) averaging beats the mixture | `x112_crossmodal.json` |
 
 **Headline.** I4 is not resurrected by multiple targets anywhere: the pre-registered
 interaction was reversed on three corpora and null on a fourth. What *does* predict an
@@ -343,9 +374,12 @@ text, so its "memory" framing needs rewriting.
 - **A hop-type predictor.** Can a label-free signal tell a chain question from a
   comparison question before retrieval? That would make expansion deployable.
 - **C3 rewrite.** Report k-NN vote next to energy descent wherever the image result
-  appears.
-=======
-## 1d. STATUS — families H and I are done, the family-A remainder is done, J is blocked (2026-10-10)
+  appears. **Discharged** by X113 (Phase 10), which reproduced this result under a
+  pre-registered matched baseline and is what the paper now reports.
+
+---
+
+## 1e. STATUS — families H and I are done, the family-A remainder is done, J is blocked (2026-10-10, committed in `a140680`)
 
 Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`. **The backlog is closed except where noted.**
 
@@ -362,8 +396,8 @@ Phase 9 of `docs/10_EXPERIMENT_LEDGER.md`. **The backlog is closed except where 
 | X67–X69 joint grid | ❌ **0/30 cells**. No combination of β, T, K beats the corner | `x67_joint_and_x105.json` |
 | X105 transfer | — both corpora select K₀=0; nothing to transfer | `x67_joint_and_x105.json` |
 | **X120–X123 (family J)** | 🚫 **BLOCKED — no `ANTHROPIC_API_KEY`.** X35 is the API-free proxy and its answer is discouraging | — |
-| X100, X101, X103 | ⏸️ **not run, deprioritised** — four corpora already agree. Say "not run", never "does not replicate" | — |
-| X112 cross-modal | ⏸️ out of scope by the matched-encoder rule: needs CLIP, comparable to nothing else here | — |
+| ~~X100, X101, X103~~ | 🛠 **THIS ROW WAS WRONG.** They *were* run, as **X200 / X201 / X203** in section 1d, before this row was written. See the collision note above. | `x10x_longmemeval.json`, `x101_msc.json`, `x10x_qasper.json` |
+| ~~X112 cross-modal~~ | 🛠 **THIS ROW WAS WRONG.** Run as **X212** in section 1d under CLIP ViT-B/32 on Flickr8k. The matched-encoder rule is satisfied *within* the comparison — both arms use CLIP — which is what the rule requires. | `x112_crossmodal.json` |
 
 **Two self-caught artifacts this phase**, neither of which reached a conclusion: X102d
 printed a logsumexp-vs-averaging gap without the cosine column (both arms were *below* the
@@ -381,7 +415,6 @@ that to single-target images specifically.
 **If you want to reopen something**, the two live threads are X104's non-significant +0.0105
 (powered replication, pre-registered, SciFact-shaped tasks) and X41's paraphrase modes
 (which is a query-expansion paper, not a memory-architecture one). Everything else is closed.
->>>>>>> 2480810 (Withdraw the image result as evidence for an associative mechanism: the published comparison was a 1-NN classifier against a soft-k-NN one)
 
 ---
 
@@ -795,10 +828,10 @@ the same suspicion.
 
 The single biggest open item in `paper/SUBMISSION.md`. One public corpus is one corpus.
 
-### X100 — LongMemEval — **not run, deprioritised (Phase 9)**
-### X101 — MSC (Multi-Session Chat) — **not run, deprioritised (Phase 9)**
+### ~~X100~~ → **X200** — LongMemEval — **RUN (Phase 9), `x10x_longmemeval.json`**
+### ~~X101~~ → **X201** — MSC (Multi-Session Chat) — **RUN (Phase 9), `x101_msc.json`**
 ### X102 — HotpotQA / 2WikiMultihopQA — **RAN (Phase 9): interaction still absent** — purpose-built multi-hop, big *m*, huge n
-### X103 — QuALITY / NarrativeQA — **not run, deprioritised (Phase 9)** — long-document, different hop structure
+### ~~X103~~ → **X203** — QASPER (substituted for QuALITY / NarrativeQA, which carry no evidence labels) — **RUN (Phase 9), `x10x_qasper.json`**
 ### X104 — BEIR subset — **RAN (Phase 9): a caveat against our own PRF** — standard IR, where PRF baselines are well calibrated
 ### X105 — Cross-corpus transfer — **RAN (Phase 9): nothing to transfer**: tune on LoCoMo, evaluate elsewhere, no retuning
 

@@ -4,10 +4,12 @@ We set out to build a better memory for autonomous agents on associative-memory 
 That thesis is refuted here by our own measurements, at adequate power, with the mechanism
 identified: every departure from the dense-retrieval corner that changes only how an answer
 is read off the energy landscape fails on agent text, because none of them changes the
-landscape.
+landscape. The one departure that survives changes the \emph{cue} instead, and it is query
+expansion rather than attractor dynamics.
 
-What replaced it is narrower and better supported. Dense top-$k$ retrieval is exactly the
-$(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update, which makes
+What replaced it is narrower and better supported. Dense retrieval is exactly the
+$(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update --- exactly
+so at $k{=}1$, and at $k>1$ with the shortlist read off the cue --- which makes
 the standard baseline a configuration of the method under test rather than a rival outside
 it, and converts an ill-posed question into a finite one. Within that frame, one side of
 the sign is predictable before the experiment: associative descent hurts monotonically when
@@ -23,12 +25,29 @@ is $-0.003$ \ci{-0.008}{+0.000}. The premise is therefore necessary and not suff
 we withdraw the image win rather than keep it under a weaker description
 (\S\ref{sec:occlusion}). Of eight mechanisms beyond the corner, one survives---a
 nonparametric predictor over the agent's own observed transitions, which retrieves by
-succession rather than resemblance. It beats cosine on one-hop association in three
-independent implementations across two corpora, including $+0.043$ Recall@1
-\ci{+0.036}{+0.050} on a public benchmark against a pooled bank of $5{,}882$ turns. The
-same experiment bounds it: at two hops the effect is $-0.002$, and a $+0.185$ two-hop
-result of our own is withdrawn as an artifact. Association helps one step ahead and does
-not compose.
+succession rather than resemblance. It beats cosine on one-hop association in four
+measurements across three corpora, including $+0.043$ Recall@1 \ci{+0.036}{+0.050} on
+\textsc{LoCoMo} against a pooled bank of $5{,}882$ turns and $+0.016$ \ci{+0.014}{+0.018}
+on \textsc{MSC} against $30{,}320$. The same experiments bound it: at two hops the effect is
+$-0.002$ on the first corpus and $+0.005$ on the second, one eighteenth of the $+0.185$
+two-hop result of our own that we withdraw. Association helps one step ahead and essentially
+stops there.
+
+\paragraph{One thing beats the corner, and it is not the thing we were looking for.} We
+could not tell from \textsc{LoCoMo} alone whether query expansion fails as a mechanism or
+fails on that corpus, so we ran six more. It fails on the corpus. Fold a few retrieved
+memories back into the cue and retrieve again, and on multi-hop questions whose second
+document is reachable only \emph{from the first} the gain is $+0.023$ \ci{+0.010}{+0.037}
+and $+0.171$ \ci{+0.118}{+0.219}; on questions in the same corpora whose documents are both
+reachable from the question, selection declines to expand in $10$ of $10$ folds and the
+method correctly does nothing. Random modes lose to real ones by $+0.13$ to $+0.39$, so what
+pays is which memories enter the cue. Our own pre-registered explanation for when this
+should happen---more targets---comes out reversed on four corpora, and the predictor that
+survives is the shape of the hop. We hold the claim at arm's length nonetheless: it needs
+per-corpus tuning, it needs a question shape we cannot yet detect without labels, and on the
+two conversational corpora that motivate this paper it is null, where a lexical hybrid gains
+$+0.156$. It is the one place where the thesis we began with was too pessimistic, and it is
+still not a better agent memory (\S\ref{sec:corpora}).
 
 We also report what the protocol was worth, in the only currency that makes the argument:
 seven errors, each a reasonable default, each worth a conclusion. Two produced false

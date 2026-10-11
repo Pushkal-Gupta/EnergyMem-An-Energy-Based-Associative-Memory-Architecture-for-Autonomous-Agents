@@ -539,12 +539,23 @@ Phase 8 there is nowhere else on LoCoMo to look.
 
 ---
 
-<<<<<<< HEAD
 ## Phase 9 — Families H and I: other corpora, other modalities (2026-10-09)
 
+> **IDs RENUMBERED 2026-10-11.** This phase originally used X100–X112. Phase 9b, which ran
+> concurrently, used the same labels for different experiments, and a rebase resolved the
+> two appended sections in favour of Phase 9b — so for a day this phase was absent from the
+> ledger while its eleven result JSONs sat in `experiments/results/`, and
+> `experiment-backlog/README.md` described seven of these corpora as "not run". This phase
+> is now **X200–X212** (X100→X200, X101→X201, X102→X202, X102-checks→X202c, X103→X203,
+> X104→X204, X105→X205, X110→X210, X111→X211, X112→X212). Phase 9b keeps X1xx because the
+> paper already cited it. Driver filenames are unchanged on purpose: `x101_msc.py` produces
+> X201, `x11x_modalities.py` produces X210–X212. A filename that matches its commit is
+> worth more than a filename that matches its ID.
+
 **Why.** After Phase 8 there was nowhere left to look on LoCoMo. The one live hypothesis was
-X32's: LoCoMo's evidence is too similar (ε=0.52) for a mixture to help, so the effect
-could exist on corpora built for multi-hop. Family I carried the paper's own open item:
+X32's: LoCoMo's evidence is too similar (mean mutual cosine between a question's gold
+evidence turns = 0.527, `x102_hotpot.json/X102a_geometry/eps_locomo_cat1`) for a mixture to
+help, so the effect could exist on corpora built for multi-hop. Family I carried the paper's own open item:
 does the image-occlusion positive (C3) survive on text?
 
 **Protocol.** `experiment-backlog/PREREG_HI.md` was **committed alone (18e7150) before any
@@ -553,7 +564,7 @@ with" caveat. Each corpus goes through the unchanged `locomo_qa.py` methods and 
 `experiments/corpus_qa.py`, with leave-one-group-out selection on the training side only
 and per-fold picks in every JSON. Drivers: `x10x_corpora.py`, `x101_msc.py`,
 `x102_checks.py`, `x11x_modalities.py`. One deviation is logged in the prereg: the
-X102 robustness checks were chosen **after** seeing X102, so they are exploratory.
+X202 robustness checks were chosen **after** seeing X202, so they are exploratory.
 
 **Environment.** This was a fresh checkout on a different machine (Apple M3). Before
 anything new ran, cosine `gold@10` on LoCoMo reproduced Phase 7's 0.5269 exactly.
@@ -562,28 +573,28 @@ anything new ran, cosine `gold@10` on LoCoMo reproduced Phase 7's 0.5269 exactly
 
 | ID | Question | Result | Consequence |
 |---|---|---|---|
-| **X102 HotpotQA** | Does expansion help on purpose-built multi-hop? (2,000 dev q, 100 q pooled per bank, ~1k paragraphs, 20 clusters) | **Yes, the first time in this project.** Bridge (n=1,591): the mixture is selected over the null in **0/10** folds (K0∈{1,3}, β=16). Cosine 0.889 → mixture **0.912**, Δ **+0.023 [+0.010, +0.037]**. It beats Rocchio and averaging (I4 Δ +0.006 bridge, **+0.009 [+0.002, +0.016] all**, p=0.0025). Comparison (n=409) backs off to null 10/10. **RRF is still higher: 0.924, and mixture − RRF = −0.017 [−0.030, −0.005] (all).** | **P-H1 met on HotpotQA, P-H3 met.** It holds only against cosine and the averaging baselines. RRF, the one lexical method, still wins in absolute terms. |
-| **X102 2Wiki** | Same, plus the within-corpus cardinality axis m=2 vs m=4. | **Large gains, organized by hop *type* rather than by m.** Inference: cosine 0.724 → mixture **0.894** (+0.171), beating RRF by **+0.094 [+0.045, +0.140]**. Compositional: +0.067, with **averaging better than the mixture** (I4 −0.022). Comparison: null 10/10. **Bridge_comparison (m=4): null**. All: I4 **+0.027 [+0.017, +0.036]**. **P-H2's interaction comes out reversed: Δ(m=4) − Δ(m=2) = −0.023 [−0.044, −0.004].** | **P-H1 met, P-H2 not met; it is the opposite sign.** The gain sits on *chain* questions, where the second document is reachable from the first rather than from the question, and not on questions with more targets. |
-| **X102-checks** (exploratory) | Does X102 survive a disjoint sample, the bge encoder, banks ½× and 2×, and random modes? | **The expansion-over-cosine gain survives all of them**: HotpotQA bridge +0.020 to +0.026 in every variant; 2Wiki inference +0.10 to +0.19 and compositional +0.07 to +0.17. **Random modes lose by +0.13 to +0.39 (HotpotQA) and +0.16 to +0.36 (2Wiki), 9/9 cells each.** **The I4-specific part does not survive**: HotpotQA's mixture-over-averaging advantage drops to −0.000 under bge and +0.004 n.s. at 200 q/bank. Mixture − RRF flips sign with the encoder (−0.017 mpnet, **+0.021 bge**). | **The robust finding is association-driven expansion on chain-shaped multi-hop questions.** Whether the modes are kept apart (mixture) or averaged is a second-order, encoder-dependent detail. |
-| **X103 QASPER** (substitutes for QuALITY/NarrativeQA, which have no evidence labels; declared in the prereg) | Long scientific documents, bank = one paper (~47 paragraphs). | **Expansion hurts where m>1.** Multi-evidence (m=3.31): mixture **−0.027 [−0.049, −0.010]** vs cosine, I4 −0.041. Single-evidence: +0.036 (p=0.04). RRF best overall: **0.659 vs cosine 0.593**. Interaction **−0.036 [−0.070, −0.001]**. | A third corpus where more targets do not help a mixture. With a 47-paragraph bank the top-K0 modes are mostly redundant neighbours. |
-| **X104 BEIR** | SciFact (300 q), NFCorpus (323 q; m≈41). | SciFact: **RRF wins (0.832 vs cosine 0.790, p=0.025)**; the mixture is n.s. NFCorpus multi-relevant: **mixture +0.017 [+0.008, +0.027], p=0.0003**, which ties RRF (+0.008, n.s.); I4 +0.011 [+0.002, +0.022]. | PRF-style expansion helps on the one corpus with huge relevant sets. It does not beat RRF on either corpus. |
-| **X105 transfer** | Do LoCoMo-selected configs transfer? | **For expansion, trivially, because LoCoMo selected the null.** Transferring K0=0 gives up the entire in-corpus gain (HotpotQA bridge −0.023, 2Wiki inference −0.171, 2Wiki all −0.043). RRF's k=10 transfers within 0.012 everywhere. | **P-H5 not met for expansion.** The LoCoMo null is a property of LoCoMo, not of the method. Any deployment would have to tune on its own corpus. |
-| **X101 MSC** | Does X26's one-hop association replicate on a second public corpus? (30,320 pooled turns, 2,505 sessions, 501 dialogues) | **Yes.** Hop 1, n=27,815: cosine R@1 **0.049**, world model **0.065**, Δ **+0.016 [+0.014, +0.018]**, p<10⁻⁴ (**+33% relative**); R@5 +0.029. Mixture +0.006, again below averaging (as in X26c). Hop 2: +0.005 [+0.003, +0.006], small but positive, where LoCoMo was null. | **P-H4 met. The project's one positive claim now replicates on two public corpora**, here with a bank 5× LoCoMo's. The mixture-loses-to-averaging pattern (I4 falsified) replicates too. |
-| **X100 LongMemEval-S** | Chat-assistant memory, each question with its own ~490-turn haystack (479 q with gold turns, question = cluster). | **Null for expansion, decisive for RRF.** Mixture − cosine **−0.007 [−0.032, +0.018]** (all); multi-session −0.012; knowledge-update −0.049 [−0.083, −0.014]. Interaction (multi-session − single-session) **+0.002 [−0.040, +0.045]**. **RRF − cosine +0.156 [+0.125, +0.189]** overall, **+0.255** on temporal-reasoning, +0.218 on knowledge-update; mixture − RRF −0.163. | **P-H1/P-H3 not met here.** The second conversational-memory corpus shows LoCoMo's pattern again, more strongly: the lexical signal (dates, names, exact phrases) is what memory QA over chat needs, and association adds nothing to it. Expansion helps on encyclopedic chains (X102), not on chat. |
+| **X202 HotpotQA** | Does expansion help on purpose-built multi-hop? (2,000 dev q, 100 q pooled per bank, ~1k paragraphs, 20 clusters) | **Yes, the first time in this project.** Bridge (n=1,591): the mixture is selected over the null in **0/10** folds (K0∈{1,3}, β=16). Cosine 0.889 → mixture **0.912**, Δ **+0.023 [+0.010, +0.037]**. It beats Rocchio and averaging (I4 Δ +0.006 bridge, **+0.009 [+0.002, +0.016] all**, p=0.0025). Comparison (n=409) backs off to null 10/10. **RRF is still higher: 0.924, and mixture − RRF = −0.017 [−0.030, −0.005] (all).** | **P-H1 met on HotpotQA, P-H3 met.** It holds only against cosine and the averaging baselines. RRF, the one lexical method, still wins in absolute terms. |
+| **X202 2Wiki** | Same, plus the within-corpus cardinality axis m=2 vs m=4. | **Large gains, organized by hop *type* rather than by m.** Inference: cosine 0.724 → mixture **0.894** (+0.171), beating RRF by **+0.093 [+0.045, +0.140]** (recorded as +0.094 until 2026-10-11; the file says 0.09350, which rounds to 0.093 -- caught by `scripts/verify_paper_numbers.py`). Compositional: +0.067, with **averaging better than the mixture** (I4 −0.022). Comparison: null 10/10. **Bridge_comparison (m=4): null**. All: I4 **+0.027 [+0.017, +0.036]**. **P-H2's interaction comes out reversed: Δ(m=4) − Δ(m=2) = −0.023 [−0.044, −0.004].** | **P-H1 met, P-H2 not met; it is the opposite sign.** The gain sits on *chain* questions, where the second document is reachable from the first rather than from the question, and not on questions with more targets. |
+| **X202c** (exploratory) | Does X202 survive a disjoint sample, the bge encoder, banks ½× and 2×, and random modes? | **The expansion-over-cosine gain survives all of them**: HotpotQA bridge +0.020 to +0.026 in every variant; 2Wiki inference +0.10 to +0.19 and compositional +0.07 to +0.17. **Random modes lose by +0.13 to +0.39 (HotpotQA) and +0.16 to +0.36 (2Wiki), 9/9 cells each.** **The I4-specific part does not survive**: HotpotQA's mixture-over-averaging advantage drops to −0.000 under bge and +0.004 n.s. at 200 q/bank. Mixture − RRF flips sign with the encoder (−0.017 mpnet, **+0.021 bge**). | **The robust finding is association-driven expansion on chain-shaped multi-hop questions.** Whether the modes are kept apart (mixture) or averaged is a second-order, encoder-dependent detail. |
+| **X203 QASPER** (substitutes for QuALITY/NarrativeQA, which have no evidence labels; declared in the prereg) | Long scientific documents, bank = one paper (~47 paragraphs). | **Expansion hurts where m>1.** Multi-evidence (m=3.31): mixture **−0.027 [−0.049, −0.010]** vs cosine, I4 −0.041. Single-evidence: +0.036 (p=0.04). RRF best overall: **0.659 vs cosine 0.593**. Interaction **−0.036 [−0.070, −0.001]**. | A third corpus where more targets do not help a mixture. With a 47-paragraph bank the top-K0 modes are mostly redundant neighbours. |
+| **X204 BEIR** | SciFact (300 q), NFCorpus (323 q; m≈41). | SciFact: **RRF wins (0.832 vs cosine 0.790, p=0.025)**; the mixture is n.s. NFCorpus multi-relevant: **mixture +0.017 [+0.008, +0.027], p=0.0003**, which ties RRF (+0.008, n.s.); I4 +0.011 [+0.002, +0.022]. | PRF-style expansion helps on the one corpus with huge relevant sets. It does not beat RRF on either corpus. |
+| **X205 transfer** | Do LoCoMo-selected configs transfer? | **For expansion, trivially, because LoCoMo selected the null.** Transferring K0=0 gives up the entire in-corpus gain (HotpotQA bridge −0.023, 2Wiki inference −0.171, 2Wiki all −0.043). RRF's k=10 transfers within 0.012 everywhere. | **P-H5 not met for expansion.** The LoCoMo null is a property of LoCoMo, not of the method. Any deployment would have to tune on its own corpus. |
+| **X201 MSC** | Does X26's one-hop association replicate on a second public corpus? (30,320 pooled turns, 2,505 sessions, 501 dialogues) | **Yes.** Hop 1, n=27,815: cosine R@1 **0.049**, world model **0.065**, Δ **+0.016 [+0.014, +0.018]**, p<10⁻⁴ (**+33% relative**); R@5 +0.029. Mixture +0.006, again below averaging (as in X26c). Hop 2: +0.005 [+0.003, +0.006], small but positive, where LoCoMo was null. | **P-H4 met. The project's one positive claim now replicates on two public corpora**, here with a bank 5× LoCoMo's. The mixture-loses-to-averaging pattern (I4 falsified) replicates too. |
+| **X200 LongMemEval-S** | Chat-assistant memory, each question with its own ~490-turn haystack (479 q with gold turns, question = cluster). | **Null for expansion, decisive for RRF.** Mixture − cosine **−0.007 [−0.032, +0.018]** (all); multi-session −0.012; knowledge-update −0.049 [−0.083, −0.014]. Interaction (multi-session − single-session) **+0.002 [−0.040, +0.045]**. **RRF − cosine +0.156 [+0.125, +0.189]** overall, **+0.255** on temporal-reasoning, +0.218 on knowledge-update; mixture − RRF −0.163. | **P-H1/P-H3 not met here.** The second conversational-memory corpus shows LoCoMo's pattern again, more strongly: the lexical signal (dates, names, exact phrases) is what memory QA over chat needs, and association adds nothing to it. Expansion helps on encyclopedic chains (X202), not on chat. |
 
 ### Family I — other modalities
 
 | ID | Question | Result | Consequence |
 |---|---|---|---|
-| **X110 image arm** | Re-run the C3 image result with a k-NN class-vote control. | **Reproduced exactly, then explained away.** Energy − cosine **+0.0135 [+0.0055, +0.0219]**, identical to `image_holdout.json`. The k-NN vote (k=10 chosen on the tune half) gets **+0.045 [+0.035, +0.055]** vs cosine, and **beats energy descent by +0.031 [+0.023, +0.040]**, at every occlusion level (30/50/70%). | **The C3 positive is class smoothing, and a weak form of it.** Cosine top-1 is 1-NN classification, and the task scores class match. Energy descent recovers about a third of what a plain k-NN vote gets. The paper's "memory" framing for C3 does not survive this control. |
-| **X110 text arm** | Does span occlusion of text behave like image occlusion? (Yahoo Answers, 10 classes, 400-text bank, 4,000 held-out × 3 levels) | **No.** Energy − cosine **+0.003 [−0.000, +0.006]**, n.s., with deletion and with `[MASK]` alike. k-NN gains **+0.104** (deletion) and **+0.111** (`[MASK]`). | **Prediction not met.** In the backlog's words, "the image result may not be about memory at all", and that is now the reading: on text the energy path does nothing, and the smoothing it partially captured on images is available in full from k-NN. |
-| **X111 image mosaics** | X32's interaction with m set by construction: 2×2 mosaics of m∈{1..4} bank images, gold = the sources. | **Null for the mixture at every m.** It backs off to cosine 10/10 in every stratum, so the interaction is exactly 0. **MMR wins: +0.070 / +0.069 / +0.068 at m=2/3/4** (p at the 2/1024 floor). | **Prediction not met. This is PREREG_X32's kill criterion: on constructed multi-target retrieval the useful mechanism is diversity, not association.** |
-| **X112 cross-modal** | CLIP ViT-B/32, Flickr8k test. t→i (m=1) vs i→t (m=5). | t→i: everything backs off to null. i→t: **Rocchio +0.019** and averaging +0.012 beat cosine; the mixture is n.s. (+0.004); **I4 −0.008 [−0.016, −0.001]**. Interaction (i→t − t→i) **−0.008 [−0.013, −0.004]**. | **Prediction not met, reversed.** The five gold captions are near-paraphrases (high ε), the regime where averaging should and does win. |
+| **X210 image arm** | Re-run the C3 image result with a k-NN class-vote control. | **Reproduced exactly, then explained away.** Energy − cosine **+0.0135 [+0.0055, +0.0219]**, identical to `image_holdout.json`. The k-NN vote (k=10 chosen on the tune half) gets **+0.045 [+0.035, +0.055]** vs cosine, and **beats energy descent by +0.031 [+0.023, +0.040]**, at every occlusion level (30/50/70%). | **The C3 positive is class smoothing, and a weak form of it.** Cosine top-1 is 1-NN classification, and the task scores class match. Energy descent recovers about a third of what a plain k-NN vote gets. The paper's "memory" framing for C3 does not survive this control. |
+| **X210 text arm** | Does span occlusion of text behave like image occlusion? (Yahoo Answers, 10 classes, 400-text bank, 4,000 held-out × 3 levels) | **No.** Energy − cosine **+0.003 [−0.000, +0.006]**, n.s., with deletion and with `[MASK]` alike. k-NN gains **+0.104** (deletion) and **+0.111** (`[MASK]`). | **Prediction not met.** In the backlog's words, "the image result may not be about memory at all", and that is now the reading: on text the energy path does nothing, and the smoothing it partially captured on images is available in full from k-NN. |
+| **X211 image mosaics** | X32's interaction with m set by construction: 2×2 mosaics of m∈{1..4} bank images, gold = the sources. | **Null for the mixture at every m.** It backs off to cosine 10/10 in every stratum, so the interaction is exactly 0. **MMR wins: +0.070 / +0.069 / +0.068 at m=2/3/4** (p at the 2/1024 floor). | **Prediction not met. This is PREREG_X32's kill criterion: on constructed multi-target retrieval the useful mechanism is diversity, not association.** |
+| **X212 cross-modal** | CLIP ViT-B/32, Flickr8k test. t→i (m=1) vs i→t (m=5). | t→i: everything backs off to null. i→t: **Rocchio +0.019** and averaging +0.012 beat cosine; the mixture is n.s. (+0.004); **I4 −0.008 [−0.016, −0.001]**. Interaction (i→t − t→i) **−0.008 [−0.013, −0.004]**. | **Prediction not met, reversed.** The five gold captions are near-paraphrases (high ε), the regime where averaging should and does win. |
 
 ### What Phase 9 establishes
 
 - ✅ **One-hop association has external validity on two public corpora** (LoCoMo X26, MSC
-  X101). This is still the project's strongest claim.
+  X201). This is still the project's strongest claim.
 - ✅ **Two-stage expansion works on chain-shaped multi-hop text** (HotpotQA bridge, 2Wiki
   compositional/inference). It survives a disjoint sample, a second encoder and two
   bank sizes, and random modes lose to it by large margins. This is new, and it is a
@@ -603,7 +614,9 @@ anything new ran, cosine `gold@10` on LoCoMo reproduced Phase 7's 0.5269 exactly
   SciFact and LongMemEval.
 
 **Families H and I are closed.** Family J needs an API key and was not run.
-=======
+
+---
+
 ## Phase 8b — The paper, and a withdrawn win inside Phase 7 (2026-10-10)
 
 Phase 8 said two of this project's instruments had been over-read. Carrying those
@@ -700,13 +713,10 @@ citations. Built with `tectonic`; the repository has no `pdflatex`, so
   hyperparameter. The protocol needs the rule stated plainly: **before reporting any delta,
   write down what the other arm was allowed to do, and check that it was allowed to do its
   best.**
-<<<<<<< HEAD
->>>>>>> eb3d8ea (Fix a Proposition 1 over-claim that contradicted its own appendix, and withdraw a Phase 7 win whose baseline was handicapped)
-=======
 
 ---
 
-## Phase 9 — Families H, I and the family-A remainder: the paper's own falsifier fires (2026-10-10)
+## Phase 9b — Families H, I and the family-A remainder: the paper's own falsifier fires (2026-10-10)
 
 Drivers: `x110_text_occlusion.py`, `x111_image_multitarget.py`, `x102_hotpot.py`,
 `x104_beir.py`, `x3x_family_a.py`, `x67_joint_and_x105.py`, `hotpot.py`.
@@ -977,4 +987,62 @@ limitation), `protocol_errors.tex` (**seventh error added**, counts propagated),
 `appendix.tex` (budget table rows, the no-X-identifier gap).
 Build: **30 pages named / 29 anonymous** (was 27/26), 0 overfull boxes, 0 undefined
 references or citations.
->>>>>>> 2480810 (Withdraw the image result as evidence for an associative mechanism: the published comparison was a 1-NN classifier against a soft-k-NN one)
+
+---
+
+## Phase 11 — The lost phase, recovered and written into the paper (2026-10-11)
+
+**Why.** An external review asserted six findings the paper did not contain. The first audit
+of it checked the ledger and the backlog, found a row reading "X100, X101, X103 — not run,
+deprioritised", and reported the findings as unsupported. **That was wrong.** The experiments
+had been run and committed in `4262715` four commits earlier; the documentation describing
+them was the discarded side of a rebase conflict, and the result files were on disk the whole
+time. The review was quoting the repository back at itself.
+
+**The rule this produces, and it is the sharpest one in this file.** *Verify a claim about an
+experiment against the experiment's output, never against prose about it.* Reading
+`experiments/results/x101_msc.json` takes one command and would have settled it immediately:
+`dR1 = +0.01603 [+0.01391, +0.01814]`, exactly the review's "+0.016". This is the seventh
+protocol error (unmatched baseline) one level up — not a wrong number, but a *record* that
+disagreed with the data beside it. No test catches that, because every number was correct,
+reproducible and committed.
+
+### What was recovered
+
+| was | now | corpus | the finding |
+|---|---|---|---|
+| X100 | **X200** | LongMemEval-S, 479 q | expansion null (−0.007 [−0.032,+0.018]); **RRF +0.156 [+0.125,+0.189]**, +0.255 temporal. Second conversational corpus, same verdict as LoCoMo, more strongly |
+| X101 | **X201** | MSC, 27,815 probes / 30,320-turn bank | **one-hop association replicates: +0.016 [+0.014,+0.018], p<10⁻⁴, +33% rel.** Hop 2 is +0.005 [+0.003,+0.006] — positive but 1/18 of the withdrawn +0.185 |
+| X102 | **X202** | HotpotQA + 2Wiki, 2,000 q each | **the first departure from the corner that pays.** Bridge +0.023 [+0.010,+0.037]; 2Wiki inference +0.171 [+0.118,+0.219], beating RRF by +0.093. Comparison strata self-null 10/10 |
+| X102-checks | **X202c** | exploratory | gain survives disjoint sample, bge, ½×/2× banks. **Random modes lose by +0.13 to +0.39, 18/18 cells.** The I4 (mixture>averaging) part does *not* survive bge |
+| X103 | **X203** | QASPER, 812 q, ~47-par. banks | expansion **hurts** on multi-evidence: −0.027 [−0.049,−0.010]. Small banks make the modes redundant |
+| X104 | **X204** | SciFact + NFCorpus | SciFact: RRF wins, mixture n.s. NFCorpus multi-relevant: mixture +0.017 [+0.008,+0.027] |
+| X105 | **X205** | transfer | LoCoMo selects K₀=0, so transfer gives up the whole gain (−0.023, −0.171). RRF transfers within 0.012 |
+| X110 | **X210** | images + Yahoo Answers | **the X113 finding, two days earlier.** Image: descent −0.0313 [−0.0397,−0.0227] vs the k-NN vote. Text: descent +0.003 [−0.000,+0.006] n.s., vote **+0.104** |
+| X111 | **X211** | 2,000 image mosaics | mixture self-nulls 10/10 at every m; **MMR +0.07** at m=2/3/4. Diversity, not association |
+| X112 | **X212** | Flickr8k, CLIP | i→t (m=5): averaging +0.012 beats the mixture (n.s. +0.004). Interaction **−0.008 [−0.013,−0.004]**, reversed |
+
+**The cardinality hypothesis is refuted, not unconfirmed.** Across seven pre-registered
+tests the interaction is reversed on four (2Wiki −0.023, QASPER −0.036, SciFact −0.025,
+Flickr8k −0.008), confirmed on one (NFCorpus +0.011, on a 23-query comparison stratum), and
+null on two. What predicts an expansion gain is **hop type** — is the next document
+reachable from the retrieved evidence or only from the question — not target count.
+
+**X210 does not independently replicate X113's image arm.** Both evaluate the same 5,847
+cues over the same 1,949 source images; their descent−cosine figures agree to sixteen
+decimals because they are one measurement. What X210 adds is the *text* arm, which X113
+never ran. Recorded here so nobody cites "found twice" about the image number.
+
+### Paper changes
+
+New `sec:corpora` subsection (Table 7 `tab_corpora`, Table 8 `tab_cardinality`, both
+generated); new contribution **C7**; `tab_assoc` row (iv) and `tab_twohop` row (d) for MSC;
+abstract and conclusion rewritten around the one positive departure; `setup.tex` gains eight
+corpora and the second encoder; `limitations.tex` loses a **false claim** ("LongMemEval is
+the obvious second corpus and we have not run it") and gains three paragraphs; `sec:modes`
+gains the exception to "never beats the cue alone"; seven citations added, each verified
+against Crossref or the arXiv API on 2026-10-11.
+
+Two prose numbers were corrected against JSON while writing: the abstract's probe total
+(63,463 → **63,763**) and corpus count (nine → **twelve**), and ε was renamed in
+`results.tex` because the appendix already uses it for the softmax residual mass.

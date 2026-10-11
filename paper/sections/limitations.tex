@@ -1,15 +1,19 @@
 \label{sec:limitations}
 
-\paragraph{One public benchmark, one task shape.} The one-hop positive replicates on
-\textsc{LoCoMo} \citep{maharana2024locomo}, which discharges the external-validity concern
-for that result. It does not discharge it generally. The probe shape---cue a turn, retrieve
-the turn that followed---is one operationalisation of temporal association, and
-\textsc{LoCoMo}'s alternating two-speaker structure gives next-turn prediction a regularity
-that a single agent's episode stream may not share. \textsc{LongMemEval}
-\citep{wu2025longmemeval} is the obvious second corpus and we have not run it.
+\paragraph{Two public benchmarks, one task shape.} The one-hop positive replicates on
+\textsc{LoCoMo} \citep{maharana2024locomo} and on \textsc{MSC} \citep{xu2022msc} at a bank
+five times the size (\S\ref{sec:composition}), which discharges the external-validity concern
+for that result about as well as two corpora can. It does not discharge it generally, and
+the reason is the \emph{probe}, not the corpus. Cue a turn, retrieve the turn that followed
+is one operationalisation of temporal association, and both corpora are
+speaker-alternating dialogue, so both give next-turn prediction a regularity that a single
+agent's episode stream may not share. Replicating on a second corpus of the same shape
+cannot detect a bias that belongs to the shape. What this claim still lacks is a corpus
+where the stream is one agent's own actions, and we know of no public one.
 
-\paragraph{Association does not compose, and we do not know why.} Two hops is null on both
-corpora (\S\ref{sec:composition}). We attribute it to compounding prediction error
+\paragraph{Association barely composes, and we do not know why.} Two hops is null on the
+episodic corpus and on \textsc{LoCoMo}, and positive but $18\times$ smaller than the
+withdrawn claim on \textsc{MSC} (\S\ref{sec:composition}). We attribute it to compounding prediction error
 exceeding the compositional signal, but that is an interpretation rather than a measurement:
 we have not isolated the error accumulated per step, and the small residual Recall@5 effect
 on \textsc{LoCoMo} is unexplained. A rollout-depth sweep with per-step error attribution is
@@ -38,8 +42,12 @@ our PRF is simply weak. Until that is settled, we do not claim ``the prior art d
 either'', and any comparison in this paper against Rocchio should be read with that
 reservation.
 
-\paragraph{Scale.} Banks run from $400$ to $5{,}882$ patterns with encoders of $512$ and
-$768$ dimensions. The image advantage is explicitly capacity-dependent---cosine overtakes
+\paragraph{Scale.} Banks run from $47$ patterns (\textsc{QASPER}, one paper) to $30{,}320$
+(\textsc{MSC}), with encoders of $512$, $768$ and --- for the cross-modal arm --- CLIP's
+joint space. Both ends of that range matter and both are far from the target: the
+$47$-paragraph banks are where expansion inverts and starts to hurt, and the
+$30{,}320$-turn bank is still two orders of magnitude short of what a long-lived agent
+accumulates. The image advantage is explicitly capacity-dependent---cosine overtakes
 descent past $N\approx 800$ at fixed $\beta$---so nothing here licenses a claim at the
 $10^6$-memory scale a long-lived agent would reach. Whether the crossover is a $\beta$-scaling
 artefact is unresolved. It was the most important unanswered question about the completion
@@ -66,6 +74,37 @@ paired bootstrap, and none of that machinery can detect a baseline that was neve
 to do its best, or a metric whose name does not match the operation it scores. Readers
 weighing the rest of this paper should know that the defect was found by re-reading our
 scoring code, which is the one audit we had not systematised.
+
+\paragraph{The one positive departure is not deployable, and we say so rather than rounding
+it up.} Expansion on chain-shaped multi-hop questions (\S\ref{sec:corpora}) is the only
+mechanism in this paper that beats the dense corner on its own terms. Three things bound it.
+It requires tuning on the corpus it will serve --- configurations selected on
+\textsc{LoCoMo} give up the entire gain, where RRF's single parameter transfers within
+$0.012$. It requires knowing the question's shape in advance, and we have not shown a
+label-free signal that separates a chain question from a comparison question before
+retrieval; the gain and the harm live in different strata of the \emph{same} corpus, so a
+system cannot collect the one without risking the other. And it is null on both
+conversational corpora, which is the setting this paper is nominally about. A reader looking
+for the deployable recommendation in this paper will not find it here either.
+
+\paragraph{Two strata carry more weight than their size supports.} The cardinality table
+(Table~\ref{tab:cardinality}) rests in two places on a $23$-query stratum: \textsc{SciFact}
+multi-relevant and \textsc{NFCorpus} single-relevant. One of those two is the single
+confirmation of the prediction, so the one piece of evidence \emph{for} our own hypothesis
+is also among the weakest in the table. We have left both rows in rather than dropping them,
+and flagged them in the caption, because dropping the inconvenient-but-weak row and keeping
+the convenient-but-weak one is precisely how a table acquires a thumb on the scale.
+
+\paragraph{An experimental record can fork, and ours did.} Two programmes in this project
+ran concurrently and both numbered their experiments \texttt{X100}--\texttt{X112}, so the
+same identifier names different experiments depending on which record a reader consults, and
+a merge of the two documentation files resolved in favour of one --- leaving a committed
+documentation file that described seven completed corpora as ``not run'' while their result
+files sat in the repository. We renumbered the second programme to \texttt{X200}--\texttt{X212}
+and the ledger now carries both phases. We report it because it is the same failure as the
+others in \S\ref{sec:protocol}, one level up: not a wrong number, but a record that
+disagreed with the data on disk, and no test can catch that --- the results were correct,
+reproducible and committed the whole time, and only the prose describing them was wrong.
 
 \paragraph{Biological framing is analogy.} We use the words basin, attractor and
 consolidation because they are the established vocabulary of the formalism. We make no claim

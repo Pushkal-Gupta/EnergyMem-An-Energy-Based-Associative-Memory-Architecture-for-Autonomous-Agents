@@ -8,7 +8,6 @@ deviation and punish a silent one.
 |---|---|---|
 | 2026-08-11 | Stage A moves from synthetic to real sentence embeddings in Week 1 | Day-0 finding F6: cosine scores 1.000 on every synthetic condition, so there is no headroom to measure anything |
 | 2026-08-11 | DegradeBench D5 is no longer the G1 discriminator | Day-0 finding F4: single-state descent is structurally *worse* than top-k for multi-target queries. D5 now motivates residual peeling instead |
-<<<<<<< Updated upstream
 | 2026-09-03 | Stage-A real-embedding validation run on **image** data (Imagenette-160, ResNet18 features) instead of sentence embeddings | Fastest path to real (non-synthetic) embeddings ahead of Review 2; also matches the project's actual framing of Hopfield-network memory over image/ImageNet-style data. Text/sentence-embedding validation (per `04_EXPERIMENT_PROTOCOL.md` Stage A) is still owed and not covered by this run. |
 | 2026-09-03 | Added a capacity sweep (N=100..4,000) not in the pre-registered protocol | Ad hoc follow-up to the occlusion result: needed to check whether a fixed beta=32 (tuned informally at N=300) generalizes to larger memory banks. It does not -- the occlusion-recovery advantage over cosine shrinks/reverses past ~N=800. Finding: beta requires re-tuning (or an adaptive schedule) as corpus size grows; this was not anticipated in the original plan and is now a candidate future-work item rather than a settled result. |
 | 2026-09-03 | Added a confidence-calibration test (retrieval margin vs. correctness) not in the pre-registered protocol | Exploratory addition to test whether the energy margin could serve as an uncertainty signal for an agent. Result is negative for both cosine and energy retrieval on this run (near-zero / negative correlation, non-monotonic accuracy across margin quartiles) -- reported as-is rather than dropped, per the project's rule that negative results ship. |
@@ -60,17 +59,3 @@ The β-versus-corpus-size finding from the image run and the β-versus-dimension
 (F11) from the sentence run are **consistent in direction**: β does not transfer across
 conditions and must be re-tuned per setting. Neither run substitutes for the other, and the
 paper must say which modality each number came from.
-=======
-
-## 2026-09-04 — deviation 3: first real-embedding run discarded
-The run at 20260904T174209Z was executed before the F10 fix (perturbation scale not
-dimension-normalized). It reported `vote_proj=0.000` and `repulsion=0.016`, which were
-units artifacts rather than measurements. Deleted rather than kept, so nobody cites it.
-Superseded by 20260904T174411Z. Finding recorded as F10.
-
-## 2026-09-04 — deviation 4: significance testing changed to a cluster bootstrap
-Originally CIs were bootstrapped over all (seed × question) measurements. Seeds reshuffle
-the corpus but reuse the same 37 questions, so those rows are correlated and the naive
-bootstrap is pseudo-replication — it reported p=0.0005 where the correct cluster bootstrap
-over questions reports p=0.076. **All significance testing now resamples questions.**
->>>>>>> Stashed changes

@@ -45,6 +45,16 @@ ENTRIES = [
  ("cameron2008bootstrap","Bootstrap-Based Improvements for Inference with Clustered Errors"),
  ("ethayarajh2019contextual","How Contextual are Contextualized Word Representations? Comparing the Geometry of BERT, ELMo, and GPT-2 Embeddings"),
  ("gao2019representation","Representation Degeneration Problem in Training Natural Language Generation Models"),
+ # Added 2026-10-11 with the six-corpus study. Four of these are distributed under a name
+ # that does NOT appear in their title (2WikiMultihopQA, QASPER, MSC, BGE), so a title
+ # search for the dataset name finds nothing and a DOI lookup is the only reliable route.
+ ("yang2018hotpotqa","HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering"),
+ ("ho2020twowiki","Constructing A Multi-hop QA Dataset for Comprehensive Evaluation of Reasoning Steps"),
+ ("dasigi2021qasper","A Dataset of Information-Seeking Questions and Answers Anchored in Research Papers"),
+ ("thakur2021beir","BEIR: A Heterogenous Benchmark for Zero-shot Evaluation of Information Retrieval Models"),
+ ("xu2022msc","Beyond Goldfish Memory: Long-Term Open-Domain Conversation"),
+ ("radford2021clip","Learning Transferable Visual Models From Natural Language Supervision"),
+ ("xiao2024bge","C-Pack: Packed Resources For General Chinese Embeddings"),
 ]
 
 import subprocess

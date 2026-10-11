@@ -1,16 +1,47 @@
 # Submission status
 
-**TMLR template applied. Compiles clean: 30 pages named / 29 anonymous, 0 overfull boxes,
-0 undefined references, 0 undefined citations, 0 TODOs.**
+**TMLR template applied. Compiles clean: 36 pages named / 35 anonymous, 0 overfull boxes,
+0 undefined references, 0 undefined citations, 0 TODOs. Anonymity verified by extracting
+the anonymous PDF's text layer (0 hits for author name, email, repo URL or local paths).**
 
-> ⚠️ **Phase 10 changed what the paper claims.** X113 withdrew the image result as evidence
-> for an associative mechanism, so Claim 1 now has no confirming instance and the paper's
-> empirical verdict is uniformly negative for the energy machinery. The surviving positive
-> is the nonparametric predictor, which is not associative retrieval. Do not submit a PDF
-> built before 2026-10-10 Phase 10.
+> ⚠️ **Phases 10 and 11 both changed what the paper claims. The committed PDFs predate
+> Phase 11 and MUST be rebuilt before submission.**
+>
+> **Phase 10 (2026-10-10).** X113 withdrew the image result as evidence for an associative
+> mechanism, so Claim 1 has no confirming instance.
+>
+> **Phase 11 (2026-10-11).** A phase of eleven committed experiments (X200–X212) had been
+> lost from the documentation by a rebase and is now in the paper. Two consequences:
+> 1. **C5 is stronger.** One-hop association replicates on **MSC** (+0.016 [+0.014,+0.018],
+>    27,815 probes, 30,320-turn bank) — a second public corpus.
+> 2. **C7 is new, and it contradicts the thesis.** Two-stage query expansion **beats** the
+>    dense corner on chain-shaped multi-hop questions (+0.023 HotpotQA bridge, +0.171 2Wiki
+>    inference). The paper's old blanket claim that no departure from the corner pays was
+>    false and is withdrawn. It is sharply bounded: query expansion rather than attractor
+>    dynamics, no cross-corpus transfer, null on both conversational corpora.
+>
+> `limitations.tex` also carried a **false statement** until Phase 11 — that LongMemEval
+> "is the obvious second corpus and we have not run it" — while `x10x_longmemeval.json`
+> sat in the tree. Any PDF built before 2026-10-11 contains it.
 
-> Built with `tectonic` on 2026-10-10 (this machine has no `pdflatex`, so
-> `scripts/rebuild_paper.sh` cannot run as written here).
+> Built with `tectonic` on 2026-10-11 (this machine has no `pdflatex`/`latexmk`, so
+> `scripts/rebuild_paper.sh` cannot run as written here; `appendix.tex` now records this
+> and gives the `tectonic` invocation instead of the old `pdflatex` recipe).
+
+## Pre-submission checks, and how to re-run them
+
+```bash
+python scripts/make_tables.py            # regenerate all 9 tables from JSON
+python scripts/verify_paper_numbers.py   # 66 TYPED prose numbers vs the JSONs
+python scripts/verify_refs.py /tmp/r.json # 31 citations vs Crossref/arXiv
+python -m pytest -q                      # 31 tests, incl. the Prop. 1 gate
+```
+
+Last run, 2026-10-11: **66/66 numbers agree**, 31/31 citations resolve (the one known gap,
+`welling2011sgld`, is a Crossref hole for early PMLR and is flagged in `refs.bib`), 31/31
+tests pass. `verify_paper_numbers.py` is new this phase and immediately earned itself: it
+caught `+0.094` where the file says `0.09350`, a mis-rounding that had propagated from the
+ledger into the draft.
 
 ```bash
 bash scripts/rebuild_paper.sh     # regenerates every number, then builds BOTH PDFs
@@ -29,7 +60,7 @@ line marked `[SUBMIT]` in `main.tex` before building.
 
 | | Venue | Why | Risk |
 |---|---|---|---|
-| **1st** | **TMLR** | Criteria are *claims supported by evidence* + *interesting to some audience*, no novelty bar. A reduction, a taxonomy, eight diagnosed negatives and one externally validated positive is exactly the shape. Rolling submission. | Lower prestige than JMLR. |
+| **1st** | **TMLR** | Criteria are *claims supported by evidence* + *interesting to some audience*, no novelty bar. A reduction, a taxonomy, eight diagnosed negatives, one externally validated positive on two public corpora, and one bounded positive that contradicts our own thesis is exactly the shape. Rolling submission. | Lower prestige than JMLR. |
 | **2nd** | **JMLR** | Top ML journal, takes long-form methodological work. The external-validity hole that would have drawn a major revision is now closed (X26). | Will likely ask for a second public corpus and a downstream-task result. |
 | Alt | NeurIPS D&B / position track | If the taxonomy leads over the theorem. | |
 

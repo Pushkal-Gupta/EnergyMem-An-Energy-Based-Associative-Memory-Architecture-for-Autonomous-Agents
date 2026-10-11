@@ -175,6 +175,14 @@ Association (ours) & $k_P\in\{5,10,20\}$, $\tau\in\{2,5,10\}$ & 9 & val storylin
  & mixture $K,\beta,\alpha$ & 48 & val storylines, per fold & test storylines \\
 Association (\textsc{LoCoMo}) & $k_P,\tau$ as above & 9 & val sessions, per fold & test sessions \\
  & mixture $K,\beta,\alpha$ & 18 & val sessions, per fold & test sessions \\
+Association (\textsc{MSC}, \xid{X201}) & \textsc{LoCoMo}'s grid, unchanged & 9 & val sessions, per fold & test sessions \\
+Six corpora (\xid{X200}--\xid{X204}) & expansion: $K_0 \in \{0,1,2,3,5\} \times \beta \in \{4,16,64\} \times \texttt{with\_query}$ & 30 & 9 of 10 groups, per fold & held-out group \\
+ & averaged expansion: same grid & 30 & 9 of 10 groups, per fold & held-out group \\
+ & Rocchio: $K_0 \times \gamma \in \{0,0.25,0.5,1\}$ & 20 & 9 of 10 groups, per fold & held-out group \\
+ & MMR: $\lambda \in \{0.3,\dots,0.9\} \times \texttt{pool} \in \{20,50\}$ & 8 & 9 of 10 groups, per fold & held-out group \\
+ & RRF: $k_{\mathrm{rrf}} \in \{10,60,120\}$ & 3 & 9 of 10 groups, per fold & held-out group \\
+ & BM25, cosine: none & --- & --- & held-out group \\
+Modalities (\xid{X211}, \xid{X212}) & expansion and Rocchio grids as above & 30 & 9 of 10 groups, per fold & held-out group \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -393,8 +401,13 @@ python experiments/locomo_assoc.py          # X26
 python scripts/exp_locomo_anchored.py       # Table 2
 python scripts/confirm_holdout.py           # Table 1
 python scripts/exp_multibeta_scales.py      # Table 5
+python experiments/x113_class_vote.py       # X113; Tables 1 and 6
+python experiments/x101_msc.py              # X201; rows (iv) and (d)
+python experiments/x10x_corpora.py          # X200, X202-X205; Tables 6 and 7
+python experiments/x102_checks.py           # X202c robustness checks
+python experiments/x11x_modalities.py       # X210-X212; Table 7
 python scripts/make_tables.py               # JSON -> generated tables + figures
-cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+cd paper && tectonic -X compile main.tex    # or: latexmk -pdf main
 \end{verbatim}}
 
 \texttt{make\_tables.py} prints, on every run, the list of tables it could \emph{not}
@@ -402,12 +415,15 @@ generate from a results file. We regard that output as part of the reproducibili
 statement: it names precisely which numbers in the paper are still typed rather than
 derived, so the gap is visible to a reader instead of assumed closed.
 
-\paragraph{Known reproduction frictions.} Two, both environmental rather than scientific,
+\paragraph{Known reproduction frictions.} Three, all environmental rather than scientific,
 recorded because they cost us time. Python on this machine ships without a CA bundle, so
 \texttt{urllib}-based downloads (including \texttt{torch.hub} weight fetches) fail with a
 certificate error; export \texttt{SSL\_CERT\_FILE} from \texttt{certifi}, or pre-fetch the
-checkpoint with \texttt{curl}. And \texttt{torchvision} is an optional dependency not
-installed by \texttt{make setup}; the two image experiments require it.
+checkpoint with \texttt{curl}. \texttt{torchvision} is an optional dependency not
+installed by \texttt{make setup}; the two image experiments require it. And the machine the
+final draft was built on carries \texttt{tectonic} but neither \texttt{pdflatex} nor
+\texttt{latexmk}, so \texttt{scripts/rebuild\_paper.sh}, which assumes the latter, does not
+run there; the \texttt{tectonic} invocation above is what produced this \textsc{pdf}.
 
 \paragraph{Every number currently reported in this paper is reproducible.} Two drivers were lost before they
 were committed --- the one behind Table~\ref{tab:assoc} row~(i) and the one behind the

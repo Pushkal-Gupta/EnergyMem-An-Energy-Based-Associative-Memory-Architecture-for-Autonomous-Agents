@@ -9,6 +9,34 @@ evidence during revision.
 column is blank means the number is typed rather than generated, and is a submission
 blocker.
 
+> ⚠️ **The "Paper" column has drifted, and only the rows added 2026-10-11 are current.**
+> Sections and tables have been renumbered twice as the paper grew (27 → 30 → 36 pages), and
+> the older rows still carry their numbering from before. **Resolve any reference through the
+> label table below rather than trusting a `Tab. N` in a row written earlier.** Regenerate
+> this table from `main.aux` after any build:
+> `grep -o 'newlabel{\(tab:[a-z]*\|sec:[a-z]*\)}{{[^}]*}' main.aux`
+>
+> | label | № | | label | № |
+> |---|---|---|---|---|
+> | `tab:images` | 1 | | `sec:method` | 3 |
+> | `tab:completion` | 2 | | `sec:band` | 3.4 |
+> | `tab:locomo` | 3 | | `sec:setup` | 4 |
+> | `tab:assoc` | 4 | | `sec:results` | 5 |
+> | `tab:twohop` | 5 | | `sec:completion` | 5.1 |
+> | **`tab:corpora`** | **6** | | `sec:semantic` | 5.2 |
+> | **`tab:cardinality`** | **7** | | `sec:composition` | 5.3 |
+> | `tab:negatives` | 8 | | **`sec:corpora`** | **5.4** |
+> | `tab:multibeta` | 9 | | `sec:negatives` | 5.5 |
+> | `tab:regimes` | 10 | | `sec:modes` | 5.6 |
+> | `tab:errors` | 11 | | `sec:taxonomy` | 6 |
+> | `tab:grids` | 12 | | `sec:occlusion` | 6.2 |
+> | | | | `sec:protocol` | 7 |
+> | | | | `sec:limitations` | 8 |
+> | | | | `sec:conclusion` | 9 |
+>
+> Fixing the stale rows is a separate pass, not folded in here: rewriting a reference whose
+> referent I would have to guess at is how a trace table stops being evidence.
+
 | Claim | Ledger | Script | Raw output | Test | Paper |
 |---|---|---|---|---|---|
 | **C1** Dense top-k is the `(T=1, β→∞, b=0, R=I)` corner | X1 | `tests/test_reduction.py` | `results/reduction_check.json` | exact top-1 equality: **1000/1000** synthetic *d*=64, **838/838** real mpnet *d*=768 | Prop. 1, §3.2, App. A |
@@ -34,6 +62,22 @@ blocker.
 | **C5** One-hop, own corpus 4-fold: +0.035 [+0.012,+0.061] p=0.002 | X25 | `experiments/x23_mode_diagnostics.py` | `results/x23_mode_diagnostics.json` | cluster bootstrap over threads; per-fold val selection | Tab. 3 row (ii) |
 | **C5** One-hop, **LoCoMo** 4-fold: +0.043 [+0.036,+0.050] p<1e-4 | **X26** | `experiments/locomo_assoc.py` | `results/x26_locomo_assoc.json` | cluster bootstrap over 272 sessions; per-fold val selection; namespaced ids | Tab. 3 row (iii), Fig. 1 |
 | **C5** Two-hop **withdrawn**: LoCoMo −0.002 [−0.008,+0.004] p=0.77 | **X26b** | `experiments/locomo_assoc.py` | `results/x26_locomo_assoc.json` | as above, n=5,013 | Tab. 6, §5.3 |
+| **C5** One-hop, **MSC** 4-fold: **+0.016 [+0.014,+0.018] p<1e-4** (+33% rel.) | **X201** | `experiments/x101_msc.py` | `results/x101_msc.json` | cluster bootstrap over 2,505 sessions; LoCoMo's grid unchanged; bank 30,320 turns (5× LoCoMo) | Tab. 4 row (iv) *(generated)*, §5.3 |
+| **C5** Two-hop on MSC: **+0.005 [+0.003,+0.006]**, excludes zero but 1/18 of the withdrawn +0.185 | **X201** | `experiments/x101_msc.py` | `results/x101_msc.json` | as above, n=25,310 — the only two-hop measurement that resolves; reported *with* its magnitude caveat | Tab. 5 row (d) *(generated)*, §5.3 |
+| **C5** Mixture below averaging on MSC too (+0.006 vs +0.016) | X201 | `experiments/x101_msc.py` | `results/x101_msc.json` | same folds; 4th corpus reproducing the I4 ordering | §5.3, §5.6 |
+| **C7** Expansion beats cosine, **HotpotQA bridge +0.023 [+0.010,+0.037]** | **X202** | `experiments/x10x_corpora.py` | `results/x10x_hotpot.json` | LOGO over 10 banks, train side only; **non-null K₀ selected 10/10 folds**; cluster bootstrap over banks | Tab. 6 *(generated)*, §5.4 |
+| **C7** Expansion beats cosine, **2Wiki inference +0.171 [+0.118,+0.219]**; beats RRF +0.093 | **X202** | `experiments/x10x_corpora.py` | `results/x10x_2wiki.json` | as above, n=246 | Tab. 6 *(generated)*, §5.4 |
+| **C7** Comparison strata **self-null 10/10** on both corpora (Δ exactly 0 by selection, not by measurement) | X202 | `experiments/x10x_corpora.py` | `results/x10x_hotpot.json`, `results/x10x_2wiki.json` | `folds_backed_off_to_null` = 10; no interval is placed on these cells | Tab. 6 *(generated)*, §5.4 |
+| **C7** Random-mode control: real modes win **+0.13 to +0.39, 18/18 cells** | **X202c** | `experiments/x102_checks.py` | `results/x102_checks.json` | 9 (K₀,β) cells per corpus; **exploratory — chosen after seeing X202**, logged as a deviation in `PREREG_HI.md` | §5.4 |
+| **C7** Gain survives disjoint sample, bge, ½×/2× banks (bridge +0.020→+0.026) | X202c | `experiments/x102_checks.py` | `results/x102_checks.json` | exploratory; **the I4 sub-claim does *not* survive bge (+0.001 [−0.004,+0.006])** | §5.4 |
+| **C7** Expansion **hurts** on small banks: QASPER multi-evidence **−0.027 [−0.049,−0.010]** | **X203** | `experiments/x10x_corpora.py` | `results/x10x_qasper.json` | LOGO over 268 single-paper banks (~47 paragraphs) | Tab. 6 *(generated)*, §5.4 |
+| **C7** No transfer: LoCoMo's K₀=0 gives up the whole gain (−0.023, −0.171); RRF transfers within 0.012 | **X205** | `experiments/x10x_corpora.py` | each `results/x10x_*.json` (`transfer/vs_selected`) | per-corpus transfer contrast | §5.4, §8 |
+| **C7** ~~Cardinality: more targets should help more~~ **WITHDRAWN — reversed on 4 of 7 tests** | X202–X204, X211, X212 | `experiments/x10x_corpora.py`, `x11x_modalities.py` | `results/x10x_*.json`, `x111_mosaic.json`, `x112_crossmodal.json` | pre-registered difference-of-differences per corpus; **2 of 7 rows rest on a 23-query stratum and are flagged in the caption** | Tab. 7 *(generated)*, §5.4 |
+| **C4** LongMemEval: expansion null **−0.007 [−0.032,+0.018]**; **RRF +0.156 [+0.125,+0.189]** | **X200** | `experiments/x10x_corpora.py` | `results/x10x_longmemeval.json` | LOGO over 479 per-question haystacks; benchmark's own strata | Tab. 6 *(generated)*, §5.4 |
+| **C4** Mosaics: expansion self-nulls at every m; **MMR +0.07** | **X211** | `experiments/x11x_modalities.py` | `results/x111_mosaic.json` | m set by construction; p at the 2/1024 floor | Tab. 7 *(generated)*, §5.4 |
+| **C4** Cross-modal (CLIP, Flickr8k): averaging +0.012 beats the mixture (n.s. +0.004) | **X212** | `experiments/x11x_modalities.py` | `results/x112_crossmodal.json` | matched encoder *within* the comparison (both arms CLIP) | Tab. 7 *(generated)*, §5.4 |
+| **C3** X113's image finding, measured 2 days earlier: descent **−0.0313 [−0.0397,−0.0227]** vs the vote | **X210** | `experiments/x11x_modalities.py` | `results/x110_occlusion.json` | ⚠️ **NOT an independent replication of the image arm** — same 5,847 cues as X113a, agreeing to 16 decimals. Differs only in the vote's grid (k=10 vs k=20) | §6.2 |
+| **C3** X210's genuine addition: **text** occlusion, descent +0.003 [−0.000,+0.006] **n.s.**, vote **+0.104** | **X210** | `experiments/x11x_modalities.py` | `results/x110_occlusion.json` | Yahoo Answers, 10 classes, 2,000 held-out texts × 3 levels; deletion and `[MASK]` both | §6.2 |
 | **C5** Parametric JEPA memorises: **1.000 fitted / 0.000 unseen** (rank 32); best unseen 0.016 vs cosine 0.131 | **X17-r** | `experiments/x17_parametric.py` | `results/x17_parametric.json` | rank sweep 2→32, storyline-disjoint | §5.3 |
 | **C5** X16 gate: cosine R@1 0.105, gold median rank 24/1319 | X16 | `experiments/x23_mode_diagnostics.py` (reproduced) | `results/x23_mode_diagnostics.json` | descriptive | §5.3, App. C |
 | **C6** σ not dimensionless: 0.016 → 0.277 | X10 | `experiments/run_real.py` | `experiments/results/real/` | before/after on identical probes | Tab. 7 |
@@ -109,6 +153,21 @@ above therefore quote intervals, and the paper quotes intervals, not p.
   classification on cues whose source was never stored, and a classifier beats descent at
   it. Pre-registered in `PREREG_X113.md` before the driver existed; the fourth row of that
   document's outcome table is the one that fired.
+
+- 📈 **C7 is new, and it contradicts the thesis (X202).** One departure from the corner
+  does pay. The rows above are deliberately explicit about what bounds it: the comparison
+  strata self-null, the gain does not transfer, the robustness checks are exploratory, and
+  the cardinality explanation we had pre-registered for it came out reversed. A claim that
+  goes *our* way gets the same scrutiny as one that does not, or the record is worthless.
+
+- 🛠 **Sixteen rows above were absent from this file for a day (ledger Phase 11).** The
+  experiments ran in `4262715`; a rebase resolved two concurrently-appended ledger sections
+  in favour of one, and the surviving documentation described seven of these corpora as
+  "not run" while their JSONs sat in `experiments/results/`. The rule this file now carries:
+  **a claim is verified against the experiment's output, never against prose about it.**
+  Renumbered to X200–X212; `scripts/verify_paper_numbers.py` asserts 66 typed prose numbers
+  against the JSONs on every run and caught one mis-rounded figure (+0.094 → +0.093) while
+  this section was being written.
 
 **Still open:**
 
