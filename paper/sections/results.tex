@@ -239,7 +239,9 @@ $K_0{=}0$, i.e.\ declined to expand: where it reads $10/10$ the $+0.000$ is the 
 refusing to act, not a measurement that came out at zero, and no interval can be placed on
 it. $^{*}$ marks an interval excluding zero. The pattern is not about corpus and not about
 target count --- it is about whether the next piece of evidence is reachable from the
-retrieved evidence (``chain'') or only from the question. RRF's column is given for scale
+retrieved evidence (``chain'') or only from the question. The two \emph{unstratified} rows
+are the same corpora with the question-shape label withheld from selection and from
+scoring, and they are the deployable version of the claim. RRF's column is given for scale
 and is discussed below.}
 \label{tab:corpora}
 \input{generated/tab_corpora}
@@ -255,6 +257,25 @@ correctly does nothing. On \textsc{QASPER}, whose banks are single papers of ${\
 paragraphs, expansion actively hurts the multi-evidence stratum, $-0.027$
 \ci{-0.049}{-0.010}: with a bank that small the top-$K_0$ modes are mostly redundant
 neighbours of each other, so expansion adds no information and costs precision.
+
+\paragraph{Without the label, the gain is smaller and still there.} Every stratified number
+above is conditional on knowing a question's shape, and that label comes from the benchmark,
+not from a detector we built (\S\ref{sec:taxonomy}). The obvious objection is that the result
+is therefore an oracle result, so we report the run that answers it: the same driver also
+selects and scores on the \emph{unstratified} pool, where no label is available at any
+stage --- one configuration chosen on a mixed training stream and applied to a mixed
+evaluation stream. The gain survives on both multi-hop corpora. \textsc{HotpotQA} gives
+$+0.015$ \ci{+0.004}{+0.025} over $n{=}2{,}000$, against $+0.023$ on the bridge stratum that
+is $80\%$ of it; \textsc{2Wiki} gives $+0.043$ \ci{+0.029}{+0.056} over $n{=}2{,}000$,
+against a chain fraction of $54\%$. In both cases selection declines the null in $0/10$
+folds, so it is acting on the pooled stream rather than backing off from it, and in both
+cases the unstratified effect is close to the stratum-weighted average of the parts --- the
+label changes what we can say in advance about \emph{which} queries pay, not whether the
+method pays. The corpora with no chain stratum behave as that reading requires: unstratified
+\textsc{QASPER} is $+0.023$ \ci{-0.002}{+0.047} and \textsc{NFCorpus} $+0.009$
+\ci{-0.004}{+0.021}, both spanning zero, and \textsc{LongMemEval} is the $-0.007$ already in
+the table. We take the unstratified rows, not the stratified ones, to be the honest size of
+this result for anyone who wants to use it.
 
 \paragraph{The hypothesis this kills is ours.} We had pre-registered that the gain should
 grow with the number of targets $m$. Table~\ref{tab:cardinality} collects every test of
@@ -333,25 +354,39 @@ dates, names and exact phrases; association adds nothing on top of them. Two ind
 conversational corpora now say the same thing, which is as close to a settled negative as
 this paper gets.
 
-\subsection{Eight mechanisms that do not pay for themselves}
+\subsection{Ten mechanisms that do not pay for themselves}
 \label{sec:negatives}
 
+Table~\ref{tab:negatives} is the complete inventory of \emph{Family~A}: every mechanism we
+tested that changes the state update or the readout and leaves the landscape alone. Ten of
+them, no wins. Family~B --- the two interventions that do not read an answer off the
+landscape --- is not in this table and not in the count, because those are the two that pay
+(\S\ref{sec:composition}, \S\ref{sec:corpora}). Each row below is one line; the full
+diagnosis, with numbers and identifiers, is Appendix~\ref{app:familya}.
+
 \begin{table}[t]\centering\small
-\caption{Negative results, each with its diagnosed mechanism. ``Regime'' indicates where the
-test was run. Two of these overturn claims we previously made ourselves.}
+\caption{\textbf{Family A in full: every tested change to the state update or the readout.}
+None improves on the dense corner under matched conditions. Three rows overturn claims we
+previously made ourselves. This table's row count --- ten --- is the only source for the
+count used in the abstract, the introduction and the conclusion, so a reader can audit it.
+Family~B, the two interventions that \emph{do} pay, is not in this table: see
+\S\ref{sec:composition} and \S\ref{sec:corpora}. Each row's full diagnosis, with the
+numbers and the \xid{X} identifiers, is in Appendix~\ref{app:familya}.}
 \label{tab:negatives}
-\begin{tabular}{@{}p{0.235\textwidth}p{0.20\textwidth}p{0.45\textwidth}@{}}
+\begin{tabular}{@{}p{0.30\textwidth}p{0.21\textwidth}p{0.40\textwidth}@{}}
 \toprule
-\textbf{Mechanism} & \textbf{Result} & \textbf{Diagnosed mechanism} \\
+\textbf{Mechanism} & \textbf{Result} & \textbf{Why it fails, in brief} \\
 \midrule
-Multi-step descent (G1) & no effect & Identical to one step above the $\beta$ threshold---precisely what Corollary~\ref{cor:degeneracy} predicts. Once $\beta$ commits on step one there is nothing left to do (\xid{X2}). \\
-Residual peeling & $0.268$ vs.\ repulsion $0.290$ & Restores multi-answer recall on orthogonal synthetic patterns ($0.258 \to 1.000$) and inverts on real embeddings: non-orthogonal golds mean projecting one out damages the others (\xid{X5}, \xid{X13}). \\
-Repulsive parallel descent & $+0.004$, $p{=}0.43$ & Survives to $146$ questions but not to held-out selection. The $+0.042$ trend was hyperparameter overfitting (\xid{X15}). \\
-Noise-seeded parallel descent & fails at every $\sigma$ & No intermediate value exists. Too little noise and all chains land in one basin; too much and they scatter uniformly, where correct answers are no likelier than any others. Isotropic noise carries no information about where the other answers are (\xid{X7}). \\
-Cosine-seeded parallel descent & exactly chance & Circular. Stored patterns are exact fixed points, so descent is a no-op; ranking the landing sites requires a signal the descent has already destroyed. Ranking them by similarity to the cue scores $1.000$---but that ranking \emph{is} cosine top-$k$ (\xid{X7}). \\
-Multi-scale $\beta$ & $+0.0003$ \ci{-0.0014}{+0.0021} & Expressively distinct and performance-neutral. An integrated mixture is provably not reducible to any single $\beta$ \citep{yang2018softmax}, and diverges from an ensemble at $T{=}8$ ($63\%$ top-1 agreement), yet changes \emph{which} queries are answered, not how many (\texttt{exp\_multibeta\_scales.py}; this study predates the ledger and has no \xid{X} identifier). \\
-Per-memory / learned $\beta$ & inert & The learned values ($51$--$88$) land above the leverage band, and a shuffle control with the same values randomly reassigned scores identically. Conditioning $\beta$ on the query is motivated---the optimum does differ by corruption level---but the learned function converged to a near constant ($\beta{\approx}31$ everywhere). \\
-Predictor coupled into the energy & never exceeds external & Interpolating the routing operator inside the descent step gives $0.130$ at $\eta{=}0.5$ and $0.154$ at $\eta{=}1.0$---the latter merely \emph{recovering} the external predictor, since $\eta{=}1$ replaces the Hopfield step entirely (\xid{X18}). This was our stated novelty against prior work \citep{dury2026pam} and it is withdrawn. \\
+Multi-step descent (G1) & no effect & Degenerate above the $\beta$ threshold; Corollary~\ref{cor:degeneracy} \\
+Residual peeling & $0.268$ vs.\ repulsion $0.290$ & Inverts on non-orthogonal real embeddings \\
+Repulsive parallel descent & $+0.004$, $p{=}0.43$ & The trend was hyperparameter overfitting \\
+Noise-seeded parallel descent & fails at every $\sigma$ & Isotropic noise carries no information about the other answers \\
+Cosine-seeded parallel descent & exactly chance & Circular: stored patterns are fixed points, so descent is a no-op \\
+Vote-count readout & $0.621$ synthetic, does not transfer & Synthetic-only; the ordering it rests on inverts at $d{=}768$ \\
+Query-conditional $\beta$ from the retrieval margin & $-0.121$ \ci{-0.149}{-0.098} & Beat only a reference denied its own best $\beta$ \\
+Multi-scale $\beta$ & $+0.0003$ \ci{-0.0014}{+0.0021} & Expressively distinct, performance-neutral \\
+Per-memory / learned $\beta$ & inert & Learned values land above the band; converged to a constant \\
+Predictor coupled into the energy & never exceeds external & At $\eta{=}1$ it merely recovers the external predictor \\
 \bottomrule
 \end{tabular}
 \end{table}

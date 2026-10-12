@@ -219,12 +219,41 @@ the evidence supports, and the claim that one sentence predicts the sign in adva
 not.
 
 What does not follow is that nothing outside the corner ever pays. \S\ref{sec:corpora}
-reports one mechanism that does, on a question shape we can name before running it, and
-the distinction between the two findings is the useful part: \emph{completing a cue} from
+reports one mechanism that does, on a question shape that is \emph{stated} in advance rather
+than found afterwards --- but stated is not the same as detected, and the next paragraph says
+what that costs. The distinction between the two findings is the useful part: \emph{completing a cue} from
 the memory bank does not work anywhere we have looked, and \emph{expanding a query} with
 retrieved memories works where the next piece of evidence is reachable only from the
 retrieved evidence. Both are departures from $(T{=}1,\beta\to\infty,b{=}0,R{=}I)$. Only the
 second one pays, and it is not the one that motivated this paper.
+
+\paragraph{This taxonomy explains; it does not yet route.} A reader should be able to ask
+what the table would tell them about a task they have not run, so we are explicit about which
+of its columns are available before retrieval. The regime a query belongs to is, in every
+experiment here, supplied by a benchmark annotation or by our own construction of the cue:
+``bridge'' and ``inference'' are \textsc{HotpotQA} and \textsc{2Wiki} category labels,
+``comparison'' likewise, and the occlusion levels of \S\ref{sec:occlusion} are ours by
+design. We did not build, and do not evaluate, a detector that reads hop type off an
+unlabelled query. What the taxonomy therefore supports is a \emph{conditional} statement ---
+given that a query has this shape, this mechanism helps by this much --- and not a selection
+policy that an agent could run.
+
+How much that costs is measurable, and we measured it rather than argue about it. The same
+drivers also select and evaluate on the \emph{unstratified} query pool, where no
+question-shape label is available at any point: selection sees a mixed stream, picks one
+configuration for all of it, and is scored on all of it. The gain survives on both multi-hop
+corpora --- $+0.015$ \ci{+0.004}{+0.025} on \textsc{HotpotQA} and $+0.043$
+\ci{+0.029}{+0.056} on \textsc{2Wiki}, both over $n{=}2{,}000$ with selection declining the
+null in $0/10$ folds (Table~\ref{tab:corpora}, the \emph{unstratified} rows) --- at roughly
+the dilution the chain-shaped fraction of each pool predicts. So the headline per-stratum
+numbers are conditional on a label, but the existence of a gain is not; what a label buys is
+knowing in advance \emph{which} queries will supply it. On the corpora with no chain stratum
+the unstratified effect is correspondingly not significant ($+0.023$ \ci{-0.002}{+0.047} on
+\textsc{QASPER}, $+0.009$ \ci{-0.004}{+0.021} on \textsc{NFCorpus}), which is the same
+statement from the other side. Until a label-free hop-type signal is demonstrated we present
+Table~\ref{tab:regimes} as a post hoc explanatory account of our own results, and an
+inference-time regime detector as the obvious next experiment rather than as something this
+paper delivers.
 
 We state plainly what this costs the paper. \xid{X113} removes the only positive result we
 had for the energy machinery itself, and it is a result we had published a pre-registered,

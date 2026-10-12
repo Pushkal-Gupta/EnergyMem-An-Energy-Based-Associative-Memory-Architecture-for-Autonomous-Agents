@@ -1,8 +1,24 @@
 # Submission status
 
-**TMLR template applied. Compiles clean: 36 pages named / 35 anonymous, 0 overfull boxes,
+**TMLR template applied. Compiles clean: 40 pages named / 39 anonymous, 0 overfull boxes,
 0 undefined references, 0 undefined citations, 0 TODOs. Anonymity verified by extracting
-the anonymous PDF's text layer (0 hits for author name, email, repo URL or local paths).**
+the anonymous PDF's text layer (0 hits for author name, email, repo URL or local paths;
+the review banner appears on all 39 pages).**
+
+> **Phase 13 (2026-10-12) is built and installed.** An editorial pass that found a real
+> miscount: "eight mechanisms" was two overlapping lists of eight, and the true Family A
+> inventory is **ten**. Table 8 is now the authoritative count and sits beside its own
+> section (it had been floating 19 pages away, to p37). Contributions went 7 → 3 + 1.
+> Reproducibility is stated in three tiers after testing it: **only 2 of 11 data inputs are
+> present in a fresh checkout**, reported by the new `scripts/check_data.py`. See
+> `docs/10_EXPERIMENT_LEDGER.md` Phase 13.
+
+> **Phase 12 (2026-10-11) is built and installed.** `main-anonymous.pdf` and
+> `main-preprint.pdf` in this directory are current as of Phase 12. Phase 12 narrowed two
+> theory statements (the energy-descent claim for the projected update, and Corollary 1's
+> fixed-point hypotheses) and added the **unstratified** expansion rows, which answer the
+> objection that C7 presupposes a benchmark hop-type label. See
+> `docs/10_EXPERIMENT_LEDGER.md` Phase 12.
 
 > ⚠️ **Phases 10 and 11 both changed what the paper claims. The committed PDFs predate
 > Phase 11 and MUST be rebuilt before submission.**
@@ -32,12 +48,13 @@ the anonymous PDF's text layer (0 hits for author name, email, repo URL or local
 
 ```bash
 python scripts/make_tables.py            # regenerate all 9 tables from JSON
-python scripts/verify_paper_numbers.py   # 66 TYPED prose numbers vs the JSONs
+python scripts/verify_paper_numbers.py   # 80 TYPED prose numbers vs the JSONs
+python scripts/check_data.py             # which corpora a fresh checkout lacks (2/11 present)
 python scripts/verify_refs.py /tmp/r.json # 31 citations vs Crossref/arXiv
 python -m pytest -q                      # 31 tests, incl. the Prop. 1 gate
 ```
 
-Last run, 2026-10-11: **66/66 numbers agree**, 31/31 citations resolve (the one known gap,
+Last run, 2026-10-11 (Phase 12): **80/80 numbers agree**, 31/31 citations resolve (the one known gap,
 `welling2011sgld`, is a Crossref hole for early PMLR and is flagged in `refs.bib`), 31/31
 tests pass. `verify_paper_numbers.py` is new this phase and immediately earned itself: it
 caught `+0.094` where the file says `0.09350`, a mis-rounding that had propagated from the
@@ -50,7 +67,11 @@ bash scripts/rebuild_paper.sh     # regenerates every number, then builds BOTH P
 | file | what it is |
 |---|---|
 | `paper/main-anonymous.pdf` | **submit this.** `\usepackage{tmlr}` — "Under review as submission to TMLR", anonymous, contributions suppressed |
-| `paper/main-preprint.pdf` | named version (= `main.pdf`), `\usepackage[preprint]{tmlr}` — for arXiv, circulation, camera-ready |
+| `paper/main-preprint.pdf` | named version, `\usepackage[preprint]{tmlr}` — for arXiv, circulation, camera-ready |
+
+> ⚠️ **`paper/main.pdf` is a build artefact, not a deliverable.** It is gitignored and is
+> whatever the last `tectonic` run produced (currently the *named* build). Submit
+> `main-anonymous.pdf`. Do not treat `main.pdf` as equivalent to `main-preprint.pdf`.
 
 ⚠️ **TMLR's style file is explicit: "Non-anonymous submissions will be rejected without
 review."** The default build is the *named* one, so submit `main-anonymous.pdf`, or flip the
@@ -60,7 +81,7 @@ line marked `[SUBMIT]` in `main.tex` before building.
 
 | | Venue | Why | Risk |
 |---|---|---|---|
-| **1st** | **TMLR** | Criteria are *claims supported by evidence* + *interesting to some audience*, no novelty bar. A reduction, a taxonomy, eight diagnosed negatives, one externally validated positive on two public corpora, and one bounded positive that contradicts our own thesis is exactly the shape. Rolling submission. | Lower prestige than JMLR. |
+| **1st** | **TMLR** | Criteria are *claims supported by evidence* + *interesting to some audience*, no novelty bar. A reduction, a taxonomy, ten diagnosed negatives, one externally validated positive on two public corpora, and one bounded positive that contradicts our own thesis is exactly the shape. Rolling submission. | Lower prestige than JMLR. |
 | **2nd** | **JMLR** | Top ML journal, takes long-form methodological work. The external-validity hole that would have drawn a major revision is now closed (X26). | Will likely ask for a second public corpus and a downstream-task result. |
 | Alt | NeurIPS D&B / position track | If the taxonomy leads over the theorem. | |
 

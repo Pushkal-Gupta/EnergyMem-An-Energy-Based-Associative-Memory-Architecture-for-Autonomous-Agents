@@ -21,9 +21,13 @@ variants hold exponentially many patterns \citep{krotov2016dense,ramsauer2021hop
 repair a corrupted cue as a side effect of converging. The obvious experiment---use one as
 an agent's persistent memory and compare---has not been run under matched conditions.
 
-\paragraph{Why not.} We think the answer is Proposition~\ref{prop:reduction}, and that it is
-the reason this comparison has been quietly circular wherever it has been attempted. At the
-operating point everyone actually uses, the two methods are the \emph{same operator}. One
+\paragraph{Why it is hard.} We think the answer is Proposition~\ref{prop:reduction}. At the
+operating point most systems actually use, the two methods are the \emph{same operator}.
+We do not survey the literature to claim that prior comparisons were in fact circular --- that
+would require re-running them, which we have not done. What we claim is narrower and
+checkable: the hazard is structural, it is invisible unless the reduction is stated first,
+and it caught \emph{us} (\S\ref{sec:protocol}, and the $\beta{=}512$ measurement of
+\S\ref{sec:band}). One
 step of the modern Hopfield update with the temperature turned up returns the top cosine
 neighbour exactly. Dense retrieval is not a rival sitting outside the energy formulation; it
 is a single corner of it. Any paper claiming that an energy-based memory beats similarity
@@ -37,10 +41,15 @@ paper exact by construction: the baseline is our own code with different argumen
 is no implementation advantage to argue about and no encoder mismatch to suspect.
 
 \paragraph{What we found.} Mostly that the departures do not pay, and---more usefully---why.
-Of the mechanisms available beyond the corner, every one that changes only \emph{how an
-answer is read off the landscape} fails on agent text: multi-step descent, residual peeling,
-repulsive parallel descent, vote-count readout, multi-scale and per-memory $\beta$. The two
-that help do not change the readout. One is a model of \emph{what follows what}, fitted on
+The departures split into two families and the split is the result. \textbf{Family~A}
+changes the state update or the readout and leaves the landscape alone. We tested ten such
+mechanisms --- multi-step descent, residual peeling, repulsive, noise-seeded and
+cosine-seeded parallel descent, vote-count readout, multi-scale $\beta$, per-memory $\beta$,
+query-conditional $\beta$ from the retrieval margin, and coupling the predictor into the
+energy --- and none of them beats the dense corner on agent text. Table~\ref{tab:negatives}
+is that list in full, with a diagnosed mechanism per row, and it is where the number ten
+comes from. \textbf{Family~B} does not read an answer off the landscape, and both of its
+members pay within stated limits. One is a model of \emph{what follows what}, fitted on
 the agent's own transitions. The other changes the \emph{cue}: fold a few retrieved
 memories back into the query and retrieve again, which pays on exactly those questions whose
 second piece of evidence is reachable from the first rather than from the question, and pays
@@ -74,75 +83,91 @@ second document is reachable from the first rather than from the question, and b
 all on the two conversational-memory corpora this paper is about
 (\S\ref{sec:corpora}).
 
-\paragraph{Contributions.}
-\begin{itemize}\itemsep2pt
-  \item[\textbf{C1}] \textbf{The reduction.} Dense retrieval is exactly the
-    $(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern Hopfield update
-    (Proposition~\ref{prop:reduction}), verified at $1000/1000$ queries on synthetic vectors
-    and $838/838$ on real sentence embeddings, both asserted in continuous integration. The
-    equality is exact at $k{=}1$; at $k>1$ the shortlist must be read off the \emph{cue},
-    because ranks $2..k$ of the converged state order patterns by proximity to the winner
-    instead (Remark~\ref{rem:shortlist}) --- which is not a caveat but the mechanism behind
-    the shortlist regression we report. Every baseline in this paper is
-    a configuration of the method under test. (\xid{X1})
-  \item[\textbf{C2}] \textbf{The $\beta$ leverage band, and a hazard it implies.} $\beta$ has
-    influence only within a narrow band, bounded below by collapse of the state to the corpus
-    centroid on the first step and above by degeneration into cosine. Accuracy cannot see the
-    upper edge---two retrievers can score identically while disagreeing about what they
-    return---so we measure top-1 \emph{decision} agreement with cosine, which rises to
-    $\mathbf{99.4\%}$ at $\beta{=}512$. A comparison run above the band therefore compares
-    cosine against itself on nearly every query and will correctly report no difference for
-    the wrong reason. The band is a property of the encoder, not a constant.
-    (\xid{X3}, \xid{X11}, \S\ref{sec:band})
-  \item[\textbf{C3}] \textbf{A regime taxonomy, and the withdrawal of its one positive
-    instance.} Completion, composition and semantic match require mutually exclusive
-    operating points, and the premise that separates them predicts a monotone $-0.084$
-    across an interpolation sweep on $1{,}977$ \textsc{LoCoMo} questions. We then ran the
-    three discriminating tests we had nominated against ourselves, and all three came back
-    negative --- including a matched-baseline audit of our own flagship image result, which
-    a soft $k$-NN class vote beats by $-0.036$ \ci{-0.043}{-0.028}. The premise is reported
-    as \emph{necessary and not sufficient}, and the image result is withdrawn as evidence
-    for an associative mechanism. (\S\ref{sec:taxonomy}, \S\ref{sec:occlusion},
-    \xid{X113})
-  \item[\textbf{C4}] \textbf{Eight diagnosed negative results.} Each is reported with the
-    mechanism that produces it rather than as a bare null, including two that overturn claims
-    we had previously made ourselves. (\S\ref{sec:negatives})
-  \item[\textbf{C5}] \textbf{One externally validated positive, on two public corpora, and a
-    sharp limit on it.} A nonparametric predictor over the agent's own observed transitions
-    beats cosine on one-hop temporal association, in four measurements over three corpora.
-    On \textsc{LoCoMo} it raises Recall@1 from $0.064$ to $0.107$
+\paragraph{Contributions.} Three scientific claims, then one methodological one.
+
+\begin{itemize}\itemsep3pt
+  \item[\textbf{C1}] \textbf{The reduction, and what it does to fair comparison.} Dense
+    retrieval is exactly the $(T{=}1,\beta\!\to\!\infty,b{=}0,R{=}I)$ corner of the modern
+    Hopfield update (Proposition~\ref{prop:reduction}), verified at $1000/1000$ queries on
+    synthetic vectors and $838/838$ on real sentence embeddings, both asserted in continuous
+    integration. The equality is exact at $k{=}1$; at $k>1$ the shortlist must be read off
+    the \emph{cue}, because ranks $2..k$ of the converged state order patterns by proximity
+    to the winner instead (Remark~\ref{rem:shortlist}) --- which is not a caveat but the
+    mechanism behind the shortlist regression we report. Two consequences for anyone running
+    this comparison. \emph{(a)} Every baseline in this paper is a configuration of the
+    method under test, so there is no implementation advantage to argue about (\xid{X1}).
+    \emph{(b)} $\beta$ has influence only within a narrow band, bounded below by collapse of
+    the state to the corpus centroid and above by degeneration into cosine --- and accuracy
+    cannot see the upper edge, since two retrievers can score identically while disagreeing
+    about what they return. Measuring top-1 \emph{decision} agreement instead gives
+    $\mathbf{99.4\%}$ at $\beta{=}512$: a comparison run above the band compares cosine
+    against itself on nearly every query and will report no difference for the wrong reason.
+    The band is a property of the encoder, not a constant. (\xid{X3}, \xid{X11},
+    \S\ref{sec:band})
+
+  \item[\textbf{C2}] \textbf{A systematic evaluation of associative retrieval dynamics, and
+    the withdrawal of our own flagship result.} Family~A --- every tested mechanism that
+    changes the state update or the readout and leaves the landscape alone --- is ten
+    mechanisms deep and empty of wins (Table~\ref{tab:negatives}, one diagnosed mechanism
+    per row, three of them overturning claims we had made ourselves). The organising premise
+    is that associative completion needs the cue to be a degraded instance of a stored
+    pattern; it predicts a monotone $-0.084$ across an interpolation sweep on $1{,}977$
+    \textsc{LoCoMo} questions. We then ran the three discriminating tests we had nominated
+    against ourselves and all three came back negative, including a matched-baseline audit
+    of our own flagship image result, which a soft $k$-NN class vote beats by $-0.036$
+    \ci{-0.043}{-0.028}. The premise is therefore reported as \emph{necessary and not
+    sufficient}, and the image result is withdrawn as evidence for an associative mechanism.
+    (\S\ref{sec:taxonomy}, \S\ref{sec:negatives}, \S\ref{sec:occlusion}, \xid{X113})
+
+  \item[\textbf{C3}] \textbf{Two task-dependent positives, each with its boundary measured.}
+    Family~B does not read an answer off the landscape, and both of its members pay.
+    \emph{(a) Transition prediction.} A nonparametric predictor over the agent's own
+    observed transitions beats cosine on one-hop temporal association in four measurements
+    over three corpora: on \textsc{LoCoMo} it raises Recall@1 from $0.064$ to $0.107$
     ($+0.043$, \ci{+0.036}{+0.050}, $p<10^{-4}$, $+67\%$ relative) over $5{,}233$ probes in
-    $272$ sessions against a pooled $5{,}882$-turn bank; the same driver, unmodified, gives
-    $+0.016$ \ci{+0.014}{+0.018} on \textsc{MSC} over $27{,}815$ probes against a
-    $30{,}320$-turn bank. At \emph{two} hops \textsc{LoCoMo} returns $-0.002$
-    \ci{-0.008}{+0.004} and \textsc{MSC} $+0.005$ \ci{+0.003}{+0.006}, a factor of $18$
-    below the $+0.185$ two-hop figure of our own that we withdraw: association helps one
-    step ahead and at best marginally thereafter. (\S\ref{sec:composition}, \xid{X26},
-    \xid{X201})
-  \item[\textbf{C6}] \textbf{The measured price of seven protocol shortcuts.} For each of seven
-    errors we made, the magnitude of the false result it produced in our own data. Two were
-    false \emph{negatives}, which proved far harder to find than the false positives. The
-    seventh is the one we would most want read: an \emph{unmatched baseline} that every
-    other safeguard in this paper was blind to, because split hygiene and pre-registration
-    check how two arms are compared and not which two arms. (\S\ref{sec:protocol})
-  \item[\textbf{C7}] \textbf{One departure from the corner that \emph{does} pay, and the
-    question shape that predicts it.} Folding $K_0$ retrieved memories back into the cue and
-    retrieving again beats dense retrieval by $+0.023$ \ci{+0.010}{+0.037} on
+    $272$ sessions against a pooled $5{,}882$-turn bank, and the same driver unmodified
+    gives $+0.016$ \ci{+0.014}{+0.018} on \textsc{MSC} over $27{,}815$ probes against a
+    $30{,}320$-turn bank. At \emph{two} hops it is $-0.002$ \ci{-0.008}{+0.004} and $+0.005$
+    \ci{+0.003}{+0.006}, a factor of $18$ below the $+0.185$ two-hop figure of our own that
+    we withdraw: association helps one step ahead and at best marginally thereafter.
+    \emph{(b) Two-stage query expansion.} Folding $K_0$ retrieved memories back into the cue
+    and retrieving again beats dense retrieval by $+0.023$ \ci{+0.010}{+0.037} on
     \textsc{HotpotQA} bridge questions and $+0.171$ \ci{+0.118}{+0.219} on \textsc{2Wiki}
     inference questions, surviving a disjoint sample, a second encoder and two bank sizes,
-    with random modes losing by $+0.13$ to $+0.39$. On comparison questions in the same
-    corpora selection declines to expand in $10$ of $10$ folds. The predictor is hop type,
-    not target count---our own pre-registered cardinality hypothesis comes out
+    with random modes losing by $+0.13$ to $+0.39$; on comparison questions in the same
+    corpora selection declines to expand in $10/10$ folds. Those strata are benchmark
+    annotations, so the figure we ask readers to quote is the unstratified one, with the
+    label withheld from selection and scoring entirely: $+0.015$ \ci{+0.004}{+0.025} and
+    $+0.043$ \ci{+0.029}{+0.056} over $n{=}2{,}000$ each. What predicts the gain is hop type,
+    not target count --- our own pre-registered cardinality hypothesis comes out
     \emph{reversed} on four corpora (Table~\ref{tab:cardinality}) and we withdraw it. This
-    is the one claim in the paper that contradicts the thesis we started with, it is query
-    expansion rather than attractor dynamics, and it does not transfer across corpora.
-    (\S\ref{sec:corpora}, \xid{X202}--\xid{X204})
+    is the one claim here that contradicts the thesis we began with; it is query expansion
+    rather than attractor dynamics, and it does not transfer across corpora.
+    (\S\ref{sec:composition}, \S\ref{sec:corpora}, \xid{X26}, \xid{X201},
+    \xid{X202}--\xid{X204})
 \end{itemize}
+
+\noindent\textbf{And one methodological contribution, which we do not rank beside the
+three above but would most want read.} \textbf{The measured price of seven protocol
+shortcuts:} for each of seven errors we made, the magnitude of the false result it produced
+in our own data. Two were false \emph{negatives}, which proved far harder to find than the
+false positives. The seventh is the one to take away --- an \emph{unmatched baseline}, which
+every other safeguard in this paper was blind to, because split hygiene and pre-registration
+check how two arms are compared and not which two arms. (\S\ref{sec:protocol})
+
+\paragraph{What the taxonomy is, and is not.} We develop an empirical taxonomy of retrieval
+regimes and characterise the conditions associated with success and failure in each. We do
+\emph{not} demonstrate an automatic mechanism selector that generalises to unseen tasks. In
+every experiment here the regime of a query is supplied by a benchmark annotation or by our
+own construction of the cue; we built no inference-time detector and evaluate none, and we
+decline to add one we could not evaluate under clean train/test separation. The taxonomy is
+therefore a post hoc explanatory account of measured results, and an inference-time regime
+detector is named as the next experiment rather than implied to exist (\S\ref{sec:taxonomy}).
 
 \paragraph{What this paper is not.} It is not a system paper, and it does not claim a better
 agent memory. The thesis we began with---that energy-based retrieval improves agent
 recall---is refuted here by our own measurements, at adequate power, with the mechanism
-identified. The one departure that does beat the corner (C7) is query expansion on a
+identified. The one departure that does beat the corner (C3b) is query expansion on a
 question shape we cannot yet detect without labels, it needs per-corpus tuning, and it is
 null on conversational memory, so it is a finding rather than a recommendation. We think the
 resulting object is more useful to the field than the system would have been: a reduction
