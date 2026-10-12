@@ -169,6 +169,59 @@ above therefore quote intervals, and the paper quotes intervals, not p.
   against the JSONs on every run and caught one mis-rounded figure (+0.094 → +0.093) while
   this section was being written.
 
+### Phase 12 rows — the unstratified (label-free) expansion result
+
+Added 2026-10-11. No new experiment: these cells were already in the committed JSONs and
+had not been reported. Selection *and* scoring on the `strata/all` pool, so no question-shape
+label is used at any stage.
+
+| Claim | Ledger | Script | Raw output | Test | Paper |
+|---|---|---|---|---|---|
+| **C7 survives label removal** HotpotQA unstratified **+0.015 [+0.004,+0.025]**, n=2,000, null 0/10 | X202 | `experiments/x10x_corpora.py` | `results/x10x_hotpot.json` :: `strata/all/mixture/vs_cosine` | LOGO selection on train side only, cluster bootstrap over banks | §5.4, Tab. 6 (*unstratified* row), abstract, C7, §9 |
+| **C7 survives label removal** 2Wiki unstratified **+0.043 [+0.029,+0.056]**, n=2,000, null 0/10 | X203 | `experiments/x10x_corpora.py` | `results/x10x_2wiki.json` :: `strata/all/mixture/vs_cosine` | as above | §5.4, Tab. 6 (*unstratified* row), abstract, C7, §9 |
+| **C7 bounded** QASPER unstratified +0.023 [−0.002,+0.047] **n.s.** (no chain stratum) | X204 | `experiments/x10x_corpora.py` | `results/x10x_qasper.json` :: `strata/all/mixture/vs_cosine` | as above | §5.4 |
+| **C7 bounded** NFCorpus unstratified +0.009 [−0.004,+0.021] **n.s.** (no chain stratum) | X205 | `experiments/x10x_corpora.py` | `results/x10x_nfcorpus.json` :: `strata/all/mixture/vs_cosine` | as above | §5.4 |
+
+All fourteen numbers above are asserted by `scripts/verify_paper_numbers.py` (80/80 total).
+
+### Phase 12 — statements narrowed, with no number attached
+
+These are corrections to claims, not results, so they have no raw output to trace. Recorded
+here because a reader checking the paper against this file should not conclude they are
+undocumented.
+
+| Claim as it stood | What it is now | Where |
+|---|---|---|
+| Eq. (2) is "the CCCP update" and "decreases (1) monotonically for η=0" | Descent belongs to the unprojected step, now Eq. (2); the projected/blended map is Eq. (3) and claims no energy. Π preserves rankings (so Prop. 1 is untouched) and acts as βₜ = β/‖v‖ ≥ β across steps | §3.1 (Eqs. 1-3), App. A.5 |
+| Corollary 1: "stored patterns are exact fixed points" | Hypotheses stated (unit norm, pairwise distinct, b=0, η=0, unique argmax), "in the limit", finite-β rate O((N−1)e^{−βδ_j}) governed by **min_j δ_j** | §3.4 (Cor. 1), App. A.3 |
+| Taxonomy implied a usable regime selector | States that every regime label here is a benchmark annotation or our own construction; no detector built or evaluated; Table 10 is post hoc explanatory | §6 |
+| "Every number currently reported in this paper is reproducible" | Defines the term: backed by a committed driver that runs ≠ re-derived per build. Nine tables generated; prose numbers typed and checked | App. repro |
+
+### Phase 13 rows — the two mechanisms that had no table row
+
+Added 2026-10-12. Both were named in the abstract's count of mechanisms but had no row in
+the negatives table and no number in the paper. Both are real and both are losses. They are
+now rows of `tab:negatives`, which is the authoritative inventory of Family A (ten rows).
+
+| Claim | Ledger | Script | Raw output | Test | Paper |
+|---|---|---|---|---|---|
+| **Family A** Query-conditional β from the retrieval margin loses **−0.121 [−0.149,−0.098]** vs a fold-selected fixed β (β∼1/std: −0.089 [−0.121,−0.061]; sign-reversed control collapses to 0.007) | **X65-r** | `experiments/x65r_adaptive_beta.py` | `results/x65r_adaptive_beta.json` :: `rows/beta ~ 1\/margin/fold_selected` | fixed β selected on each fold's nine training conversations (unanimously 32) | §5.5, Tab. 8 |
+| **Family A** Vote-count readout: 0.621 synthetic vs 0.142, does not transfer to real embeddings | **X8** (→ X10, X13) | `experiments/run_real.py` (F8) | `docs/09_DAY0_FINDINGS.md`, X10/X13 ledger rows | synthetic orthogonal patterns; refuted by the non-dimensionless σ of X10 and the inverted ordering of X13 | §5.5, Tab. 8 |
+
+**Count correction.** The paper previously said "eight mechanisms" in three places and no two
+lists agreed; the abstract's eight and the table's eight differed by two members each. The
+true Family A inventory is **ten**, and the table's row count is now the only source for it.
+See ledger Phase 13.
+
+### Phase 13 — editorial, no number attached
+
+| Claim as it stood | What it is now | Where |
+|---|---|---|
+| Seven co-equal contributions C1–C7 | Three scientific (C1 reduction + fair-comparison, C2 Family A evaluation + withdrawal, C3 the two positives) plus one explicitly-not-co-equal methodological item | §1 |
+| Contributions implied a usable regime selector | New "What the taxonomy is, and is not": explanatory taxonomy, **no** selector demonstrated, and none added that we could not evaluate cleanly | §1, §6 |
+| "never been evaluated"; "the two literatures have not met"; "quietly circular wherever attempted"; "every mechanism" | Narrowed to what we can support: no literature survey claim, and "all ten mechanisms we tested" | Abstract, §1, §2 |
+| "Every number is backed by a driver that is committed and runs" | Three tiers. Tier 0 needs no data; Tier 2 is nine corpora a reader must fetch. Verified by running it: `x10x_corpora.py` fails with `FileNotFoundError` on a fresh checkout. `scripts/check_data.py` reports 2/11 inputs present | App. repro, README |
+
 **Still open:**
 
 1. **Table 5 (negatives) stays hand-assembled**, deliberately: it is a prose synthesis of

@@ -117,6 +117,23 @@ Lemma~\ref{lem:state} applied at $t=0$, the trajectory reaches $z_{i^\star}$ aft
 and remains there, so $T>1$ is observationally equivalent to $T=1$, which is cosine
 retrieval by Proposition~\ref{prop:reduction}.
 
+The hypothesis is doing real work, and it is worth naming exactly how much. Unit norm is
+what makes $\langle z_j,z_j\rangle = 1$ the strict maximum of $\langle \cdot\,,z_j\rangle$
+over the bank: for unit vectors $\langle z_i,z_j\rangle = 1$ iff $z_i = z_j$, so a stored
+pattern fails to be its own unique nearest neighbour only when the bank contains a copy of
+it. That case does not break the conclusion --- the tied columns \emph{are} the same vector,
+so whatever way the softmax splits its mass between them the blend returns that vector --- so
+distinctness is needed for uniqueness of the maximising index, not for the fixed point. What
+does change with correlation is the rate. Setting $\xib^{(t)} = z_j$ and writing
+$\delta_j = 1 - \max_{i \neq j}\langle z_i,z_j\rangle$ for that pattern's own margin,
+Lemma~\ref{lem:conc} gives off-$j$ mass at most $(N{-}1)e^{-\beta\delta_j}$, hence
+$\|v(z_j) - z_j\| \le 2(N{-}1)e^{-\beta\delta_j}$ and the same bound up to a constant after
+projection. The bank-level onset of degeneracy is therefore set by $\min_j \delta_j$, the
+least separated pattern, and not by the average separation: one near-duplicate pair is enough
+to keep a bank out of the degenerate regime at a $\beta$ where every other pattern has
+already frozen. This is the precise sense in which the corollary cannot be used to read off a
+$\beta$ threshold for a new corpus, and why \S\ref{sec:band} measures one instead.
+
 \paragraph{Scope of the empirical claim.} Corollary~\ref{cor:degeneracy} is exact only in
 the limit. The empirical statement in \S\ref{sec:band} --- that a comparison run at high
 $\beta$ compares cosine against cosine --- is therefore an \emph{approximation claim}, and we
@@ -128,6 +145,73 @@ retrievers can score identically while disagreeing about what they return, and t
 corollary is a claim about the choice. The theorem explains \emph{why} the gap closes and gives the rate
 at which it closes; the measurement establishes that at the $\beta$ values this literature
 actually uses, it has closed. Neither alone supports the claim.
+
+\section{Family A in full: the ten mechanisms and their diagnoses}
+\label{app:familya}
+
+Table~\ref{tab:negatives} lists these ten in one line each. Here is the full diagnosis for
+every row, with the numbers and the ledger identifiers. The order matches the table. Nothing
+here is a bare null: each entry says what the mechanism did instead of working, because a
+negative result that does not identify its mechanism cannot be acted on by anyone else.
+
+\begin{description}\itemsep4pt
+\item[\textnormal{\textbf{Multi-step descent (G1).}}] \emph{no effect.} Identical to one step above the $\beta$ threshold---precisely what Corollary~\ref{cor:degeneracy} predicts. Once $\beta$ commits on step one there is nothing left to do (\xid{X2}).
+\item[\textnormal{\textbf{Residual peeling.}}] \emph{$0.268$ vs.\ repulsion $0.290$.} Restores multi-answer recall on orthogonal synthetic patterns ($0.258 \to 1.000$) and inverts on real embeddings: non-orthogonal golds mean projecting one out damages the others (\xid{X5}, \xid{X13}).
+\item[\textnormal{\textbf{Repulsive parallel descent.}}] \emph{$+0.004$, $p{=}0.43$.} Survives to $146$ questions but not to held-out selection. The $+0.042$ trend was hyperparameter overfitting (\xid{X15}).
+\item[\textnormal{\textbf{Noise-seeded parallel descent.}}] \emph{fails at every $\sigma$.} No intermediate value exists. Too little noise and all chains land in one basin; too much and they scatter uniformly, where correct answers are no likelier than any others. Isotropic noise carries no information about where the other answers are (\xid{X7}).
+\item[\textnormal{\textbf{Cosine-seeded parallel descent.}}] \emph{exactly chance.} Circular. Stored patterns are exact fixed points, so descent is a no-op; ranking the landing sites requires a signal the descent has already destroyed. Ranking them by similarity to the cue scores $1.000$---but that ranking \emph{is} cosine top-$k$ (\xid{X7}).
+\item[\textnormal{\textbf{Vote-count readout.}}] \emph{$0.621$ synthetic, does not transfer.} Counting how many parallel chains land in each basin is a real ranking signal on orthogonal synthetic patterns ($0.621$ against $0.142$ for the readout \xid{X7} tested), which corrected an overclaim of ours. It does not survive real embeddings: the hyperparameter it needs was not dimensionless (\xid{X10}) and the peeling/repulsion ordering it rests on inverts at $d{=}768$ (\xid{X13}). Diversity belongs in the dynamics, not the readout (\xid{X8}).
+\item[\textnormal{\textbf{Query-conditional $\beta$ from the retrieval margin.}}] \emph{$-0.121$ \ci{-0.149}{-0.098}.} Setting $\beta$ per query from the query's own score spread. Reported as a win against a reference fixed at $\beta{=}16$, which is not the best fixed $\beta$ --- $\beta{=}32$ is, by $+0.156$. Against a fixed $\beta$ selected on each fold's training conversations (unanimously $32$) the margin rule loses $-0.121$ and the standard-deviation rule $-0.089$, while a sign-reversed control collapses to $0.007$, confirming the rules read the signal they were built to read and cannot spend it (\xid{X65}-r).
+\item[\textnormal{\textbf{Multi-scale $\beta$.}}] \emph{$+0.0003$ \ci{-0.0014}{+0.0021}.} Expressively distinct and performance-neutral. An integrated mixture is provably not reducible to any single $\beta$ \citep{yang2018softmax}, and diverges from an ensemble at $T{=}8$ ($63\%$ top-1 agreement), yet changes \emph{which} queries are answered, not how many (\texttt{exp\_multibeta\_scales.py}; this study predates the ledger and has no \xid{X} identifier).
+\item[\textnormal{\textbf{Per-memory / learned $\beta$.}}] \emph{inert.} The learned values ($51$--$88$) land above the leverage band, and a shuffle control with the same values randomly reassigned scores identically. Conditioning $\beta$ on the query is motivated---the optimum does differ by corruption level---but the learned function converged to a near constant ($\beta{\approx}31$ everywhere).
+\item[\textnormal{\textbf{Predictor coupled into the energy.}}] \emph{never exceeds external.} Interpolating the routing operator inside the descent step gives $0.130$ at $\eta{=}0.5$ and $0.154$ at $\eta{=}1.0$---the latter merely \emph{recovering} the external predictor, since $\eta{=}1$ replaces the Hopfield step entirely (\xid{X18}). This was our stated novelty against prior work \citep{dury2026pam} and it is withdrawn.
+\end{description}
+
+Three of these --- residual peeling, repulsive parallel descent, and the predictor coupled
+into the energy --- overturn claims we had previously made ourselves. A fourth,
+query-conditional $\beta$, is the seventh protocol error in its third costume and is
+discussed as such in \S\ref{sec:protocol}.
+
+\subsection{The projection and the blend are not covered by the descent proof}
+\label{app:projection}
+
+Equation~\eqref{eq:update} is not Equation~\eqref{eq:cccp}, and the monotone-descent result
+for the latter does not transfer. We set out the discrepancy rather than inherit a guarantee
+we do not have.
+
+\paragraph{The projection.} $v(\xib) = X\sm(\beta(X^{\!\top}\xib+b))$ is a convex combination
+of unit vectors, so $\|v(\xib)\| \le 1$, with equality only when the softmax is a point mass
+(or spread over exact duplicates). The map $\Pi$ divides by that norm and so scales the step
+up. In \eqref{eq:energy} this raises the convex term $\tfrac12\|\xib\|^2$ and lowers
+$-\tfrac1\beta\lse(\beta(X^{\!\top}\xib+b))$, the two moving in opposite directions, and we
+give no argument that the sum decreases. The claim we do make is weaker and sufficient for
+everything in this paper: for $c>0$, $\langle z_i, c\,\xib\rangle = c\,\langle
+z_i,\xib\rangle$, so rescaling a state leaves the induced ranking over patterns --- and hence
+the top-$k$ set read off that state --- exactly as it was. Every retrieval decision we report
+is such a ranking, and Proposition~\ref{prop:reduction} concerns a single step, so neither is
+touched by $\Pi$.
+
+Projection is nonetheless not a no-op across steps, because the softmax is not scale
+invariant: for $\eta{=}0$, $b{=}0$ the projected update applied at $\xib^{(t)}$ coincides with
+the unprojected one applied at the same state with inverse temperature
+$\beta_t = \beta/\|v(\xib^{(t)})\| \ge \beta$. Projection thus acts as a step-dependent
+sharpening, which moves the trajectory in the direction the high-$\beta$ limit already points.
+It can bring the degeneracy of Corollary~\ref{cor:degeneracy} on at a nominal $\beta$ below
+the unprojected threshold; it cannot delay it. Our empirical claim about the band is a
+measurement of the implementation we ran, which includes $\Pi$, so this does not require a
+correction to any reported number --- but it does mean the band we report is a property of the
+projected update, and a reader comparing against an unprojected implementation should expect
+the agreement curve to sit slightly to the right of ours.
+
+\paragraph{The blend.} For $\eta \neq 0$ with $R \neq I$ the update is a convex combination of
+a CCCP step and an arbitrary learned map. We know of no energy of the form \eqref{eq:energy},
+or of any other form, that this composite descends, and we claim none. In particular the G3
+result of \S\ref{sec:composition} is not presented as energy minimisation: it is a retrieval
+rule whose benefit is established by a paired comparison against the matched dense baseline,
+and it would stand or fall on that comparison whether or not an energy existed. Readers
+looking for the theoretical content of this paper should look to
+Proposition~\ref{prop:reduction} and Corollary~\ref{cor:degeneracy}, which concern the corner
+itself; the departures from the corner are evaluated, not proved.
 
 \subsection{Numerical verification}
 
@@ -407,6 +491,8 @@ python experiments/x10x_corpora.py          # X200, X202-X205; Tables 6 and 7
 python experiments/x102_checks.py           # X202c robustness checks
 python experiments/x11x_modalities.py       # X210-X212; Table 7
 python scripts/make_tables.py               # JSON -> generated tables + figures
+python scripts/verify_paper_numbers.py      # typed prose numbers vs. their JSON
+python scripts/check_data.py                # which corpora a fresh checkout lacks
 cd paper && tectonic -X compile main.tex    # or: latexmk -pdf main
 \end{verbatim}}
 
@@ -425,7 +511,42 @@ final draft was built on carries \texttt{tectonic} but neither \texttt{pdflatex}
 \texttt{latexmk}, so \texttt{scripts/rebuild\_paper.sh}, which assumes the latter, does not
 run there; the \texttt{tectonic} invocation above is what produced this \textsc{pdf}.
 
-\paragraph{Every number currently reported in this paper is reproducible.} Two drivers were lost before they
+\paragraph{What ``reproducible'' means here, exactly, in three tiers.} We ran the check a
+reviewer would run --- a fresh checkout, nothing fetched --- and report what it does and does
+not support, because the honest answer has three levels and a single sentence hides two of
+them. \texttt{scripts/check\_data.py} prints the whole of what follows and exits non-zero
+under \texttt{-{}-strict}, so none of it has to be taken on trust.
+
+\emph{Tier 0, no data required.} The test suite (including the Proposition~\ref{prop:reduction}
+gate), \texttt{make\_tables.py}, \texttt{verify\_paper\_numbers.py} and the \textsc{pdf} build
+all run on a bare checkout, because they read the committed result files under
+\texttt{experiments/results/}. Every number in this paper is backed by one of those files.
+Nine tables are \emph{re-derived} from them on each build; the numbers appearing in prose are
+typed, and \texttt{verify\_paper\_numbers.py} asserts each against the \textsc{json} it came
+from, so a drift is a test failure rather than a reader's problem.
+
+\emph{Tier 1, the two inputs our \textsc{readme} already documents.} \textsc{LoCoMo} and
+Imagenette-160, with \texttt{curl} commands given.
+
+\emph{Tier 2, and this is the gap.} The nine corpora added by the later work ---
+\textsc{HotpotQA}, \textsc{2Wiki}, \textsc{QASPER}, \textsc{LongMemEval-S}, \textsc{SciFact},
+\textsc{NFCorpus}, \textsc{MSC}, \textsc{Flickr8k} and Yahoo Answers Topics --- are
+\emph{not} vendored, are redistributed under their own licences, and have no fetch step in
+this repository. A reader who runs \texttt{experiments/x10x\_corpora.py} on a fresh checkout
+gets \texttt{FileNotFoundError} on \texttt{data/hotpotqa/validation.parquet}, which is
+exactly what we got when we tested it. \texttt{check\_data.py} lists, per input, the path the
+loader expects, the public source, and the drivers it blocks. Re-running those drivers
+therefore requires the reader to obtain nine public datasets and place them at named paths;
+what does \emph{not} require it is checking any number we report, because the outputs are
+committed. We state this as a limitation of the artefact rather than leave a reader to
+discover it: the result files are the reproducible object here, and the drivers are
+reproducible conditional on data we cannot redistribute.
+
+\emph{Optional dependencies.} \texttt{pyarrow} for every Tier-2 parquet corpus;
+\texttt{torch} and \texttt{torchvision} for the image arms, neither installed by
+\texttt{make setup}; \texttt{sentence-transformers} for all text encoders, which downloads
+\texttt{all-mpnet-base-v2} on first use; CLIP \texttt{ViT-B/32} weights for the cross-modal
+arm; \texttt{matplotlib} for figure regeneration. Two drivers were lost before they
 were committed --- the one behind Table~\ref{tab:assoc} row~(i) and the one behind the
 parametric-predictor result in \S\ref{sec:composition}. Both have been rewritten ---
 \texttt{x17b\_single\_split.py} and \texttt{x17\_parametric.py} under

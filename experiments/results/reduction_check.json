@@ -1,13 +1,13 @@
 {
   "real_mpnet_d768": {
     "agree": 838,
-    "checked": "2026-10-11T15:13:27Z",
+    "checked": "2026-10-12T15:15:22Z",
     "exact": true,
     "total": 838
   },
   "synthetic_d64": {
     "agree": 1000,
-    "checked": "2026-10-11T15:13:27Z",
+    "checked": "2026-10-12T15:15:21Z",
     "exact": true,
     "total": 1000
   }
