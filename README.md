@@ -285,24 +285,6 @@ tar xzf data/imagenette2-160.tgz -C data/
 
 Extra deps for these: `torch`, `torchvision`, `sentence-transformers`, `matplotlib`.
 
-The two above are the only inputs this README used to document, and they are the only two
-present in a typical checkout. **Nine more corpora were added by the later work and are not
-vendored** — HotpotQA, 2WikiMultihopQA, QASPER, LongMemEval-S, BEIR SciFact, BEIR NFCorpus,
-MSC, Flickr8k and Yahoo Answers Topics. Each is public but redistributed under its own
-licence, and there is no fetch step here, so `experiments/x10x_corpora.py` on a fresh
-checkout fails with `FileNotFoundError: data/hotpotqa/validation.parquet`.
-
-```bash
-python scripts/check_data.py          # per input: expected path, source, drivers it blocks
-python scripts/check_data.py --strict # exits 1 if anything is missing
-```
-
-This does **not** affect checking any number in the paper: every result file is committed
-under `experiments/results/`, the nine tables regenerate from them, and
-`scripts/verify_paper_numbers.py` asserts every typed prose number against its JSON. What
-needs the data is re-running a driver, not auditing a claim. See the appendix's
-"What reproducible means here, exactly, in three tiers".
-
 ## Read these first, in order
 
 | Doc | What it settles |

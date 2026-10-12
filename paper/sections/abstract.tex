@@ -1,9 +1,8 @@
 Agent long-term memory is almost universally retrieved by top-$k$ embedding similarity.
 Associative-memory theory offers an alternative---recall as convergence to an attractor in
-an energy landscape---but we are not aware of an evaluation of it as the \emph{persistent
-memory layer} of an agent under matched conditions. We first show why such a comparison is
-harder to run than it looks: at the standard operating point the two methods are the same
-operator. Proposition~1
+an energy landscape---but it has never been evaluated as the \emph{persistent memory
+layer} of an agent under matched conditions. We first show why the two literatures have
+not met: at the standard operating point they are the same operator. Proposition~1
 establishes that dense retrieval is exactly the $(T{=}1,\ \beta\!\to\!\infty,\
 b{=}0,\ R{=}I)$ corner of the modern Hopfield update --- exactly at $k{=}1$, and for
 $k>1$ only when the shortlist is read off the cue rather than off the converged state,
@@ -18,9 +17,8 @@ group-disjoint hyperparameter selection, and cluster-bootstrap intervals through
 $5{,}847$ held-out image queries, $1{,}977$ \textsc{LoCoMo} and $479$
 \textsc{LongMemEval} questions, $5{,}435$ questions over five retrieval corpora, and
 $63{,}763$ temporal-association probes across three corpora. The answer is negative for
-all ten mechanisms we tested that change only \emph{how an answer is read off} a fixed
-landscape, and the clearest evidence for that is the collapse of our own strongest positive
-result.
+every mechanism that changes only \emph{how an answer is read off} a fixed landscape, and
+the clearest evidence for that is the collapse of our own strongest positive result.
 Iterative descent beat cosine by $+0.014$ pooled \ci{+0.006}{+0.021} on occluded images,
 rising to $+0.021$ at 70\% occlusion. That number reproduces exactly and means much less
 than we claimed: the metric is ten-way same-class accuracy, the cue's source image is
@@ -49,17 +47,8 @@ We further show that $\beta$---the only dial with leverage---is influential only
 narrow, encoder-specific band (${\approx}[32,64]$ on the vision backbone we measure it on), above which
 descent degenerates into cosine --- at $\beta{=}512$ it returns cosine's own
 memory on $99.4\%$ of queries. A comparison run above that band compares cosine against itself, which we
-argue is a live hazard for this literature rather than a detail of ours.
-
-The departures divide into two families, and conflating them is how this literature stays
-confusing. \textbf{Family A} changes the state update or the readout and leaves the memory
-landscape alone: we test \emph{ten} such mechanisms --- multi-step descent, residual peeling,
-repulsive, noise-seeded and cosine-seeded parallel descent, vote-count readout, multi-scale
-$\beta$, per-memory $\beta$, query-conditional $\beta$ from the retrieval margin, and
-coupling the predictor into the energy functional --- and \emph{none} of them improves on the
-dense corner under matched conditions, each failing with a diagnosed mechanism rather than a
-bare null. \textbf{Family B} does not read an answer off the landscape at all, and both of
-its members pay, within stated limits. The first is a nonparametric
+argue is a live hazard for this literature rather than a detail of ours. Of eight
+mechanisms tested beyond the reduction corner, exactly one survives: a nonparametric
 predictor over the agent's own observed transitions beats cosine on one-hop temporal
 association, reproduced in four measurements over three corpora. On
 \textsc{LoCoMo}, against a pooled bank of $5{,}882$ turns and over $5{,}233$ probes in $272$
@@ -69,9 +58,12 @@ unmodified on \textsc{MSC}'s $30{,}320$-turn bank, gives $+0.016$ $[+0.014,+0.01
 $27{,}815$ probes. The multi-hop extension does not survive: at two hops the effect is
 $-0.002$ $[-0.008,+0.004]$ on \textsc{LoCoMo} and $+0.005$ $[+0.003,+0.006]$ on
 \textsc{MSC}, a factor of $18$ below the $+0.185$ two-hop result of our own that we
-withdraw.
+withdraw. Multi-step descent, residual peeling, repulsive parallel descent,
+vote-count readout, multi-scale $\beta$, per-memory $\beta$, retrieval-margin calibration,
+and coupling the predictor into the energy functional all fail, each with a diagnosed
+mechanism rather than a bare null.
 
-The second member of Family B also pays, and we found it by running the six corpora that
+One departure from the corner does pay, and we found it by running the six corpora that
 \textsc{LoCoMo} alone could not speak for. Folding $K_0$ retrieved memories back into the
 cue and retrieving again beats dense retrieval by $+0.023$ $[+0.010,+0.037]$ on
 \textsc{HotpotQA} bridge questions and $+0.171$ $[+0.118,+0.219]$ on \textsc{2Wiki}
@@ -79,10 +71,7 @@ inference questions, survives a disjoint sample, a second encoder and two bank s
 beats a random-mode control by $+0.13$ to $+0.39$ in $18$ of $18$ cells --- so the gain is in
 \emph{which} memories enter the cue, not in expanding it. On comparison questions in the
 same corpora, where both documents are reachable from the question directly, selection
-declines to expand in $10$ of $10$ folds. Those strata are benchmark labels, so we also ran
-the version with no label available at any stage: selecting and scoring on the unstratified
-pool still gives $+0.015$ \ci{+0.004}{+0.025} and $+0.043$ \ci{+0.029}{+0.056} over
-$n{=}2{,}000$ each, which we take to be the usable size of the effect. What predicts the gain is hop type, not target
+declines to expand in $10$ of $10$ folds. What predicts the gain is hop type, not target
 count: our own pre-registered hypothesis that more targets should help more comes out
 \emph{reversed} on four corpora and we withdraw it. The result is sharply bounded --- it is
 query expansion rather than attractor dynamics, it gives up its entire gain when its

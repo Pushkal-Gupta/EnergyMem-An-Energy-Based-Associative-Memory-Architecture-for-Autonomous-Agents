@@ -273,12 +273,10 @@ def _star(v, lo="lo", hi="hi"):
 CORPORA_ROWS = [
     ("x10x_hotpot", r"\textsc{HotpotQA}", "bridge", "bridge (chain)", True),
     ("x10x_hotpot", "", "comparison", "comparison", True),
-    ("x10x_hotpot", "", "all", r"\textit{all, unstratified}", True),
     ("x10x_2wiki", r"\textsc{2Wiki}", "inference", "inference (chain)", True),
     ("x10x_2wiki", "", "compositional", "compositional (chain)", True),
     ("x10x_2wiki", "", "comparison", "comparison", True),
     ("x10x_2wiki", "", "bridge_comparison (m=4)", r"bridge-comparison ($m{=}4$)", True),
-    ("x10x_2wiki", "", "all", r"\textit{all, unstratified}", True),
     ("x10x_qasper", r"\textsc{QASPER}", "single-evidence", "single-evidence", True),
     ("x10x_qasper", "", "multi-evidence", "multi-evidence", True),
     ("x10x_scifact", r"\textsc{SciFact}", "all", "all", True),

@@ -23,9 +23,7 @@ class vote performs better than descent does ($-0.036$, \ci{-0.043}{-0.028}). On
 premise's own best case --- occluded copies of stored images, scored by identity --- descent
 is $-0.003$ \ci{-0.008}{+0.000}. The premise is therefore necessary and not sufficient, and
 we withdraw the image win rather than keep it under a weaker description
-(\S\ref{sec:occlusion}). Of the ten Family~A mechanisms --- every tested change to the
-state update or the readout, listed in full in Table~\ref{tab:negatives} --- not one beats
-the corner. Both members of Family~B do, within limits. The first is a
+(\S\ref{sec:occlusion}). Of eight mechanisms beyond the corner, one survives---a
 nonparametric predictor over the agent's own observed transitions, which retrieves by
 succession rather than resemblance. It beats cosine on one-hop association in four
 measurements across three corpora, including $+0.043$ Recall@1 \ci{+0.036}{+0.050} on
@@ -46,12 +44,9 @@ method correctly does nothing. Random modes lose to real ones by $+0.13$ to $+0.
 pays is which memories enter the cue. Our own pre-registered explanation for when this
 should happen---more targets---comes out reversed on four corpora, and the predictor that
 survives is the shape of the hop. We hold the claim at arm's length nonetheless: it needs
-per-corpus tuning, and on the two conversational corpora that motivate this paper it is null,
-where a lexical hybrid gains $+0.156$. The hop-type label is a benchmark annotation and we
-have no detector for it, so the per-stratum numbers are conditional; what is not conditional
-is that the gain survives with the label withheld from selection and scoring entirely
-($+0.015$ and $+0.043$ over $n{=}2{,}000$ each). The label tells you in advance which queries
-will pay, not whether paying happens. It is the one place where the thesis we began with was too pessimistic, and it is
+per-corpus tuning, it needs a question shape we cannot yet detect without labels, and on the
+two conversational corpora that motivate this paper it is null, where a lexical hybrid gains
+$+0.156$. It is the one place where the thesis we began with was too pessimistic, and it is
 still not a better agent memory (\S\ref{sec:corpora}).
 
 We also report what the protocol was worth, in the only currency that makes the argument:

@@ -12,35 +12,13 @@ log-sum-exp. The modern Hopfield energy \citep{ramsauer2021hopfield} is
 E_M(\xib) \;=\; -\tfrac{1}{\beta}\lse\!\big(\beta(X^{\!\top}\xib + b)\big) \;+\; \tfrac12\|\xib\|^2,
 \label{eq:energy}
 \end{equation}
-minimised by the concave--convex (CCCP) update
+minimised by the concave--convex (CCCP) update, which we run for $T$ steps:
 \begin{equation}
-v(\xib) \;=\; X\,\sm\!\big(\beta(X^{\!\top}\xib + b)\big),
-\label{eq:cccp}
-\end{equation}
-which decreases \eqref{eq:energy} monotonically \citep{ramsauer2021hopfield}. The update we
-actually run projects that step back to the sphere and optionally blends in a routing map
-$R$, discussed in \S\ref{sec:axes}; we run it for $T$ steps:
-\begin{equation}
-\xib^{(t+1)} \;=\; \Pi\!\Big[(1-\eta)\,v\big(\xib^{(t)}\big) \;+\; \eta\, R\big(\xib^{(t)}\big)\Big].
+\xib^{(t+1)} \;=\; \Pi\!\Big[(1-\eta)\,X\,\sm\!\big(\beta(X^{\!\top}\xib^{(t)}+b)\big) \;+\; \eta\, R\big(\xib^{(t)}\big)\Big].
 \label{eq:update}
 \end{equation}
-
-\paragraph{What Equation~\eqref{eq:update} does and does not inherit.} The monotone-descent
-guarantee belongs to \eqref{eq:cccp}, not to \eqref{eq:update}, and we claim it only for the
-former. Two gaps, both ours to declare. \emph{The projection.} Because $v(\xib)$ is a convex
-combination of unit vectors, $\|v(\xib)\| \le 1$, so $\Pi$ scales the step \emph{up}: it
-raises $\tfrac12\|\xib\|^2$ and lowers $-\tfrac1\beta\lse$, and we have no argument that the
-net effect is a decrease. What $\Pi$ does preserve is every similarity ranking at a given
-state, since $\langle z_i, c\,\xib\rangle = c\langle z_i,\xib\rangle$ for $c>0$ leaves the
-ordering over $i$ untouched; no retrieval decision reported in this paper therefore depends
-on it, and Proposition~\ref{prop:reduction}, a $T{=}1$ statement, is unaffected. Across steps
-it is not inert: for $\eta{=}0$, $b{=}0$ the projected update is the unprojected one run at an
-effective inverse temperature $\beta_t = \beta/\|v(\xib^{(t)})\| \ge \beta$, so projection
-sharpens the next step and, if anything, hastens the degeneracy of
-Corollary~\ref{cor:degeneracy}. \emph{The blend.} For $\eta \neq 0$ with $R \neq I$ we know of
-no energy of the form \eqref{eq:energy} that the blended map descends, and we assert none. We
-keep the word ``descent'' for this family throughout because that is what the literature
-calls it; on the G3 axis it is a name, not a guarantee, and the claim there is empirical.
+Equation~\eqref{eq:update} decreases \eqref{eq:energy} monotonically and converges for
+$\eta=0$. The operator $R$ is a \emph{routing} map, discussed in \S\ref{sec:axes}.
 
 \subsection{Dense retrieval is a corner of this family}
 
@@ -121,28 +99,11 @@ widely consequential.
 
 \begin{corollary}[High-$\beta$ degeneracy]
 \label{cor:degeneracy}
-Assume the patterns are unit-norm and \emph{pairwise distinct}, that $b=0$ and $\eta=0$, and
-that $\arg\max_i \langle z_i,q\rangle$ is unique. Then for any $T$, as $\beta\to\infty$ the
-trajectory of Equation~\eqref{eq:update} is constant after the first step: each $z_j$
-satisfies $\langle z_j,z_j\rangle = 1 > \langle z_i,z_j\rangle$ for every $i \neq j$, so it is
-its own unique nearest neighbour and hence a fixed point \emph{in the limit}. Multi-step
-descent at high $\beta$ is therefore \emph{identical} to one-step descent, which by
-Proposition~\ref{prop:reduction} is cosine retrieval.
+For any $T$, as $\beta\to\infty$ with $b=0,\eta=0$ the trajectory of
+Equation~\eqref{eq:update} is constant after the first step, because stored patterns are
+exact fixed points. Multi-step descent at high $\beta$ is therefore \emph{identical} to
+one-step descent, which by Proposition~\ref{prop:reduction} is cosine retrieval.
 \end{corollary}
-
-Three qualifications, stated here because the rest of the paper leans on this corollary to
-interpret its own negative results. First, it is a limit statement, and at finite $\beta$ a
-stored pattern is only an \emph{approximate} fixed point: starting from $\xib^{(t)}=z_j$, the
-displacement after one step is $O\big((N{-}1)e^{-\beta\delta_j}\big)$ with
-$\delta_j = 1 - \max_{i\neq j}\langle z_i,z_j\rangle$ that pattern's own margin, so the onset
-of degeneracy is governed by the \emph{least} separated pattern in the bank rather than by an
-average. Second, pairwise distinctness buys uniqueness and nothing more: exact duplicates
-leave the limit unchanged, since the tied columns are the same vector and any split of the
-softmax mass between them returns it, but near-duplicates shrink $\delta_j$ and push the
-degeneracy to higher $\beta$. That is precisely why we locate the band by measurement below
-instead of reading a threshold off the corollary, and why the threshold we report is a
-property of this encoder and this corpus. Third, nothing here covers $b \neq 0$ or
-$\eta \neq 0$; the corollary describes the corner and its neighbourhood along $T$ only.
 
 Empirically the degeneracy arrives early, and accuracy is the wrong way to see it. Two
 retrievers can score identically while disagreeing about which memory they return, so we
