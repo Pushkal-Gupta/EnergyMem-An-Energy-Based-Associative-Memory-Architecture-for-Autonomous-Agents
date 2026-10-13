@@ -31,8 +31,16 @@ pypandoc.convert_file('paper-$v.tex', 'docx', outputfile='main-$v.docx',
 PYEOF
   )
   "$PY" "$ROOT/scripts/docx/fix_omml.py" "$WORK/main-$v.docx"
+  "$PY" "$ROOT/scripts/docx/polish_docx.py" "$WORK/main-$v.docx"
 done
 
 cp "$WORK/main-anonymous.docx" "$ROOT/paper/main-anonymous.docx"
 cp "$WORK/main-named.docx"     "$ROOT/paper/main-preprint.docx"
-echo "wrote paper/main-anonymous.docx and paper/main-preprint.docx"
+# main.docx is the Word counterpart of paper/main.pdf, which is the named build.
+cp "$WORK/main-named.docx"     "$ROOT/paper/main.docx"
+echo "wrote paper/main-anonymous.docx, paper/main-preprint.docx and paper/main.docx"
+
+# No legacy .doc target. The only converter present here is macOS textutil,
+# whose reader ignores OMML, so every quantity typeset as math -- which is every
+# effect size and interval in this paper -- is dropped silently, along with both
+# figures. A faithful .doc needs LibreOffice: soffice --convert-to doc main.docx.

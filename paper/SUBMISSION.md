@@ -69,7 +69,21 @@ bash scripts/rebuild_paper.sh     # regenerates every number, then builds BOTH P
 | `paper/main-anonymous.pdf` | **submit this.** `\usepackage{tmlr}` — "Under review as submission to TMLR", anonymous, contributions suppressed |
 | `paper/main-anonymous.docx` | Word version of the anonymous PDF (same revision). Rebuild: `scripts/docx/build_docx.sh` |
 | `paper/main-preprint.docx` | Word version of the named PDF (same revision) |
+| `paper/main.docx` | identical to `main-preprint.docx`; it sits beside `main.pdf` so the pair is one revision |
 | `paper/main-preprint.pdf` | named version, `\usepackage[preprint]{tmlr}` — for arXiv, circulation, camera-ready |
+
+> **The named Word file carries the full byline**: the three authors with their
+> institutional e-mail addresses, and the faculty member as a **contributor**, not an
+> author (Dr. Thangaramya K, Associate Professor Grade 1, Department of Information
+> Security). The anonymous one carries neither, and must not: under double-blind review a
+> contributing faculty name identifies the group as surely as an author's. The byline
+> lives in `scripts/docx/flatten_for_docx.py`, not in `main.tex`, so the PDFs are
+> unaffected — say so if you want the same block in `main-preprint.pdf`.
+>
+> **No `.doc`.** The only converter on a plain macOS box is `textutil`, whose reader
+> ignores OMML, so every effect size and interval in this paper -- all of them typeset as
+> math -- vanishes silently, along with both figures. A faithful `.doc` needs LibreOffice:
+> `soffice --convert-to doc paper/main.docx`.
 
 > ⚠️ **`paper/main.pdf` is a build artefact, not a deliverable.** It is gitignored and is
 > whatever the last `tectonic` run produced (currently the *named* build). Submit
