@@ -886,7 +886,7 @@ API-free and cheap to reproduce.
 
 ### X120 — LLM reader QA accuracy — **BLOCKED: no API key (Phase 9)**
 Feed top-k into a reader, score answers against gold. The honest version of X35. Use the
-latest Claude models; fix the model id and prompt in the driver and record both in the
+current frontier model; fix the model id and prompt in the driver and record both in the
 JSON, or the number is not reproducible.
 ### X121 — Context-length ablation — k ∈ {1,3,5,10,20,50}
 ### X122 — Reader robustness to distractors — does better retrieval help, or does the
